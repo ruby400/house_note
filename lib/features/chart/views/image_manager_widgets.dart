@@ -72,6 +72,42 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
     }
   }
 
+  Future<void> _pickMultipleFromGallery() async {
+    AppLogger.d('🖼️ Multiple gallery button pressed');
+    final imagePaths = await ImageService.pickMultipleImagesFromGallery();
+
+    if (imagePaths.isNotEmpty) {
+      setState(() {
+        _images.addAll(imagePaths);
+      });
+      // 각 이미지에 대해 콜백 호출
+      for (String imagePath in imagePaths) {
+        widget.onImageAdded(imagePath);
+      }
+      AppLogger.d('✅ ${imagePaths.length} images added to list');
+      
+      // 사용자에게 성공 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.photo_library, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('📸 ${imagePaths.length}개의 사진이 추가되었습니다'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF66BB6A),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(milliseconds: 1200),
+          ),
+        );
+      }
+    }
+  }
+
   void _deleteImage(String imagePath, int index) {
     showDialog(
       context: context,
@@ -280,83 +316,130 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
           // 카메라/갤러리 버튼
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: _takePicture,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: Colors.white,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
+                // 첫 번째 줄: 카메라와 갤러리 단일 선택
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ),
-                      icon: const Icon(Icons.camera_alt, size: 20),
-                      label: const Text(
-                        '사진 촬영',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        child: ElevatedButton.icon(
+                          onPressed: _takePicture,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          icon: const Icon(Icons.camera_alt, size: 20),
+                          label: const Text(
+                            '사진 촬영',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.grey[700]!, Colors.grey[800]!],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: _pickFromGallery,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          icon: const Icon(Icons.photo_library, size: 20),
+                          label: const Text(
+                            '갤러리',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey[700]!, Colors.grey[800]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                
+                const SizedBox(height: 16),
+                
+                // 두 번째 줄: 갤러리 다중 선택
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF66BB6A), Color(0xFF4CAF50)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: ElevatedButton.icon(
-                      onPressed: _pickFromGallery,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: Colors.white,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF66BB6A).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
                       ),
-                      icon: const Icon(Icons.photo_library, size: 20),
-                      label: const Text(
-                        '갤러리',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _pickMultipleFromGallery,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: const Icon(Icons.photo_library_outlined, size: 20),
+                    label: const Text(
+                      '갤러리에서 여러 사진 선택',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

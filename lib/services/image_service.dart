@@ -176,6 +176,48 @@ class ImageService {
     }
   }
 
+  // 갤러리에서 여러 사진 선택
+  static Future<List<String>> pickMultipleImagesFromGallery() async {
+    try {
+      AppLogger.d('🖼️ ImageService.pickMultipleImagesFromGallery() started');
+
+      AppLogger.d('✅ Permissions OK, calling multiple gallery picker...');
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
+      if (images.isEmpty) {
+        AppLogger.d('❌ User cancelled gallery selection or no images selected');
+        return [];
+      }
+
+      AppLogger.d('✅ ${images.length} images selected from gallery');
+
+      List<String> savedPaths = [];
+      
+      // 각 이미지를 앱 내부 저장소에 복사
+      for (int i = 0; i < images.length; i++) {
+        AppLogger.d('💾 Saving gallery image ${i + 1}/${images.length} to app directory...');
+        final String? savedPath = await _saveImageToAppDirectory(images[i]);
+        
+        if (savedPath != null) {
+          savedPaths.add(savedPath);
+          AppLogger.d('✅ Gallery image ${i + 1} saved successfully: $savedPath');
+        } else {
+          AppLogger.warning('❌ Failed to save gallery image ${i + 1} to app directory');
+        }
+      }
+
+      AppLogger.d('✅ pickMultipleImagesFromGallery completed, saved ${savedPaths.length}/${images.length} images');
+      return savedPaths;
+    } catch (e) {
+      AppLogger.error('❌ Error in ImageService.pickMultipleImagesFromGallery', error: e);
+      return [];
+    }
+  }
+
   // 앱 내부 디렉토리에 이미지 저장
   static Future<String?> _saveImageToAppDirectory(XFile image) async {
     try {
