@@ -24,6 +24,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedSort = '최신순'; // 기본 정렬 방식
   String? _selectedChartId; // 선택된 차트 ID
+  String _searchQuery = ''; // 검색어
   // 재할당되지 않으므로 final로 변경
   final List<String> _customSortOptions = ['최신순', '거리순', '월세순']; // 사용자 정의 정렬 옵션
 
@@ -63,370 +64,397 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: '지역, 가격으로 검색...',
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                    decoration: InputDecoration(
+                      hintText: '카드 이름, 위치, 가격으로 검색...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
                     ),
                     onChanged: (value) {
-                      // TODO: 검색 기능 구현
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
                     },
                   ),
                 ),
                 const SizedBox(height: 16),
-                // 필터 버튼들
-                Row(
-                  children: [
-                    // 정렬 드롭다운 - 왼쪽에 배치
-                    PopupMenuButton<String>(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF8A65).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
+                // 필터 버튼들 - 스크롤 가능하게 수정
+                SizedBox(
+                  height: 48,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      // 정렬 드롭다운
+                      PopupMenuButton<String>(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _selectedSort,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                      offset: const Offset(0, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      color: Colors.white,
-                      elevation: 16,
-                      shadowColor: Colors.black.withOpacity(0.25),
-                      surfaceTintColor: Colors.white,
-                      constraints: const BoxConstraints(
-                        minWidth: 200,
-                        maxWidth: 280,
-                      ),
-                      itemBuilder: (context) => [
-                        ..._customSortOptions.map((option) => PopupMenuItem<String>(
-                          value: option,
-                          height: 48,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _selectedSort == option ? Icons.check_circle : Icons.sort,
-                                  color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF718096),
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  option,
-                                  style: TextStyle(
-                                    fontWeight: _selectedSort == option ? FontWeight.w600 : FontWeight.w500,
-                                    fontSize: 14,
-                                    color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )),
-                        PopupMenuItem<String>(
-                          enabled: false,
-                          height: 16,
-                          child: Container(
-                            height: 1,
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.transparent, Colors.grey[300]!, Colors.transparent],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                            ),
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'ADD_NEW',
-                          height: 48,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey[200]!, width: 1),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.add, size: 18, color: Color(0xFF718096)),
-                                SizedBox(width: 8),
-                                Text(
-                                  '새 정렬 방식 추가',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                    color: Color(0xFF2D3748),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      onSelected: (String value) {
-                        if (value == 'ADD_NEW') {
-                          _showAddSortOptionDialog();
-                        } else {
-                          if (mounted) {
-                            setState(() {
-                              _selectedSort = value;
-                            });
-                          }
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    // 차트 선택 드롭다운 - 최신순 바로 옆에 배치
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final chartList = ref.watch(propertyChartListProvider);
-                        final String displayText = _selectedChartId == null 
-                            ? '모든 차트' 
-                            : chartList.firstWhere(
-                                (chart) => chart.id == _selectedChartId,
-                                orElse: () => PropertyChartModel(
-                                  id: '',
-                                  title: '모든 차트',
-                                  date: DateTime.now(),
-                                ),
-                              ).title.isNotEmpty 
-                                ? chartList.firstWhere(
-                                    (chart) => chart.id == _selectedChartId,
-                                    orElse: () => PropertyChartModel(
-                                      id: '',
-                                      title: '모든 차트',
-                                      date: DateTime.now(),
-                                    ),
-                                  ).title
-                                : '차트 ${_selectedChartId}';
-                        
-                        return PopupMenuButton<String?>(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF8A65).withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  displayText,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ],
-                            ),
-                          ),
-                          offset: const Offset(0, 48),
-                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          color: Colors.white,
-                          elevation: 16,
-                          shadowColor: Colors.black.withOpacity(0.25),
-                          surfaceTintColor: Colors.white,
-                          constraints: const BoxConstraints(
-                            minWidth: 200,
-                            maxWidth: 300,
-                          ),
-                          itemBuilder: (context) => [
-                            PopupMenuItem<String?>(
-                              value: null,
-                              height: 48,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
-                                    width: 1,
-                                  ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _selectedSort,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _selectedChartId == null ? Icons.check_circle : Icons.grid_view,
-                                      color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF718096),
-                                      size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                        offset: const Offset(0, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        color: Colors.white,
+                        elevation: 16,
+                        shadowColor: Colors.black.withOpacity(0.25),
+                        surfaceTintColor: Colors.white,
+                        constraints: const BoxConstraints(
+                          minWidth: 200,
+                          maxWidth: 280,
+                        ),
+                        itemBuilder: (context) => [
+                          ..._customSortOptions.map((option) => PopupMenuItem<String>(
+                            value: option,
+                            height: 48,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _selectedSort == option ? Icons.check_circle : Icons.sort,
+                                    color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    option,
+                                    style: TextStyle(
+                                      fontWeight: _selectedSort == option ? FontWeight.w600 : FontWeight.w500,
+                                      fontSize: 14,
+                                      color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '모든 차트',
-                                      style: TextStyle(
-                                        fontWeight: _selectedChartId == null ? FontWeight.w600 : FontWeight.w500,
-                                        fontSize: 14,
-                                        color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )),
+                          PopupMenuItem<String>(
+                            enabled: false,
+                            height: 16,
+                            child: Container(
+                              height: 1,
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.transparent, Colors.grey[300]!, Colors.transparent],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
                                 ),
                               ),
                             ),
-                            ...chartList.map((chart) => PopupMenuItem<String>(
-                              value: chart.id,
-                              height: 48,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _selectedChartId == chart.id ? Icons.check_circle : Icons.bar_chart,
-                                      color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF718096),
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        chart.title.isNotEmpty ? chart.title : '차트 ${chart.id}',
-                                        style: TextStyle(
-                                          fontWeight: _selectedChartId == chart.id ? FontWeight.w600 : FontWeight.w500,
-                                          fontSize: 14,
-                                          color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'ADD_NEW',
+                            height: 48,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey[200]!, width: 1),
                               ),
-                            )),
-                          ],
-                          onSelected: (String? value) {
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.add, size: 18, color: Color(0xFF718096)),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '새 정렬 방식 추가',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                      color: Color(0xFF2D3748),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        onSelected: (String value) {
+                          if (value == 'ADD_NEW') {
+                            _showAddSortOptionDialog();
+                          } else {
                             if (mounted) {
                               setState(() {
-                                _selectedChartId = value;
+                                _selectedSort = value;
                               });
                             }
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    // 새차트 만들기 버튼
-                    GestureDetector(
-                      onTap: () {
-                        _showCreateChartDialog();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF66BB6A), Color(0xFF4CAF50)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF66BB6A).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.add_chart,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              '새차트 만들기',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      // 차트 선택 드롭다운
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final chartList = ref.watch(propertyChartListProvider);
+                          final String displayText = _selectedChartId == null 
+                              ? '모든 차트' 
+                              : chartList.firstWhere(
+                                  (chart) => chart.id == _selectedChartId,
+                                  orElse: () => PropertyChartModel(
+                                    id: '',
+                                    title: '모든 차트',
+                                    date: DateTime.now(),
+                                  ),
+                                ).title.isNotEmpty 
+                                  ? chartList.firstWhere(
+                                      (chart) => chart.id == _selectedChartId,
+                                      orElse: () => PropertyChartModel(
+                                        id: '',
+                                        title: '모든 차트',
+                                        date: DateTime.now(),
+                                      ),
+                                    ).title
+                                  : '차트 ${_selectedChartId}';
+                          
+                          return PopupMenuButton<String?>(
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 200),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      displayText,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                            offset: const Offset(0, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            color: Colors.white,
+                            elevation: 16,
+                            shadowColor: Colors.black.withOpacity(0.25),
+                            surfaceTintColor: Colors.white,
+                            constraints: const BoxConstraints(
+                              minWidth: 200,
+                              maxWidth: 300,
+                            ),
+                            itemBuilder: (context) => [
+                              PopupMenuItem<String?>(
+                                value: 'ALL_CHARTS',
+                                height: 48,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _selectedChartId == null ? Icons.check_circle : Icons.grid_view,
+                                        color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '모든 차트',
+                                        style: TextStyle(
+                                          fontWeight: _selectedChartId == null ? FontWeight.w600 : FontWeight.w500,
+                                          fontSize: 14,
+                                          color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              ...chartList.map((chart) => PopupMenuItem<String>(
+                                value: chart.id,
+                                height: 48,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _selectedChartId == chart.id ? Icons.check_circle : Icons.bar_chart,
+                                        color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          chart.title.isNotEmpty ? chart.title : '차트 ${chart.id}',
+                                          style: TextStyle(
+                                            fontWeight: _selectedChartId == chart.id ? FontWeight.w600 : FontWeight.w500,
+                                            fontSize: 14,
+                                            color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )),
+                            ],
+                            onSelected: (String? value) {
+                              if (mounted) {
+                                setState(() {
+                                  if (value == 'ALL_CHARTS') {
+                                    _selectedChartId = null;
+                                  } else {
+                                    _selectedChartId = value;
+                                  }
+                                });
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      // 새차트 만들기 버튼
+                      GestureDetector(
+                        onTap: () {
+                          _showCreateChartDialog();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add_chart,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '새차트 만들기',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                  ],
+                      const SizedBox(width: 16), // 마지막 여백
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -457,11 +485,36 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                   }
                 }
 
+                // 검색어로 필터링
+                if (_searchQuery.isNotEmpty) {
+                  propertyList.removeWhere((property) {
+                    final name = property.name.toLowerCase();
+                    final deposit = property.deposit.toLowerCase();
+                    final rent = property.rent.toLowerCase();
+                    final direction = property.direction.toLowerCase();
+                    final landlordEnv = property.landlordEnvironment.toLowerCase();
+                    
+                    // 추가 데이터에서도 검색
+                    final additionalValues = property.additionalData.values
+                        .map((v) => v.toLowerCase())
+                        .join(' ');
+                    
+                    return !(name.contains(_searchQuery) ||
+                        deposit.contains(_searchQuery) ||
+                        rent.contains(_searchQuery) ||
+                        direction.contains(_searchQuery) ||
+                        landlordEnv.contains(_searchQuery) ||
+                        additionalValues.contains(_searchQuery));
+                  });
+                }
+
                 // 선택된 정렬 방식에 따라 정렬
                 _sortPropertyList(propertyList);
 
                 if (propertyList.isEmpty) {
-                  return _buildEmptyState();
+                  return _searchQuery.isNotEmpty 
+                      ? _buildNoSearchResults()
+                      : _buildEmptyState();
                 }
                 return _buildCardList(propertyList);
               },
@@ -577,6 +630,23 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
+  Widget _buildNoSearchResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text('\'$_searchQuery\'에 대한 검색 결과가 없습니다.',
+              style: const TextStyle(fontSize: 16, color: Colors.grey)),
+          const SizedBox(height: 8),
+          const Text('다른 검색어를 시도해보세요.',
+              style: TextStyle(fontSize: 14, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCardList(List<PropertyData> properties) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -603,7 +673,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
-            // [수정된 부분] const 제거
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -800,6 +869,65 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           ),
           maxLines: 3,
           overflow: TextOverflow.visible,
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactPriorityTags(PropertyData property) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final realtimeChartList = ref.watch(propertyChartListProvider);
+
+        PropertyChartModel? currentChart;
+        for (var chart in realtimeChartList) {
+          if (chart.properties.any((p) => p.id == property.id)) {
+            currentChart = chart;
+            break;
+          }
+        }
+
+        List<String> tags = [];
+        Set<String> addedTags = {};
+
+        const fixedItems = {'집 이름', '월세', '보증금', '순'};
+
+        final visibilityMap = currentChart?.columnVisibility;
+
+        if (visibilityMap != null && visibilityMap.isNotEmpty) {
+          final visibleColumns = visibilityMap.entries
+              .where((entry) => entry.value == true)
+              .map((entry) => entry.key)
+              .where((column) => !fixedItems.contains(column))
+              .take(3)
+              .toList();
+
+          for (String column in visibleColumns) {
+            if (addedTags.contains(column)) continue;
+
+            String? value = _getColumnValueForProperty(column, property);
+
+            final displayValue =
+                (value != null && value.isNotEmpty && value != '-')
+                    ? value
+                    : '미입력';
+
+            addedTags.add(column);
+            tags.add('$column: $displayValue');
+          }
+        }
+
+        if (tags.isEmpty) return const SizedBox.shrink();
+
+        return Text(
+          tags.join('\n'),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: Colors.black54,
+          ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
         );
       },
     );

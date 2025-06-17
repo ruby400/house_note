@@ -31,6 +31,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   final Map<String, bool> _checkedItems = {};
   final List<String> _sortOptions = ['최신순', '거리순', '월세순'];
   String _selectedSort = '최신순';
+  String _searchQuery = ''; // 검색어
   final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
@@ -633,7 +634,17 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final chartList = ref.watch(propertyChartListProvider);
-                return _buildChartList(chartList);
+                
+                // 검색어로 필터링
+                List<PropertyChartModel> filteredChartList = chartList;
+                if (_searchQuery.isNotEmpty) {
+                  filteredChartList = chartList.where((chart) {
+                    final title = chart.title.toLowerCase();
+                    return title.contains(_searchQuery);
+                  }).toList();
+                }
+                
+                return _buildChartList(filteredChartList);
               },
             ),
           ),
@@ -659,14 +670,29 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: '지역, 가격으로 검색...',
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                    decoration: InputDecoration(
+                      hintText: '차트 제목으로 검색...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
                     ),
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
                   ),
                 ),
               ),
@@ -1510,22 +1536,45 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   Widget _buildChartList(List<PropertyChartModel> chartList) {
     // 빈 리스트 처리
     if (chartList.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.insert_chart, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('차트가 없습니다',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            SizedBox(height: 8),
-            Text('새 차트를 추가해보세요',
-                style: TextStyle(fontSize: 14, color: Colors.grey)),
-          ],
-        ),
-      );
+      return _searchQuery.isNotEmpty 
+          ? _buildNoSearchResults()
+          : const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.insert_chart, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('차트가 없습니다',
+                      style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  SizedBox(height: 8),
+                  Text('새 차트를 추가해보세요',
+                      style: TextStyle(fontSize: 14, color: Colors.grey)),
+                ],
+              ),
+            );
     }
 
+    return _buildChartListView(chartList);
+  }
+
+  Widget _buildNoSearchResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text('\'$_searchQuery\'에 대한 검색 결과가 없습니다.',
+              style: const TextStyle(fontSize: 16, color: Colors.grey)),
+          const SizedBox(height: 8),
+          const Text('다른 검색어를 시도해보세요.',
+              style: TextStyle(fontSize: 14, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartListView(List<PropertyChartModel> chartList) {
     return ListView.builder(
       itemCount: chartList.length,
       itemBuilder: (context, index) {
