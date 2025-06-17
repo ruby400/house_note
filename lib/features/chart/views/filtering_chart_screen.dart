@@ -154,7 +154,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '부동산 정보',
     '집주인 정보',
     '계약시 중개보조인인지 중개사인지 체크',
-    '별점'
+    '별점',
+    '메모'
   ];
 
   // 기본 컬럼 목록 (삭제할 수 없는 컬럼들)
@@ -202,24 +203,81 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '월세',
       '주거형태',
       '건축물용도',
-      '임차권 등기명령 이력여부',
-      '근저당권여부',
-      '가압류나 압류이력여부',
-      '계약조건',
-      '등기부등본',
-      '입주가능일',
-      '전입신고 가능여부',
+      '임차권등기명령 이력',
+      '근저당권',
+      '가압류, 압류, 경매 이력',
+      '계약 조건',
+      '등기부등본(말소사항 포함으로)',
+      '입주 가능일',
+      '전입신고',
       '관리비',
-      '주택보증보험가능여부',
+      '주택보증보험',
       '특약',
       '특이사항'
     ],
-    '기본정보': ['재계/방향', '집주인 환경'],
-    '치안': [],
-    '소음외풍미세먼지': [],
-    '청결': [],
-    '교통과 편의시설': [],
-    '기타사항': ['별점'],
+    '기본정보': [
+      '평수',
+      '방개수',
+      '방구조',
+      '창문 뷰',
+      '방향(나침반)',
+      '채광',
+      '층수',
+      '엘리베이터',
+      '에어컨 방식',
+      '난방방식',
+      '베란다',
+      '발코니',
+      '주차장',
+      '화장실',
+      '가스'
+    ],
+    '치안': [
+      '위치',
+      'cctv 여부',
+      '창문 상태',
+      '문 상태',
+      '집주인 성격',
+      '집주인 거주',
+      '집근처 술집',
+      '저층 방범창',
+      '집주변 낮분위기',
+      '집주변 밤분위기',
+      '2종 잠금장치'
+    ],
+    '소음•외풍•미세먼지': [
+      '집 근처 소음원',
+      '실내소음',
+      '이중창(소음, 외풍)',
+      '창문 밀폐(미세먼지)'
+    ],
+    '청결': [
+      '수압',
+      '누수',
+      '에어컨 내부 곰팡이',
+      '에어컨 냄새',
+      '환기(공기순환)',
+      '곰팡이(벽,화장실,베란다)',
+      '냄새',
+      '벌레(바퀴똥)'
+    ],
+    '교통, 편의시설': [
+      '지하철 거리',
+      '버스 정류장',
+      '편의점 거리'
+    ],
+    '미관': [
+      '몰딩',
+      '창문'
+    ],
+    '기타사항': [
+      '관련 링크',
+      '부동산 정보',
+      '집주인 정보',
+      '계약시 중개보조인인지 중개사인지 체크',
+      '별점',
+      '메모'
+    ],
   };
 
   // 카테고리별 토글 상태 (기본적으로 모두 펼쳐짐)
@@ -227,9 +285,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '필수정보': true,
     '기본정보': true,
     '치안': true,
-    '소음외풍미세먼지': true,
+    '소음•외풍•미세먼지': true,
     '청결': true,
-    '교통과 편의시설': true,
+    '교통, 편의시설': true,
+    '미관': true,
     '기타사항': true,
   };
 
@@ -373,17 +432,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
       if (belongsToCategory != null) {
         final isExpanded = _categoryExpanded[belongsToCategory] ?? true;
-        final categoryColumns = _categoryGroups[belongsToCategory]!;
 
         if (isExpanded) {
           // 펼쳐진 경우: 컬럼 표시
           visibleColumns.add(column);
-        } else {
-          // 접힌 경우: 해당 카테고리의 첫 번째 컬럼만 표시
-          if (categoryColumns.isNotEmpty && column == categoryColumns.first) {
-            visibleColumns.add(column);
-          }
         }
+        // 접힌 경우: 해당 카테고리의 모든 컬럼 숨김 (아무것도 추가하지 않음)
       } else {
         // 카테고리에 속하지 않는 컬럼은 항상 표시
         visibleColumns.add(column);
@@ -3701,21 +3755,22 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       if (isExpanded) {
         visibleCategoryColumns.addAll(
             categoryColumns.where((col) => visibleColumns.contains(col)));
-      } else {
-        if (categoryColumns.isNotEmpty &&
-            visibleColumns.contains(categoryColumns.first)) {
-          visibleCategoryColumns.add(categoryColumns.first);
-        }
       }
 
-      if (visibleCategoryColumns.isNotEmpty) {
+      // 펼쳐진 경우에만 컬럼이 있을 때 헤더 표시, 접힌 경우에는 최소 너비로 헤더만 표시
+      if (visibleCategoryColumns.isNotEmpty || !isExpanded) {
         // 카테고리의 총 너비 계산
         double totalWidth = 0;
-        for (final column in visibleCategoryColumns) {
-          final originalIndex = _columns.indexOf(column);
-          if (originalIndex != -1) {
-            totalWidth += _getColumnWidth(originalIndex);
+        if (isExpanded) {
+          for (final column in visibleCategoryColumns) {
+            final originalIndex = _columns.indexOf(column);
+            if (originalIndex != -1) {
+              totalWidth += _getColumnWidth(originalIndex);
+            }
           }
+        } else {
+          // 접힌 경우 최소 너비
+          totalWidth = 120;
         }
 
         headers.add(
@@ -3737,8 +3792,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                   const SizedBox(width: 8),
                   Icon(
                     isExpanded
-                        ? Icons.keyboard_arrow_right
-                        : Icons.keyboard_arrow_down,
+                        ? Icons.keyboard_arrow_down
+                        : Icons.keyboard_arrow_right,
                     size: 16,
                     color: Colors.grey[600],
                   ),
