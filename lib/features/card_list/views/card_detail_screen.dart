@@ -32,6 +32,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   bool isEditMode = false;
   Map<String, String> editedValues = {};
   Map<String, List<String>> dropdownOptions = {};
+  Map<String, bool> showPlaceholder = {};
 
   @override
   void initState() {
@@ -57,13 +58,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   // 카테고리별 항목 정의 (차트에서 사용하는 모든 항목들)
   final Map<String, List<Map<String, dynamic>>> categories = {
-    '기본 정보': [
-      {'key': 'order', 'label': '순번'},
-      {'key': 'name', 'label': '집 이름'},
-      {'key': 'deposit', 'label': '보증금'},
-      {'key': 'rent', 'label': '월세'},
-      {'key': 'rating', 'label': '별점 (1-5)'},
-    ],
     '필수 정보': [
       {'key': 'housing_type', 'label': '주거 형태'},
       {'key': 'building_use', 'label': '건축물용도'},
@@ -208,33 +202,73 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    propertyData!.name.isNotEmpty
-                        ? propertyData!.name
-                        : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  // 이름 편집
+                  isEditMode
+                      ? TextField(
+                          controller: TextEditingController(
+                            text: editedValues['name'] ?? propertyData!.name,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          decoration: const InputDecoration(
+                            border: UnderlineInputBorder(),
+                            hintText: '부동산 이름',
+                          ),
+                          onChanged: (value) {
+                            editedValues['name'] = value;
+                          },
+                        )
+                      : Text(
+                          propertyData!.name.isNotEmpty
+                              ? propertyData!.name
+                              : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
                   const SizedBox(height: 12),
+                  // 별점 편집
                   Row(
                     children: [
-                      Row(
-                        children: List.generate(
-                            5,
-                            (index) => Icon(
-                                  index < propertyData!.rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 20,
-                                )),
-                      ),
+                      isEditMode
+                          ? Row(
+                              children: List.generate(5, (index) {
+                                final currentRating = int.tryParse(editedValues['rating'] ?? '') ?? propertyData!.rating;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      editedValues['rating'] = (index + 1).toString();
+                                    });
+                                  },
+                                  child: Icon(
+                                    index < currentRating
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 24,
+                                  ),
+                                );
+                              }),
+                            )
+                          : Row(
+                              children: List.generate(
+                                  5,
+                                  (index) => Icon(
+                                        index < propertyData!.rating
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: Colors.amber,
+                                        size: 20,
+                                      )),
+                            ),
                       const SizedBox(width: 8),
                       Text(
-                        '${propertyData!.rating}/5',
+                        '${int.tryParse(editedValues['rating'] ?? '') ?? propertyData!.rating}/5',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
@@ -246,9 +280,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _buildSummaryItem('보증금', propertyData!.deposit),
+                      _buildSummaryItem('보증금', propertyData!.deposit, 'deposit'),
                       const SizedBox(width: 16),
-                      _buildSummaryItem('월세', propertyData!.rent),
+                      _buildSummaryItem('월세', propertyData!.rent, 'rent'),
                     ],
                   ),
                 ],
@@ -337,37 +371,51 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
 
     if (allImages.isEmpty) {
-      // 사진이 없을 때는 추가 버튼만 표시
-      return GestureDetector(
-        onTap: () => _showImageManager('gallery'),
-        child: Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!, width: 2),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_a_photo,
-                size: 32,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '사진 추가',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w500,
+      // 사진이 없을 때는 3개의 추가 버튼을 표시
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          for (int i = 0; i < 3; i++)
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: i == 1 ? 8 : 4),
+                child: GestureDetector(
+                  onTap: () => _showImageManager('gallery'),
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 243, 242, 242),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color.fromARGB(255, 224, 224, 224)!,
+                            width: 2),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_a_photo,
+                            size: 32,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '사진 추가',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+        ],
       );
     }
 
@@ -517,29 +565,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  Widget _buildImagePlaceholder() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.add_a_photo,
-          size: 32,
-          color: Colors.grey[400],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '사진 추가',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[500],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryItem(String label, String value) {
+  Widget _buildSummaryItem(String label, String value, [String? key]) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -560,14 +586,34 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              value.isNotEmpty ? value : '-',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            isEditMode && key != null
+                ? TextField(
+                    controller: TextEditingController(
+                      text: editedValues[key] ?? value,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: '입력하세요',
+                    ),
+                    onChanged: (newValue) {
+                      editedValues[key] = newValue;
+                    },
+                  )
+                : Text(
+                    value.isNotEmpty ? value : '-',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ],
         ),
       ),
@@ -618,13 +664,39 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: items
-                  .map((item) => _buildInfoRow(
-                        item['label'],
-                        _getPropertyValue(item['key']),
-                        item['key'],
-                      ))
-                  .toList(),
+              children: [
+                for (int i = 0; i < items.length; i += 2)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _buildInfoRow(
+                              items[i]['label'],
+                              _getPropertyValue(items[i]['key']),
+                              items[i]['key'],
+                            ),
+                          ),
+                          if (i + 1 < items.length) ...[
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildInfoRow(
+                                items[i + 1]['label'],
+                                _getPropertyValue(items[i + 1]['key']),
+                                items[i + 1]['key'],
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(width: 12),
+                            const Expanded(child: SizedBox()),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -636,137 +708,170 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final String currentValue = editedValues[key] ?? value;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[200]!),
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 120,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w600,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 레이블 섹션
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: isEditMode
-                  ? _buildEditableField(key, currentValue)
-                  : Text(
-                      currentValue.isNotEmpty ? currentValue : '입력하세요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: currentValue.isNotEmpty
-                            ? Colors.black87
-                            : Colors.grey[500],
-                        fontWeight: currentValue.isNotEmpty
-                            ? FontWeight.w500
-                            : FontWeight.normal,
-                      ),
-                    ),
-            ),
-            if (isEditMode && key != null) ...[
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: PopupMenuButton<String>(
-                  padding: EdgeInsets.zero,
-                  iconSize: 18,
-                  icon: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8A65).withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+              if (isEditMode && key != null)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    iconSize: 14,
+                    icon: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_drop_down,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  offset: const Offset(0, 32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  color: Colors.white,
-                  elevation: 12,
-                  shadowColor: Colors.black.withOpacity(0.25),
-                  surfaceTintColor: Colors.white,
-                  constraints: const BoxConstraints(
-                    minWidth: 180,
-                    maxWidth: 220,
-                  ),
-                  onSelected: (String value) {
-                    if (value == 'direct_input') {
-                      // 직접 입력 모드는 그대로 유지
-                    } else if (value == 'add_new') {
-                      _showAddOptionDialog(key!);
-                    } else {
-                      if (mounted) {
-                        setState(() {
-                          editedValues[key!] = value;
-                        });
-                      }
-                    }
-                  },
-                  itemBuilder: (BuildContext context) {
-                    final List<String> options = dropdownOptions[key] ?? [];
-                    return [
-                      PopupMenuItem<String>(
-                        height: 44,
-                        value: 'direct_input',
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 2),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border:
-                                Border.all(color: Colors.grey[200]!, width: 1),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF8A65).withOpacity(0.3),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
                           ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.edit,
-                                  size: 16, color: Color(0xFF718096)),
-                              SizedBox(width: 8),
-                              Text(
-                                '직접 입력',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF2D3748),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                    offset: const Offset(0, 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    color: Colors.white,
+                    elevation: 8,
+                    shadowColor: Colors.black.withOpacity(0.2),
+                    surfaceTintColor: Colors.white,
+                    constraints: const BoxConstraints(
+                      minWidth: 260,
+                      maxWidth: 320,
+                    ),
+                    onSelected: (String value) {
+                      if (value == 'direct_input') {
+                        if (mounted) {
+                          setState(() {
+                            showPlaceholder[key!] = true;
+                          });
+                        }
+                      } else if (value == 'add_new') {
+                        _showAddOptionDialog(key!);
+                      } else {
+                        if (mounted) {
+                          setState(() {
+                            editedValues[key!] = value;
+                            showPlaceholder[key!] = false;
+                          });
+                        }
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      final List<String> options = dropdownOptions[key] ?? [];
+                      return [
+                        PopupMenuItem<String>(
+                          height: 48,
+                          value: 'direct_input',
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: Colors.grey[200]!, width: 1),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit,
+                                    size: 16, color: Color(0xFF718096)),
+                                SizedBox(width: 8),
+                                Text(
+                                  '직접 입력',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF2D3748),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (options.isNotEmpty)
+                          PopupMenuItem<String>(
+                            enabled: false,
+                            height: 12,
+                            child: Container(
+                              height: 1,
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.grey[300]!,
+                                    Colors.transparent
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      if (options.isNotEmpty)
+                        ...options.map((option) => PopupMenuItem<String>(
+                              height: 44,
+                              value: option,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: Colors.grey[200]!, width: 1),
+                                ),
+                                child: Text(
+                                  option,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF2D3748),
+                                  ),
+                                ),
+                              ),
+                            )),
                         PopupMenuItem<String>(
                           enabled: false,
                           height: 12,
@@ -787,66 +892,21 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                             ),
                           ),
                         ),
-                      ...options.map((option) => PopupMenuItem<String>(
-                            height: 40,
-                            value: option,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: Colors.grey[200]!, width: 1),
-                              ),
-                              child: Text(
-                                option,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF2D3748),
-                                ),
-                              ),
+                        PopupMenuItem<String>(
+                          height: 48,
+                          value: 'add_new',
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: Colors.grey[200]!, width: 1),
                             ),
-                          )),
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        height: 12,
-                        child: Container(
-                          height: 1,
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                Colors.grey[300]!,
-                                Colors.transparent
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                          ),
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        height: 44,
-                        value: 'add_new',
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 2),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border:
-                                Border.all(color: Colors.grey[200]!, width: 1),
-                          ),
-                          child: const Row(
-                            children: [
+                            child: Row(children: [
                               Icon(Icons.add,
                                   size: 16, color: Color(0xFF718096)),
                               SizedBox(width: 8),
@@ -858,17 +918,34 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                                   color: Color(0xFF2D3748),
                                 ),
                               ),
-                            ],
+                            ]),
                           ),
                         ),
-                      ),
-                    ];
-                  },
+                      ];
+                    },
+                  ),
                 ),
-              ),
             ],
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          // 값 섹션
+          SizedBox(
+            height: 24,
+            child: isEditMode
+                ? _buildEditableField(key, currentValue)
+                : currentValue.isNotEmpty 
+                    ? Text(
+                        currentValue,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: null,
+                      )
+                    : Container(),
+          ),
+        ],
       ),
     );
   }
@@ -918,18 +995,22 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildEditableField(String? key, String value) {
+    final bool shouldShowPlaceholder = key != null && (showPlaceholder[key] ?? false);
+    
     return TextField(
       controller: TextEditingController(text: value),
       style: const TextStyle(
-        fontSize: 13,
+        fontSize: 16,
         color: Colors.black87,
       ),
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         border: InputBorder.none,
-        hintText: '입력하세요',
+        hintText: shouldShowPlaceholder ? '입력하세요' : null,
         isDense: true,
         contentPadding: EdgeInsets.zero,
       ),
+      maxLines: null,
+      minLines: 1,
       onChanged: (newValue) {
         if (key != null) {
           editedValues[key] = newValue;
@@ -967,6 +1048,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       }
                       dropdownOptions[key]!.add(controller.text);
                       editedValues[key] = controller.text;
+                      showPlaceholder[key] = false;
                     });
                   }
                 }

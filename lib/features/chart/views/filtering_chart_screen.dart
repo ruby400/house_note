@@ -1014,6 +1014,20 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _showEditBottomSheet(int rowIndex, int columnIndex, String columnName) {
     final currentValue = _getCurrentCellValue(rowIndex, columnIndex);
     final options = _columnOptions[columnName] ?? [];
+    
+    // 기본 옵션과 사용자 옵션 합치기
+    final defaultOptions = _columnDefaultOptions[columnName] ?? [];
+    final allOptions = <String>[];
+    
+    // 기본 옵션을 먼저 추가
+    allOptions.addAll(defaultOptions);
+    
+    // 중복되지 않는 사용자 옵션 추가
+    for (final option in options) {
+      if (!allOptions.contains(option)) {
+        allOptions.add(option);
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -1022,7 +1036,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       builder: (context) => _EditBottomSheet(
         columnName: columnName,
         currentValue: currentValue,
-        options: options,
+        options: allOptions,
+        defaultOptionsCount: defaultOptions.length,
         onSave: (value) {
           _updateCellValue(rowIndex, columnIndex, value);
         },
@@ -1032,16 +1047,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           }
           _columnOptions[columnName]!.add(newOption);
           _saveCurrentChart();
-          // 바텀시트 갱신을 위해 setState 호출하되, 화면도 갱신되도록 함
+          // 메인 화면 갱신
           if (mounted) {
             setState(() {});
           }
         },
         onDeleteOption: (option) {
-          _columnOptions[columnName]?.remove(option);
-          _saveCurrentChart(); // 삭제 후 차트 저장
-          if (mounted) {
-            setState(() {});
+          // 기본 옵션은 삭제할 수 없도록 함
+          if (!defaultOptions.contains(option)) {
+            _columnOptions[columnName]?.remove(option);
+            _saveCurrentChart(); // 삭제 후 차트 저장
+            if (mounted) {
+              setState(() {});
+            }
           }
         },
       ),
@@ -4298,6 +4316,7 @@ class _EditBottomSheet extends StatefulWidget {
   final String columnName;
   final String currentValue;
   final List<String> options;
+  final int defaultOptionsCount;
   final Function(String) onSave;
   final Function(String) onAddOption;
   final Function(String)? onDeleteOption;
@@ -4306,6 +4325,7 @@ class _EditBottomSheet extends StatefulWidget {
     required this.columnName,
     required this.currentValue,
     required this.options,
+    this.defaultOptionsCount = 0,
     required this.onSave,
     required this.onAddOption,
     this.onDeleteOption,
@@ -4318,12 +4338,14 @@ class _EditBottomSheet extends StatefulWidget {
 class _EditBottomSheetState extends State<_EditBottomSheet> {
   late TextEditingController _controller;
   String _selectedValue = '';
+  late List<String> _currentOptions;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.currentValue);
     _selectedValue = widget.currentValue;
+    _currentOptions = List<String>.from(widget.options);
   }
 
   @override
@@ -4356,10 +4378,14 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
           TextButton(
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
-                widget.onAddOption(controller.text.trim());
+                final newOption = controller.text.trim();
+                // 로컬 상태 업데이트
+                setState(() {
+                  _currentOptions.add(newOption);
+                });
+                // 부모에게 콜백 호출
+                widget.onAddOption(newOption);
                 Navigator.pop(context);
-                // 항목 추가 후 바로 UI 갱신
-                setState(() {});
               }
             },
             child: const Text('추가'),
@@ -4371,6 +4397,27 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
 
   // 항목 삭제 다이얼로그
   void _showDeleteOptionDialog(String option) {
+    final optionIndex = _currentOptions.indexOf(option);
+    final isDefaultOption = optionIndex < widget.defaultOptionsCount;
+    
+    if (isDefaultOption) {
+      // 기본 옵션은 삭제할 수 없음을 알리는 다이얼로그
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('삭제 불가'),
+          content: Text('\'$option\'은(는) 기본 옵션으로 삭제할 수 없습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -4383,12 +4430,15 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
           ),
           TextButton(
             onPressed: () {
+              // 로컬 상태 업데이트
+              setState(() {
+                _currentOptions.remove(option);
+              });
+              // 부모에게 콜백 호출
               if (widget.onDeleteOption != null) {
                 widget.onDeleteOption!(option);
               }
               Navigator.pop(context);
-              // 항목 삭제 후 바로 UI 갱신
-              setState(() {});
             },
             style:
                 TextButton.styleFrom(foregroundColor: const Color(0xFFFF8A65)),
@@ -4443,7 +4493,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
             const SizedBox(height: 16),
 
             // 미리 설정된 옵션들
-            if (widget.options.isNotEmpty) ...[
+            if (_currentOptions.isNotEmpty) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -4468,8 +4518,12 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: widget.options.map((option) {
+                children: _currentOptions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final option = entry.value;
                   final isSelected = _selectedValue == option;
+                  final isDefaultOption = index < widget.defaultOptionsCount;
+                  
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -4477,7 +4531,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                         _controller.text = option;
                       });
                     },
-                    onLongPress: () => _showDeleteOptionDialog(option),
+                    onLongPress: isDefaultOption ? null : () => _showDeleteOptionDialog(option),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -4497,7 +4551,9 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                       child: Text(
                         option,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
+                          color: isSelected 
+                            ? Colors.white 
+                            : Colors.black87,
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
@@ -4588,6 +4644,7 @@ class _DirectionBottomSheet extends StatelessWidget {
       columnName: '재계/방향',
       currentValue: currentValue,
       options: options,
+      defaultOptionsCount: 10, // 방향 기본 옵션 개수
       onSave: onSave,
       onAddOption: onAddOption,
       onDeleteOption: onDeleteOption,
@@ -4616,6 +4673,7 @@ class _EnvironmentBottomSheet extends StatelessWidget {
       columnName: '집주인 환경',
       currentValue: currentValue,
       options: options,
+      defaultOptionsCount: 3, // 집주인 성격 기본 옵션 개수
       onSave: onSave,
       onAddOption: onAddOption,
       onDeleteOption: onDeleteOption,
@@ -4644,6 +4702,7 @@ class _PriceBottomSheet extends StatelessWidget {
       columnName: '가격',
       currentValue: currentValue,
       options: options,
+      defaultOptionsCount: 0, // 가격은 기본 옵션 없음
       onSave: onSave,
       onAddOption: onAddOption,
       onDeleteOption: onDeleteOption,
