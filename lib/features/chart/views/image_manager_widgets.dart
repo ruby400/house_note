@@ -391,106 +391,107 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              height: 400,
-              child: GridView.builder(
-                physics: const BouncingScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.0,
-                ),
-                itemCount: _images.length,
-                itemBuilder: (context, index) {
-                  final imagePath = _images[index];
-                  return Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: () => _viewFullScreen(index),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Stack(
-                              children: [
-                                Image.file(
-                                  File(imagePath),
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                                // 오버레이 그라데이션
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.black.withValues(alpha: 0.1),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // 확대 아이콘
-                                const Positioned(
-                                  bottom: 4,
-                                  right: 4,
-                                  child: Icon(
-                                    Icons.zoom_in,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _deleteImage(imagePath, index),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                child: GridView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemCount: _images.length,
+                  itemBuilder: (context, index) {
+                    final imagePath = _images[index];
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _viewFullScreen(index),
                           child: Container(
-                            width: 24,
-                            height: 24,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF8A65),
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 2),
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 14,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Stack(
+                                children: [
+                                  Image.file(
+                                    File(imagePath),
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  // 오버레이 그라데이션
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.1),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // 확대 아이콘
+                                  const Positioned(
+                                    bottom: 4,
+                                    right: 4,
+                                    child: Icon(
+                                      Icons.zoom_in,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _deleteImage(imagePath, index),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8A65),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF8A65)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
+            )
           ] else ...[
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -565,51 +566,53 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
           ],
 
           // 닫기 버튼
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white,
-                  Colors.grey[50]!,
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[100],
-                  foregroundColor: Colors.grey[700],
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  side: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: Colors.grey[600],
-                ),
-                label: Text(
-                  '닫기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                  ),
+          SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white,
+                    Colors.grey[50]!,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[100],
+                    foregroundColor: Colors.grey[700],
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.close,
+                    size: 20,
+                    color: Colors.grey[600],
+                  ),
+                  label: Text(
+                    '닫기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+          )
         ],
       ),
     );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
+import 'package:house_note/features/chart/views/image_manager_widgets.dart';
+import 'package:house_note/providers/property_chart_providers.dart';
+import 'dart:io';
 
 class CardDetailScreen extends ConsumerStatefulWidget {
   static const routeName = 'card-detail';
@@ -8,8 +11,16 @@ class CardDetailScreen extends ConsumerStatefulWidget {
 
   final String cardId;
   final PropertyData? propertyData;
+  final String? chartId;
+  final bool isNewProperty;
 
-  const CardDetailScreen({super.key, required this.cardId, this.propertyData});
+  const CardDetailScreen({
+    super.key,
+    required this.cardId,
+    this.propertyData,
+    this.chartId,
+    this.isNewProperty = false,
+  });
 
   @override
   ConsumerState<CardDetailScreen> createState() => _CardDetailScreenState();
@@ -18,21 +29,30 @@ class CardDetailScreen extends ConsumerStatefulWidget {
 class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   // 실제 PropertyData (나중에 Provider로 가져올 예정)
   PropertyData? propertyData;
+  bool isEditMode = false;
+  Map<String, String> editedValues = {};
+  Map<String, List<String>> dropdownOptions = {};
 
   @override
   void initState() {
     super.initState();
     // PropertyData가 생성자로 전달되었으면 사용, 아니면 기본값으로 생성
-    propertyData = widget.propertyData ?? PropertyData(
-      id: widget.cardId,
-      order: '',
-      name: '',
-      deposit: '',
-      rent: '',
-      direction: '',
-      landlordEnvironment: '',
-      rating: 0,
-    );
+    propertyData = widget.propertyData ??
+        PropertyData(
+          id: widget.cardId,
+          order: '',
+          name: '',
+          deposit: '',
+          rent: '',
+          direction: '',
+          landlordEnvironment: '',
+          rating: 0,
+        );
+
+    // 새 부동산인 경우 자동으로 편집 모드 활성화
+    if (widget.isNewProperty) {
+      isEditMode = true;
+    }
   }
 
   // 카테고리별 항목 정의 (차트에서 사용하는 모든 항목들)
@@ -145,9 +165,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         backgroundColor: const Color(0xFFFF8A65),
         centerTitle: true,
         title: Text(
-          propertyData!.name.isNotEmpty 
-            ? propertyData!.name 
-            : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
+          propertyData!.name.isNotEmpty
+              ? propertyData!.name
+              : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -164,19 +184,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           children: [
             // 이미지 갤러리
             Container(
-              height: 150,
+              height: 140,
               padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(child: _buildImagePlaceholder()),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildImagePlaceholder()),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildImagePlaceholder()),
-                ],
-              ),
+              child: _buildImageGallery(),
             ),
-            
+
             // 기본 정보 요약
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -197,9 +209,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    propertyData!.name.isNotEmpty 
-                      ? propertyData!.name 
-                      : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
+                    propertyData!.name.isNotEmpty
+                        ? propertyData!.name
+                        : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -210,11 +222,15 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   Row(
                     children: [
                       Row(
-                        children: List.generate(5, (index) => Icon(
-                          index < propertyData!.rating ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 20,
-                        )),
+                        children: List.generate(
+                            5,
+                            (index) => Icon(
+                                  index < propertyData!.rating
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 20,
+                                )),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -238,49 +254,216 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // 카테고리별 정보 섹션들
             ...categories.entries.map((entry) => _buildInfoSection(
-              entry.key,
-              entry.value,
-              _getCategoryColor(entry.key),
-            )),
-            
+                  entry.key,
+                  entry.value,
+                  _getCategoryColor(entry.key),
+                )),
+
             const SizedBox(height: 20),
           ],
         ),
       ),
+      bottomNavigationBar: widget.isNewProperty
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFF8A65)),
+                        foregroundColor: const Color(0xFFFF8A65),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('취소'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _saveNewProperty,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8A65),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('부동산 저장'),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
+      floatingActionButton: !widget.isNewProperty
+          ? FloatingActionButton(
+              onPressed: () {
+                if (isEditMode) {
+                  _saveChanges();
+                }
+                if (mounted) {
+                  setState(() {
+                    isEditMode = !isEditMode;
+                  });
+                }
+              },
+              backgroundColor: const Color(0xFFFF8A65),
+              child: Icon(
+                isEditMode ? Icons.check : Icons.edit,
+                color: Colors.white,
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildImageGallery() {
+    final List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
+    const int visibleSlots = 3; // 화면에 보이는 슬롯 수
+    final int totalSlots = allImages.length + 1; // 전체 슬롯 수 (기존 이미지 + 추가 버튼)
+
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: totalSlots > visibleSlots ? totalSlots : visibleSlots,
+      itemBuilder: (context, index) {
+        if (index < allImages.length) {
+          // 이미지가 있는 슬롯
+          return Container(
+            width: 100,
+            height: 100,
+            margin: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => _showImageManager('gallery'),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Stack(
+                    children: [
+                      Image.file(
+                        File(allImages[index]),
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[400],
+                              size: 24,
+                            ),
+                          );
+                        },
+                      ),
+                      if (index == 0)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              '대표',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else {
+          // 빈 슬롯 또는 추가 버튼
+          return Container(
+            width: 122,
+            height: 122,
+            margin: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () => _showImageManager('gallery'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 242, 242, 242),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: const Color.fromARGB(255, 219, 219, 219)!,
+                      width: 2),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_a_photo,
+                      size: 20,
+                      color: const Color.fromARGB(255, 127, 127, 127),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '사진 추가',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: const Color.fromARGB(255, 188, 188, 188),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 
   Widget _buildImagePlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!, width: 2),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.image_outlined,
-            size: 32,
-            color: Colors.grey[400],
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_a_photo,
+          size: 32,
+          color: Colors.grey[400],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '사진 추가',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[500],
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 4),
-          Text(
-            '사진',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -319,7 +502,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  Widget _buildInfoSection(String title, List<Map<String, dynamic>> items, Color backgroundColor) {
+  Widget _buildInfoSection(
+      String title, List<Map<String, dynamic>> items, Color backgroundColor) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
@@ -362,10 +546,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: items.map((item) => _buildInfoRow(
-                item['label'], 
-                _getPropertyValue(item['key']),
-              )).toList(),
+              children: items
+                  .map((item) => _buildInfoRow(
+                        item['label'],
+                        _getPropertyValue(item['key']),
+                        item['key'],
+                      ))
+                  .toList(),
             ),
           ),
         ],
@@ -373,7 +560,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, [String? key]) {
+    final String currentValue = editedValues[key] ?? value;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -382,32 +571,232 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[200]!),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w600,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value.isNotEmpty ? value : '입력하세요',
-              style: TextStyle(
-                fontSize: 13,
-                color: value.isNotEmpty ? Colors.black87 : Colors.grey[500],
-                fontWeight: value.isNotEmpty ? FontWeight.w500 : FontWeight.normal,
-              ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: isEditMode
+                  ? _buildEditableField(key, currentValue)
+                  : Text(
+                      currentValue.isNotEmpty ? currentValue : '입력하세요',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: currentValue.isNotEmpty
+                            ? Colors.black87
+                            : Colors.grey[500],
+                        fontWeight: currentValue.isNotEmpty
+                            ? FontWeight.w500
+                            : FontWeight.normal,
+                      ),
+                    ),
             ),
-          ),
-        ],
+            if (isEditMode && key != null) ...[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  iconSize: 18,
+                  icon: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF8A65).withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                  offset: const Offset(0, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.white,
+                  elevation: 12,
+                  shadowColor: Colors.black.withOpacity(0.25),
+                  surfaceTintColor: Colors.white,
+                  constraints: const BoxConstraints(
+                    minWidth: 180,
+                    maxWidth: 220,
+                  ),
+                  onSelected: (String value) {
+                    if (value == 'direct_input') {
+                      // 직접 입력 모드는 그대로 유지
+                    } else if (value == 'add_new') {
+                      _showAddOptionDialog(key!);
+                    } else {
+                      if (mounted) {
+                        setState(() {
+                          editedValues[key!] = value;
+                        });
+                      }
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    final List<String> options = dropdownOptions[key] ?? [];
+                    return [
+                      PopupMenuItem<String>(
+                        height: 44,
+                        value: 'direct_input',
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border:
+                                Border.all(color: Colors.grey[200]!, width: 1),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.edit,
+                                  size: 16, color: Color(0xFF718096)),
+                              SizedBox(width: 8),
+                              Text(
+                                '직접 입력',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2D3748),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (options.isNotEmpty)
+                        PopupMenuItem<String>(
+                          enabled: false,
+                          height: 12,
+                          child: Container(
+                            height: 1,
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.grey[300]!,
+                                  Colors.transparent
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ...options.map((option) => PopupMenuItem<String>(
+                            height: 40,
+                            value: option,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: Colors.grey[200]!, width: 1),
+                              ),
+                              child: Text(
+                                option,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2D3748),
+                                ),
+                              ),
+                            ),
+                          )),
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        height: 12,
+                        child: Container(
+                          height: 1,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                Colors.grey[300]!,
+                                Colors.transparent
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                          ),
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        height: 44,
+                        value: 'add_new',
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border:
+                                Border.all(color: Colors.grey[200]!, width: 1),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.add,
+                                  size: 16, color: Color(0xFF718096)),
+                              SizedBox(width: 8),
+                              Text(
+                                '새 옵션 추가',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2D3748),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ];
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -453,6 +842,261 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         return const Color(0xFFF3E5F5);
       default:
         return const Color(0xFFF5F5F5);
+    }
+  }
+
+  Widget _buildEditableField(String? key, String value) {
+    return TextField(
+      controller: TextEditingController(text: value),
+      style: const TextStyle(
+        fontSize: 13,
+        color: Colors.black87,
+      ),
+      decoration: const InputDecoration(
+        border: InputBorder.none,
+        hintText: '입력하세요',
+        isDense: true,
+        contentPadding: EdgeInsets.zero,
+      ),
+      onChanged: (newValue) {
+        if (key != null) {
+          editedValues[key] = newValue;
+        }
+      },
+    );
+  }
+
+  void _showAddOptionDialog(String key) {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('새 옵션 추가'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '새 옵션을 입력하세요',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  if (mounted) {
+                    setState(() {
+                      if (!dropdownOptions.containsKey(key)) {
+                        dropdownOptions[key] = [];
+                      }
+                      dropdownOptions[key]!.add(controller.text);
+                      editedValues[key] = controller.text;
+                    });
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('추가'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _saveChanges() {
+    // TODO: 실제 데이터 저장 로직 구현
+    // PropertyData는 immutable이므로 copyWith를 사용해서 업데이트
+    Map<String, String> additionalDataUpdate =
+        Map.from(propertyData!.additionalData);
+
+    for (String key in editedValues.keys) {
+      switch (key) {
+        case 'order':
+          propertyData = propertyData!.copyWith(order: editedValues[key]!);
+          break;
+        case 'name':
+          propertyData = propertyData!.copyWith(name: editedValues[key]!);
+          break;
+        case 'deposit':
+          propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
+          break;
+        case 'rent':
+          propertyData = propertyData!.copyWith(rent: editedValues[key]!);
+          break;
+        case 'direction':
+          propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+          break;
+        case 'landlord_environment':
+          propertyData =
+              propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
+          break;
+        case 'rating':
+          propertyData = propertyData!
+              .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
+          break;
+        case 'memo':
+          propertyData = propertyData!.copyWith(memo: editedValues[key]!);
+          break;
+        default:
+          additionalDataUpdate[key] = editedValues[key]!;
+      }
+    }
+
+    // additionalData 업데이트가 있는 경우
+    if (additionalDataUpdate != propertyData!.additionalData) {
+      propertyData =
+          propertyData!.copyWith(additionalData: additionalDataUpdate);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('변경사항이 저장되었습니다')),
+    );
+  }
+
+  void _saveNewProperty() {
+    if (propertyData == null || widget.chartId == null) return;
+
+    // Apply edited values to propertyData
+    Map<String, String> additionalDataUpdate =
+        Map.from(propertyData!.additionalData);
+
+    for (String key in editedValues.keys) {
+      switch (key) {
+        case 'order':
+          propertyData = propertyData!.copyWith(order: editedValues[key]!);
+          break;
+        case 'name':
+          propertyData = propertyData!.copyWith(name: editedValues[key]!);
+          break;
+        case 'deposit':
+          propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
+          break;
+        case 'rent':
+          propertyData = propertyData!.copyWith(rent: editedValues[key]!);
+          break;
+        case 'direction':
+          propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+          break;
+        case 'landlord_environment':
+          propertyData =
+              propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
+          break;
+        case 'rating':
+          propertyData = propertyData!
+              .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
+          break;
+        case 'memo':
+          propertyData = propertyData!.copyWith(memo: editedValues[key]!);
+          break;
+        default:
+          additionalDataUpdate[key] = editedValues[key]!;
+      }
+    }
+
+    // Update additionalData if needed
+    if (additionalDataUpdate != propertyData!.additionalData) {
+      propertyData =
+          propertyData!.copyWith(additionalData: additionalDataUpdate);
+    }
+
+    // Set current chart to the target chart
+    final chartList = ref.read(propertyChartListProvider);
+    final targetChart = chartList.firstWhere(
+      (chart) => chart.id == widget.chartId,
+      orElse: () => PropertyChartModel(
+        id: widget.chartId!,
+        title: '새 차트',
+        date: DateTime.now(),
+        properties: [],
+      ),
+    );
+
+    // Add the property to the chart
+    ref.read(currentChartProvider.notifier).setChart(targetChart);
+    ref.read(currentChartProvider.notifier).addProperty(propertyData!);
+
+    // Update the chart in the main list
+    final updatedChart = ref.read(currentChartProvider)!;
+    ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+
+    // Show success message and navigate back
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('새 부동산이 저장되었습니다')),
+    );
+
+    // Navigate back to card list
+    Navigator.of(context).pop();
+  }
+
+  void _showImageManager(String cellKey) {
+    final List<String> currentImages = propertyData?.cellImages[cellKey] ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: ImageManagerBottomSheet(
+            rowIndex: 0,
+            columnIndex: 0,
+            columnName: _getCellDisplayName(cellKey),
+            cellKey: cellKey,
+            initialImages: currentImages,
+            onImageAdded: (String imagePath) {
+              if (mounted) {
+                setState(() {
+                  final updatedImages = List<String>.from(currentImages);
+                  updatedImages.add(imagePath);
+
+                  final updatedCellImages =
+                      Map<String, List<String>>.from(propertyData!.cellImages);
+                  updatedCellImages[cellKey] = updatedImages;
+
+                  propertyData =
+                      propertyData!.copyWith(cellImages: updatedCellImages);
+                });
+              }
+            },
+            onImageDeleted: (String imagePath) {
+              if (mounted) {
+                setState(() {
+                  final updatedImages = List<String>.from(currentImages);
+                  updatedImages.remove(imagePath);
+
+                  final updatedCellImages =
+                      Map<String, List<String>>.from(propertyData!.cellImages);
+                  updatedCellImages[cellKey] = updatedImages;
+
+                  propertyData =
+                      propertyData!.copyWith(cellImages: updatedCellImages);
+                });
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getCellDisplayName(String cellKey) {
+    switch (cellKey) {
+      case 'gallery':
+        return '사진 갤러리';
+      default:
+        return '사진';
     }
   }
 }

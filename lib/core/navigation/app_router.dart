@@ -89,8 +89,21 @@ class AppRouter {
                     final cardId = state.pathParameters['cardId']!;
                     final extra = state.extra;
                     
+                    // Map 형태로 전달된 경우 (새 카드 생성 플로우)
+                    if (extra is Map<String, dynamic>) {
+                      final propertyData = extra['property'] as PropertyData?;
+                      final chartId = extra['chartId'] as String?;
+                      final isNewProperty = extra['isNewProperty'] as bool? ?? false;
+                      
+                      return CardDetailScreen(
+                        cardId: cardId, 
+                        propertyData: propertyData,
+                        chartId: chartId,
+                        isNewProperty: isNewProperty,
+                      );
+                    }
                     // PropertyData가 extra로 전달되었는지 확인
-                    if (extra is PropertyData) {
+                    else if (extra is PropertyData) {
                       return CardDetailScreen(cardId: cardId, propertyData: extra);
                     } else {
                       // PropertyData가 없으면 cardId만으로 생성

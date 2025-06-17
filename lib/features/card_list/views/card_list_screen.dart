@@ -55,84 +55,49 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
             child: Column(
               children: [
                 // 검색 바
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: '지역, 가격으로 검색...',
-                            prefixIcon: Icon(Icons.search, color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                          ),
-                          onChanged: (value) {
-                            // TODO: 검색 기능 구현
-                          },
-                        ),
-                      ),
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: '지역, 가격으로 검색...',
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      height: 48,
-                      width: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Icon(Icons.add, color: Colors.grey),
-                    ),
-                  ],
+                    onChanged: (value) {
+                      // TODO: 검색 기능 구현
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
                 // 필터 버튼들
                 Row(
                   children: [
-                    // 차트 선택 드롭다운
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final chartList = ref.watch(propertyChartListProvider);
-                        return DropdownButton<String?>(
-                          value: _selectedChartId,
-                          hint: const Text('모든 차트',
-                              style: TextStyle(fontSize: 14)),
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              child: Text('모든 차트'),
-                            ),
-                            ...chartList
-                                .map((chart) => DropdownMenuItem<String>(
-                                      value: chart.id,
-                                      child: Text(chart.title.isNotEmpty
-                                          ? chart.title
-                                          : '차트 ${chart.id}'),
-                                    )),
-                          ],
-                          onChanged: (String? value) {
-                            setState(() {
-                              _selectedChartId = value;
-                            });
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    // 정렬 드롭다운
+                    // 정렬 드롭다운 - 왼쪽에 배치
                     PopupMenuButton<String>(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF8A65),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF8A65).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -154,21 +119,93 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                           ],
                         ),
                       ),
+                      offset: const Offset(0, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      color: Colors.white,
+                      elevation: 16,
+                      shadowColor: Colors.black.withOpacity(0.25),
+                      surfaceTintColor: Colors.white,
+                      constraints: const BoxConstraints(
+                        minWidth: 200,
+                        maxWidth: 280,
+                      ),
                       itemBuilder: (context) => [
-                        ..._customSortOptions
-                            .map((option) => PopupMenuItem<String>(
-                                  value: option,
-                                  child: Text(option),
-                                )),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem<String>(
+                        ..._customSortOptions.map((option) => PopupMenuItem<String>(
+                          value: option,
+                          height: 48,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _selectedSort == option ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _selectedSort == option ? Icons.check_circle : Icons.sort,
+                                  color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontWeight: _selectedSort == option ? FontWeight.w600 : FontWeight.w500,
+                                    fontSize: 14,
+                                    color: _selectedSort == option ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
+                        PopupMenuItem<String>(
+                          enabled: false,
+                          height: 16,
+                          child: Container(
+                            height: 1,
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.transparent, Colors.grey[300]!, Colors.transparent],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                            ),
+                          ),
+                        ),
+                        PopupMenuItem<String>(
                           value: 'ADD_NEW',
-                          child: Row(
-                            children: [
-                              Icon(Icons.add, size: 20),
-                              SizedBox(width: 8),
-                              Text('새 정렬 방식 추가'),
-                            ],
+                          height: 48,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey[200]!, width: 1),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.add, size: 18, color: Color(0xFF718096)),
+                                SizedBox(width: 8),
+                                Text(
+                                  '새 정렬 방식 추가',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: Color(0xFF2D3748),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -176,12 +213,219 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                         if (value == 'ADD_NEW') {
                           _showAddSortOptionDialog();
                         } else {
-                          setState(() {
-                            _selectedSort = value;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _selectedSort = value;
+                            });
+                          }
                         }
                       },
                     ),
+                    const SizedBox(width: 12),
+                    // 차트 선택 드롭다운 - 최신순 바로 옆에 배치
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final chartList = ref.watch(propertyChartListProvider);
+                        final String displayText = _selectedChartId == null 
+                            ? '모든 차트' 
+                            : chartList.firstWhere(
+                                (chart) => chart.id == _selectedChartId,
+                                orElse: () => PropertyChartModel(
+                                  id: '',
+                                  title: '모든 차트',
+                                  date: DateTime.now(),
+                                ),
+                              ).title.isNotEmpty 
+                                ? chartList.firstWhere(
+                                    (chart) => chart.id == _selectedChartId,
+                                    orElse: () => PropertyChartModel(
+                                      id: '',
+                                      title: '모든 차트',
+                                      date: DateTime.now(),
+                                    ),
+                                  ).title
+                                : '차트 ${_selectedChartId}';
+                        
+                        return PopupMenuButton<String?>(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  displayText,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                          offset: const Offset(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          color: Colors.white,
+                          elevation: 16,
+                          shadowColor: Colors.black.withOpacity(0.25),
+                          surfaceTintColor: Colors.white,
+                          constraints: const BoxConstraints(
+                            minWidth: 200,
+                            maxWidth: 300,
+                          ),
+                          itemBuilder: (context) => [
+                            PopupMenuItem<String?>(
+                              value: null,
+                              height: 48,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: _selectedChartId == null ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _selectedChartId == null ? Icons.check_circle : Icons.grid_view,
+                                      color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '모든 차트',
+                                      style: TextStyle(
+                                        fontWeight: _selectedChartId == null ? FontWeight.w600 : FontWeight.w500,
+                                        fontSize: 14,
+                                        color: _selectedChartId == null ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            ...chartList.map((chart) => PopupMenuItem<String>(
+                              value: chart.id,
+                              height: 48,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.1) : Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: _selectedChartId == chart.id ? const Color(0xFFFF8A65).withOpacity(0.3) : Colors.grey[200]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _selectedChartId == chart.id ? Icons.check_circle : Icons.bar_chart,
+                                      color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF718096),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        chart.title.isNotEmpty ? chart.title : '차트 ${chart.id}',
+                                        style: TextStyle(
+                                          fontWeight: _selectedChartId == chart.id ? FontWeight.w600 : FontWeight.w500,
+                                          fontSize: 14,
+                                          color: _selectedChartId == chart.id ? const Color(0xFFFF8A65) : const Color(0xFF2D3748),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )),
+                          ],
+                          onSelected: (String? value) {
+                            if (mounted) {
+                              setState(() {
+                                _selectedChartId = value;
+                              });
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    // 새차트 만들기 버튼
+                    GestureDetector(
+                      onTap: () {
+                        _showCreateChartDialog();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF66BB6A), Color(0xFF4CAF50)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF66BB6A).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_chart,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '새차트 만들기',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
                   ],
                 ),
               ],
@@ -225,15 +469,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (userId != null) {
-            _showAddCardDialog(context, ref, userId);
-          }
-        },
-        backgroundColor: const Color(0xFFFF8A65),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -260,9 +495,11 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
               child: const Text('추가'),
               onPressed: () {
                 if (controller.text.trim().isNotEmpty) {
-                  setState(() {
-                    _customSortOptions.add(controller.text.trim());
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _customSortOptions.add(controller.text.trim());
+                    });
+                  }
                   Navigator.of(ctx).pop();
                 }
               },
@@ -647,6 +884,124 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       default:
         return property.additionalData[priority];
     }
+  }
+
+  void _showCreateChartDialog() {
+    final titleController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('새 차트 만들기'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: '차트 제목',
+                  hintText: '예: 강남구 원룸, 2024년 부동산 목록',
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '새 차트를 만든 후, 카드를 추가하여 부동산 정보를 입력할 수 있습니다.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('취소'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            TextButton(
+              child: const Text('만들기'),
+              onPressed: () {
+                if (titleController.text.trim().isNotEmpty) {
+                  _createNewChart(titleController.text.trim());
+                  Navigator.of(ctx).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _createNewChart(String title) {
+    final newChart = PropertyChartModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      date: DateTime.now(),
+      properties: [],
+    );
+    
+    ref.read(propertyChartListProvider.notifier).addChart(newChart);
+    
+    // 새로 만든 차트를 선택된 상태로 설정
+    setState(() {
+      _selectedChartId = newChart.id;
+    });
+    
+    // 차트 생성 후 새 카드 추가 다이얼로그 표시
+    _showAddPropertyToChartDialog(newChart.id);
+  }
+
+  void _showAddPropertyToChartDialog(String chartId) {
+    final userId = ref.read(authStateChangesProvider).asData?.value?.uid;
+    if (userId == null) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('새 부동산 추가'),
+          content: const Text('차트에 부동산을 추가하시겠습니까?\n\n카드 상세페이지에서 정보를 입력할 수 있습니다.'),
+          actions: [
+            TextButton(
+              child: const Text('나중에'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            TextButton(
+              child: const Text('추가하기'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _navigateToCardDetail(chartId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToCardDetail(String chartId) {
+    // 새로운 부동산 데이터 생성
+    final newProperty = PropertyData(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      order: '1',
+      name: '',
+      deposit: '',
+      rent: '',
+      direction: '',
+      landlordEnvironment: '',
+      rating: 0,
+      additionalData: {},
+    );
+
+    // 카드 상세페이지로 이동
+    context.goNamed(
+      CardDetailScreen.routeName,
+      pathParameters: {'cardId': newProperty.id},
+      extra: {
+        'property': newProperty,
+        'chartId': chartId,
+        'isNewProperty': true,
+      },
+    );
   }
 
   void _showAddCardDialog(BuildContext context, WidgetRef ref, String userId) {

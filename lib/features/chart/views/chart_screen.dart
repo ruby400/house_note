@@ -40,6 +40,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   void _showMenuOptions() {
+    // 이 메서드는 더 이상 사용되지 않음 (PopupMenuButton으로 대체됨)
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -623,54 +624,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         backgroundColor: const Color(0xFFFF8A65),
         centerTitle: true,
         elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onSelected: (String value) {
-              switch (value) {
-                case 'export_pdf':
-                  _exportToPDF();
-                  break;
-                case 'export_png':
-                  _exportToPNG();
-                  break;
-                case 'delete_all':
-                  _showDeleteDialog();
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'export_pdf',
-                child: ListTile(
-                  leading: Icon(Icons.picture_as_pdf, color: Color(0xFFFF8A65)),
-                  title: Text('PDF로 내보내기'),
-                  subtitle: Text('선택한 차트들을 PDF 파일로 저장합니다'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'export_png',
-                child: ListTile(
-                  leading: Icon(Icons.image, color: Colors.green),
-                  title: Text('PNG로 내보내기'),
-                  subtitle: Text('선택한 차트들을 PNG 이미지로 저장합니다'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'delete_all',
-                child: ListTile(
-                  leading: Icon(Icons.delete_sweep, color: Color(0xFFFF8A65)),
-                  title: Text('전체 삭제'),
-                  subtitle: Text('모든 차트를 삭제합니다'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
@@ -684,11 +638,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddChartDialog,
-        backgroundColor: const Color(0xFFFF8A65),
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -722,17 +671,291 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              GestureDetector(
-                onTap: _showMenuOptions,
-                child: Container(
+              PopupMenuButton<String>(
+                icon: Container(
                   height: 48,
                   width: 48,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFFF8A65),
+                        const Color(0xFFFF7043)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.menu, color: Colors.grey),
+                  child: const Icon(Icons.keyboard_arrow_down,
+                      color: Colors.white, size: 24),
                 ),
+                offset: const Offset(0, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                color: Colors.white,
+                elevation: 16,
+                shadowColor: Colors.black.withOpacity(0.25),
+                surfaceTintColor: Colors.white,
+                constraints: const BoxConstraints(
+                  minWidth: 280,
+                  maxWidth: 320,
+                ),
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'add_chart',
+                    height: 64,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF66BB6A).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.add_chart,
+                                color: Color(0xFF66BB6A), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '차트목록 추가',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2D3748),
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  '새로운 부동산 차트를 생성합니다',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF718096),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    height: 16,
+                    child: Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.grey[300]!,
+                            Colors.transparent
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'export_pdf',
+                    height: 64,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8A65).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.picture_as_pdf,
+                                color: Color(0xFFFF8A65), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('PDF로 내보내기',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: Color(0xFF2D3748))),
+                                Text('선택한 차트들을 PDF 파일로 저장',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF718096))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'export_png',
+                    height: 64,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF42A5F5).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.image,
+                                color: Color(0xFF42A5F5), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('PNG로 내보내기',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: Color(0xFF2D3748))),
+                                Text('선택한 차트들을 이미지 파일로 저장',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF718096))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    height: 16,
+                    child: Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.grey[300]!,
+                            Colors.transparent
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete_all',
+                    height: 64,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 248, 248, 248),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color.fromARGB(255, 243, 243, 243)!,
+                            width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.delete_outline,
+                                color: Colors.red, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('선택한 차트 삭제',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color:
+                                            Color.fromARGB(255, 74, 74, 74))),
+                                Text('삭제된 차트는 복구할 수 없습니다',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF718096))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                onSelected: (String value) {
+                  switch (value) {
+                    case 'add_chart':
+                      _showAddChartDialog();
+                      break;
+                    case 'export_pdf':
+                      _exportToPDF();
+                      break;
+                    case 'export_png':
+                      _exportToPNG();
+                      break;
+                    case 'delete_all':
+                      _showDeleteDialog();
+                      break;
+                  }
+                },
               ),
             ],
           ),
@@ -797,30 +1020,215 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('새 정렬 옵션 추가'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-              labelText: '정렬 이름',
-              hintText: '예: 가격순, 평점순',
-              border: OutlineInputBorder()),
-          autofocus: true,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('취소')),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                setState(() => _sortOptions.add(controller.text.trim()));
-                Navigator.of(context).pop();
-              }
-            },
-            child: const Text('추가'),
+        elevation: 16,
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 380),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, Color(0xFFFAFAFA)],
+            ),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF66BB6A), Color(0xFF4CAF50)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.sort,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '새 정렬 옵션 추가',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '새로운 정렬 방식을 추가합니다',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '정렬 옵션 정보',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D3748),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Input field
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: controller,
+                        decoration: InputDecoration(
+                          labelText: '정렬 이름',
+                          hintText: '예: 가격순, 평점순, 인기순',
+                          prefixIcon:
+                              const Icon(Icons.label, color: Color(0xFF66BB6A)),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(16),
+                          labelStyle: const TextStyle(color: Color(0xFF718096)),
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                        ),
+                        autofocus: true,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Info text
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF66BB6A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF66BB6A).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFF66BB6A),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '새로운 정렬 옵션이 필터 목록에 추가됩니다',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Actions
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF66BB6A)),
+                          foregroundColor: const Color(0xFF66BB6A),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '취소',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (controller.text.trim().isNotEmpty) {
+                            setState(
+                                () => _sortOptions.add(controller.text.trim()));
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF66BB6A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          '옵션 추가',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -831,64 +1239,259 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('새 차트 추가'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                      labelText: '차트 제목',
-                      border: OutlineInputBorder(),
-                      hintText: '예: 강남구 부동산 차트'),
-                  autofocus: true,
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 16,
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: 400),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Color(0xFFFAFAFA)],
                 ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030));
-                    if (date != null) setState(() => selectedDate = date);
-                  },
-                  child: Container(
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[400]!),
-                        borderRadius: BorderRadius.circular(4)),
-                    child: Row(
+                    padding: const EdgeInsets.all(24),
+                    decoration: const BoxDecoration(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Column(
                       children: [
-                        const Icon(Icons.calendar_today, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text(
-                            '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
-                            style: const TextStyle(fontSize: 16)),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.add_chart,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '새 차트 추가',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '새로운 부동산 차트를 생성합니다',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('취소')),
-              TextButton(
-                onPressed: () {
-                  if (titleController.text.trim().isNotEmpty) {
-                    _addNewChart(titleController.text.trim(), selectedDate);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('추가'),
+
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '차트 정보',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2D3748),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Title Input
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: titleController,
+                            decoration: InputDecoration(
+                              labelText: '차트 제목',
+                              hintText: '예: 강남구 부동산 차트',
+                              prefixIcon: const Icon(Icons.title,
+                                  color: Color(0xFFFF8A65)),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(16),
+                              labelStyle:
+                                  const TextStyle(color: Color(0xFF718096)),
+                              hintStyle: TextStyle(color: Colors.grey[400]),
+                            ),
+                            autofocus: true,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Date Picker
+                        const Text(
+                          '생성 날짜',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2D3748),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.light(
+                                      primary: Color(0xFFFF8A65),
+                                      onPrimary: Colors.white,
+                                      surface: Colors.white,
+                                      onSurface: Color(0xFF2D3748),
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (date != null)
+                              setState(() => selectedDate = date);
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[300]!),
+                              color: Colors.grey[50],
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today,
+                                    color: Color(0xFFFF8A65), size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF2D3748),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(Icons.arrow_drop_down,
+                                    color: Colors.grey[400]),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Actions
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFFF8A65)),
+                              foregroundColor: const Color(0xFFFF8A65),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              '취소',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (titleController.text.trim().isNotEmpty) {
+                                _addNewChart(
+                                    titleController.text.trim(), selectedDate);
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF8A65),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              '차트 생성',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
