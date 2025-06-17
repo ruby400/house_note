@@ -5,7 +5,7 @@ import 'package:house_note/data/repositories/card_repository.dart';
 
 class CardDetailViewModel extends StateNotifier<AsyncValue<CardModel?>> {
   final CardRepository _cardRepository;
-  final String? _userId;
+  String? _userId;
   final String _cardId;
   StreamSubscription<CardModel?>? _cardSubscription;
 
@@ -14,22 +14,31 @@ class CardDetailViewModel extends StateNotifier<AsyncValue<CardModel?>> {
     _fetchCardDetail();
   }
 
+  // userId 업데이트 메서드 추가
+  void updateUserId(String? userId) {
+    if (_userId != userId) {
+      _userId = userId;
+      _fetchCardDetail();
+    }
+  }
+
   void _fetchCardDetail() {
     if (_userId == null) {
-      state = AsyncValue.error("사용자 정보를 찾을 수 없습니다.", StackTrace.current);
+      state = AsyncValue.error("로그인이 필요합니다.", StackTrace.current);
       return;
     }
+    
     _cardSubscription?.cancel();
     _cardSubscription = _cardRepository.getCardStream(_userId!, _cardId).listen(
       (card) {
         if (card != null) {
           state = AsyncValue.data(card);
         } else {
-          state = AsyncValue.error("카드를 찾을 수 없습니다.", StackTrace.current);
+          state = AsyncValue.error("카드를 찾을 수 없습니다. (ID: $_cardId)", StackTrace.current);
         }
       },
       onError: (error, stackTrace) {
-        state = AsyncValue.error(error, stackTrace);
+        state = AsyncValue.error("카드 정보를 불러오는 중 오류가 발생했습니다: $error", stackTrace);
       },
     );
   }

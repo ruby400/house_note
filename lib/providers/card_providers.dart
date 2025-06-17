@@ -10,7 +10,14 @@ final cardListViewModelProvider =
     StateNotifierProvider<CardListViewModel, AsyncValue<List<CardModel>>>(
         (ref) {
   final cardRepository = ref.watch(cardRepositoryProvider);
-  final userId = ref.watch(authStateChangesProvider).asData?.value?.uid;
+  final authState = ref.watch(authStateChangesProvider);
+  
+  final userId = authState.when(
+    data: (user) => user?.uid,
+    loading: () => null,
+    error: (_, __) => null,
+  );
+  
   return CardListViewModel(cardRepository, userId);
 });
 
@@ -18,6 +25,26 @@ final cardListViewModelProvider =
 final cardDetailViewModelProvider = StateNotifierProvider.family<
     CardDetailViewModel, AsyncValue<CardModel?>, String>((ref, cardId) {
   final cardRepository = ref.watch(cardRepositoryProvider);
-  final userId = ref.watch(authStateChangesProvider).asData?.value?.uid;
-  return CardDetailViewModel(cardRepository, userId, cardId);
+  final authState = ref.watch(authStateChangesProvider);
+  
+  // 인증 상태가 로딩 중이거나 에러인 경우 적절히 처리
+  final userId = authState.when(
+    data: (user) => user?.uid,
+    loading: () => null,
+    error: (_, __) => null,
+  );
+  
+  final viewModel = CardDetailViewModel(cardRepository, userId, cardId);
+  
+  // userId 변경 감지를 위한 listener 추가
+  ref.listen(authStateChangesProvider, (previous, next) {
+    final newUserId = next.when(
+      data: (user) => user?.uid,
+      loading: () => null,
+      error: (_, __) => null,
+    );
+    viewModel.updateUserId(newUserId);
+  });
+  
+  return viewModel;
 });
