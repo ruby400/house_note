@@ -335,34 +335,75 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   Widget _buildImageGallery() {
     final List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
-    const int visibleSlots = 3; // 화면에 보이는 슬롯 수
-    final int totalSlots = allImages.length + 1; // 전체 슬롯 수 (기존 이미지 + 추가 버튼)
 
+    if (allImages.isEmpty) {
+      // 사진이 없을 때는 추가 버튼만 표시
+      return GestureDetector(
+        onTap: () => _showImageManager('gallery'),
+        child: Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!, width: 2),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_a_photo,
+                size: 32,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '사진 추가',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 사진이 있을 때는 모든 사진을 썸네일로 표시 + 추가 버튼
     return ListView.builder(
       scrollDirection: Axis.horizontal,
-      itemCount: totalSlots > visibleSlots ? totalSlots : visibleSlots,
+      itemCount: allImages.length + 1, // 모든 이미지 + 추가 버튼
       itemBuilder: (context, index) {
         if (index < allImages.length) {
-          // 이미지가 있는 슬롯
+          // 기존 이미지 썸네일
           return Container(
-            width: 100,
-            height: 100,
+            width: 110,
+            height: 110,
             margin: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () => _showImageManager('gallery'),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(11),
                   child: Stack(
                     children: [
                       Image.file(
                         File(allImages[index]),
-                        width: 100,
-                        height: 100,
+                        width: 110,
+                        height: 110,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -370,32 +411,61 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                             child: Icon(
                               Icons.broken_image,
                               color: Colors.grey[400],
-                              size: 24,
+                              size: 32,
                             ),
                           );
                         },
                       ),
+                      // 첫 번째 이미지에 대표 라벨
                       if (index == 0)
                         Positioned(
-                          bottom: 4,
-                          left: 4,
+                          top: 6,
+                          left: 6,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 2),
+                                horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFFF8A65),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                             child: const Text(
                               '대표',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 8,
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
+                      // 사진 순서 표시
+                      Positioned(
+                        bottom: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -403,36 +473,38 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             ),
           );
         } else {
-          // 빈 슬롯 또는 추가 버튼
+          // 맨 마지막에 추가 버튼
           return Container(
-            width: 122,
-            height: 122,
-            margin: const EdgeInsets.only(right: 10),
+            width: 110,
+            height: 110,
+            margin: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () => _showImageManager('gallery'),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 242, 242, 242),
+                  color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: const Color.fromARGB(255, 219, 219, 219)!,
-                      width: 2),
+                    color: const Color(0xFFFF8A65),
+                    width: 2,
+                    style: BorderStyle.solid,
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.add_a_photo,
-                      size: 20,
-                      color: const Color.fromARGB(255, 127, 127, 127),
+                      size: 24,
+                      color: const Color(0xFFFF8A65),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '사진 추가',
+                    const Text(
+                      '추가',
                       style: TextStyle(
-                        fontSize: 10,
-                        color: const Color.fromARGB(255, 188, 188, 188),
-                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
+                        color: Color(0xFFFF8A65),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1058,6 +1130,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             onImageAdded: (String imagePath) {
               if (mounted) {
                 setState(() {
+                  final currentImages = propertyData?.cellImages[cellKey] ?? [];
                   final updatedImages = List<String>.from(currentImages);
                   updatedImages.add(imagePath);
 
@@ -1073,6 +1146,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             onImageDeleted: (String imagePath) {
               if (mounted) {
                 setState(() {
+                  final currentImages = propertyData?.cellImages[cellKey] ?? [];
                   final updatedImages = List<String>.from(currentImages);
                   updatedImages.remove(imagePath);
 
