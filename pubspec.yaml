@@ -1,0 +1,55 @@
+name: house_note
+description: "A new Flutter project for ㅇㅇㅇ."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0' # Dart SDK 버전은 Flutter 버전에 맞춰 조정
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.1.0 # 버전은 최신으로 확인
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.0.1
+  google_sign_in: ^6.2.1 # 구글 로그인
+
+  # State Management (Riverpod)
+  flutter_riverpod: ^2.5.1
+
+  # Routing (GoRouter 추천)
+  go_router: ^14.1.0
+
+  # UI & Utilities
+  cupertino_icons: ^1.0.6
+  intl: ^0.19.0 # 다국어 지원시
+  google_maps_flutter: ^2.12.2 # 구글 지도 사용시
+  fl_chart: ^0.68.0 # 차트 사용시
+  
+  # Camera & Image
+  image_picker: ^1.0.7 # 카메라/갤러리에서 이미지 선택
+  path_provider: ^2.1.2 # 로컬 저장 경로
+  permission_handler: ^11.3.0 # 권한 관리
+  photo_view: ^0.15.0 # 풀스크린 이미지 뷰어
+  cached_network_image: ^3.3.1 # 이미지 캐싱
+  
+  # Export
+  pdf: ^3.10.4 # PDF 생성
+  screenshot: ^3.0.0 # 스크린샷 생성
+  printing: ^5.11.0 # PDF 인쇄 및 공유
+  gal: ^2.3.0 # 갤러리 저장 (더 안정적인 패키지)
+  device_info_plus: ^11.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/

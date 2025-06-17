@@ -1,0 +1,834 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:house_note/data/models/card_model.dart';
+import 'package:house_note/data/models/user_model.dart';
+import 'package:house_note/providers/card_providers.dart';
+import 'package:house_note/providers/auth_providers.dart';
+import 'package:house_note/providers/user_providers.dart';
+import 'package:house_note/features/card_list/views/property_detail_screen.dart';
+import 'package:house_note/data/models/property_chart_model.dart';
+import 'package:house_note/providers/property_chart_providers.dart';
+
+class CardListScreen extends ConsumerStatefulWidget {
+  static const routeName = 'card-list';
+  static const routePath = '/cards';
+
+  const CardListScreen({super.key});
+
+  @override
+  ConsumerState<CardListScreen> createState() => _CardListScreenState();
+}
+
+class _CardListScreenState extends ConsumerState<CardListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedSort = '최신순'; // 기본 정렬 방식
+  String? _selectedChartId; // 선택된 차트 ID
+  List<String> _customSortOptions = ['최신순', '거리순', '월세순']; // 사용자 정의 정렬 옵션
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = ref.watch(authStateChangesProvider).asData?.value?.uid;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('카드 목록',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFFFF8A65),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // 검색 바 및 필터 영역
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            color: Colors.white,
+            child: Column(
+              children: [
+                // 검색 바
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: '지역, 가격으로 검색...',
+                            prefixIcon: Icon(Icons.search, color: Colors.grey),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                          ),
+                          onChanged: (value) {
+                            // TODO: 검색 기능 구현
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // 필터 버튼들
+                Row(
+                  children: [
+                    // 차트 선택 드롭다운
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final chartList = ref.watch(propertyChartListProvider);
+                        return DropdownButton<String?>(
+                          value: _selectedChartId,
+                          hint: const Text('모든 차트', style: TextStyle(fontSize: 14)),
+                          items: [
+                            DropdownMenuItem<String?>(
+                              value: null,
+                              child: const Text('모든 차트'),
+                            ),
+                            ...chartList.map((chart) => DropdownMenuItem<String>(
+                              value: chart.id,
+                              child: Text(chart.title.isNotEmpty ? chart.title : '차트 ${chart.id}'),
+                            )),
+                          ],
+                          onChanged: (String? value) {
+                            setState(() {
+                              _selectedChartId = value;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    // 정렬 드롭다운
+                    PopupMenuButton<String>(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF8A65),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _selectedSort,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (context) => [
+                        ..._customSortOptions.map((option) => PopupMenuItem<String>(
+                          value: option,
+                          child: Text(option),
+                        )),
+                        const PopupMenuDivider(),
+                        PopupMenuItem<String>(
+                          value: 'ADD_NEW',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add, size: 20),
+                              const SizedBox(width: 8),
+                              const Text('새 정렬 방식 추가'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (String value) {
+                        if (value == 'ADD_NEW') {
+                          _showAddSortOptionDialog();
+                        } else {
+                          setState(() {
+                            _selectedSort = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // 카드 리스트 (차트 데이터 기반)
+          Expanded(
+            child: Consumer(
+              builder: (context, ref, child) {
+                final chartList = ref.watch(propertyChartListProvider);
+                final propertyList = <PropertyData>[];
+
+                // 선택된 차트에 따라 필터링
+                if (_selectedChartId != null) {
+                  final selectedChart = chartList.firstWhere(
+                    (chart) => chart.id == _selectedChartId,
+                    orElse: () => PropertyChartModel(
+                      id: '',
+                      title: '',
+                      date: DateTime.now(),
+                      properties: [],
+                    ),
+                  );
+                  propertyList.addAll(selectedChart.properties);
+                } else {
+                  // 모든 차트의 부동산 데이터를 하나의 리스트로 합치기
+                  for (final chart in chartList) {
+                    propertyList.addAll(chart.properties);
+                  }
+                }
+
+                // 선택된 정렬 방식에 따라 정렬
+                _sortPropertyList(propertyList);
+
+                if (propertyList.isEmpty) {
+                  return _buildEmptyState();
+                }
+                return _buildCardList(propertyList, chartList);
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (userId != null) {
+            _showAddCardDialog(context, ref, userId);
+          }
+        },
+        backgroundColor: const Color(0xFFFF8A65),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedSort = label;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFF8A65) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[600],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddFilterButton() {
+    return GestureDetector(
+      onTap: _showAddSortOptionDialog,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(Icons.add, color: Colors.grey, size: 20),
+      ),
+    );
+  }
+
+  void _showAddSortOptionDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('정렬 옵션 추가'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: '정렬 방식 이름',
+              hintText: '예: 별점순, 방향순 등',
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('취소'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            TextButton(
+              child: const Text('추가'),
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  setState(() {
+                    _customSortOptions.add(controller.text.trim());
+                  });
+                  Navigator.of(ctx).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _sortPropertyList(List<PropertyData> properties) {
+    switch (_selectedSort) {
+      case '최신순':
+        // ID를 기준으로 최신순 정렬 (ID가 timestamp 기반이므로)
+        properties.sort((a, b) => b.id.compareTo(a.id));
+        break;
+      case '거리순':
+        // 거리 정보가 없으므로 이름순으로 정렬 (추후 거리 필드 추가 가능)
+        properties.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case '월세순':
+        // 월세를 숫자로 변환하여 정렬 (낮은 금액부터)
+        properties.sort((a, b) {
+          final rentA = _extractNumberFromString(a.rent);
+          final rentB = _extractNumberFromString(b.rent);
+          return rentA.compareTo(rentB);
+        });
+        break;
+      case '별점순':
+        // 별점 높은 순으로 정렬
+        properties.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case '보증금순':
+        // 보증금을 숫자로 변환하여 정렬 (낮은 금액부터)
+        properties.sort((a, b) {
+          final depositA = _extractNumberFromString(a.deposit);
+          final depositB = _extractNumberFromString(b.deposit);
+          return depositA.compareTo(depositB);
+        });
+        break;
+      case '이름순':
+        // 이름 가나다 순으로 정렬
+        properties.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      default:
+        // 사용자 정의 정렬 옵션 처리
+        if (_selectedSort.contains('순')) {
+          final sortField = _selectedSort.replaceAll('순', '');
+          properties.sort((a, b) {
+            final valueA = _getPropertyValueForPriority(sortField, a) ?? '';
+            final valueB = _getPropertyValueForPriority(sortField, b) ?? '';
+            return valueA.compareTo(valueB);
+          });
+        }
+        break;
+    }
+  }
+
+  int _extractNumberFromString(String text) {
+    // 문자열에서 숫자만 추출 (예: "50만원" -> 50)
+    final regex = RegExp(r'\d+');
+    final match = regex.firstMatch(text);
+    if (match != null) {
+      return int.tryParse(match.group(0)!) ?? 0;
+    }
+    return 0;
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.credit_card_outlined, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('등록된 카드가 없습니다.',
+              style: TextStyle(fontSize: 16, color: Colors.grey)),
+          SizedBox(height: 8),
+          Text('첫 번째 카드를 추가해보세요!',
+              style: TextStyle(fontSize: 14, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardList(List<PropertyData> properties, List<PropertyChartModel> chartList) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: properties.length,
+      itemBuilder: (context, index) {
+        final property = properties[index];
+        return _buildCardItem(property, chartList);
+      },
+    );
+  }
+
+  Widget _buildCardItem(PropertyData property, List<PropertyChartModel> chartList) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final userPriorities = ref.watch(userPrioritiesProvider);
+        
+        return GestureDetector(
+          onTap: () {
+            // 상세 화면으로 이동
+            context.goNamed(PropertyDetailScreen.routeName);
+          },
+          child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 상단 헤더 (제목, 별점, 이미지)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          property.name.isNotEmpty
+                              ? property.name
+                              : '부동산 ${property.order}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (property.rating > 0) ...[
+                          Row(
+                            children: List.generate(5, (starIndex) {
+                              return Icon(
+                                starIndex < property.rating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.amber,
+                                size: 20,
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        // 사용자 우선순위 정보 표시
+                        if (userPriorities.isNotEmpty) ...[
+                          _buildPriorityTags(userPriorities, property, chartList),
+                          const SizedBox(height: 8),
+                        ],
+                        if (property.rent.isNotEmpty ||
+                            property.deposit.isNotEmpty) ...[
+                          Text(
+                            '월세: ${property.rent.isNotEmpty ? property.rent : '-'} | 보증금: ${property.deposit.isNotEmpty ? property.deposit : '-'}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        if (property.direction.isNotEmpty ||
+                            property.landlordEnvironment.isNotEmpty)
+                          Text(
+                            [
+                              if (property.direction.isNotEmpty)
+                                '방향: ${property.direction}',
+                              if (property.landlordEnvironment.isNotEmpty)
+                                '환경: ${property.landlordEnvironment}',
+                            ].join(' | '),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // 이미지 플레이스홀더
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.home,
+                      color: Colors.grey[400],
+                      size: 38,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 하단 순번 표시
+            if (property.order.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '순번: ${property.order}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+      },
+    );
+  }
+
+  // 우선순위 태그들을 표시하는 위젯 (체크된 항목만)
+  Widget _buildPriorityTags(List<String> userPriorities, PropertyData property, List<PropertyChartModel> chartList) {
+    // 실시간 차트 업데이트를 위해 Consumer 사용
+    return Consumer(
+      builder: (context, ref, child) {
+        final userAsync = ref.watch(userModelProvider);
+        final realtimeChartList = ref.watch(propertyChartListProvider);
+    
+    return userAsync.when(
+      data: (user) {
+        // 체크된(보이기 설정된) 우선순위만 필터링
+        List<String> visiblePriorities = [];
+        
+        if (user?.priorityItems.isNotEmpty == true) {
+          // 새로운 구조화된 데이터 사용
+          visiblePriorities = user!.priorityItems
+              .where((item) => item.isVisible)
+              .map((item) => item.name)
+              .toList();
+        } else {
+          // 기존 데이터 구조 호환성
+          visiblePriorities = userPriorities;
+        }
+
+        // 현재 property가 속한 차트 찾기
+        PropertyChartModel? currentChart;
+        for (var chart in chartList) {
+          if (chart.properties.any((p) => p.id == property.id)) {
+            currentChart = chart;
+            break;
+          }
+        }
+        
+        // 차트에서도 표시되도록 설정된 컬럼만 필터링
+        if (currentChart?.columnVisibility != null && currentChart!.columnVisibility!.isNotEmpty) {
+          print('🔍 차트 컬럼 표시 설정: ${currentChart.columnVisibility}');
+          final originalCount = visiblePriorities.length;
+          visiblePriorities = visiblePriorities.where((priority) {
+            String mappedColumn = _mapPriorityToColumn(priority);
+            bool isVisible = currentChart!.columnVisibility![mappedColumn] ?? false;
+            print('🔍 우선순위: $priority -> 컬럼: $mappedColumn -> 표시: $isVisible');
+            return isVisible;
+          }).toList();
+          print('🔍 필터링 결과: $originalCount -> ${visiblePriorities.length} 항목');
+        } else {
+          // columnVisibility가 설정되지 않은 경우 모든 우선순위 표시
+          print('🔍 차트에 컬럼 표시 설정이 없음, 모든 우선순위 표시');
+        }
+        
+        // 실시간 차트 목록에서 현재 property가 속한 차트 찾기
+        PropertyChartModel? currentChart;
+        for (var chart in realtimeChartList) {
+          if (chart.properties.any((p) => p.id == property.id)) {
+            currentChart = chart;
+            break;
+          }
+        }
+
+        List<Widget> tags = [];
+        Set<String> addedTags = {}; // 중복 방지를 위한 Set
+        
+        // 고정 항목들 정의 (카드 상단에 이미 표시되므로 태그에서 제외)
+        const fixedItems = {'집 이름', '월세', '보증금', '순'};
+        
+        // 차트에서 표시하도록 설정된 컬럼들만 태그로 표시
+        if (currentChart?.columnVisibility != null && currentChart!.columnVisibility!.isNotEmpty) {
+          final visibleColumns = currentChart.columnVisibility!.entries
+              .where((entry) => entry.value == true)
+              .map((entry) => entry.key)
+              .where((column) => !fixedItems.contains(column)) // 고정 항목들 제외
+              .take(8) // 최대 8개까지 표시
+              .toList();
+          
+          for (String column in visibleColumns) {
+            if (addedTags.contains(column)) continue; // 중복 방지
+            
+            String? value = _getColumnValueForProperty(column, property);
+            if (value != null && value.isNotEmpty && value != '-') {
+              addedTags.add(column);
+              tags.add(
+                Container(
+                  margin: const EdgeInsets.only(right: 6, bottom: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '$column: $value',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+        }
+        
+        if (tags.isEmpty) return const SizedBox.shrink();
+        
+        return Wrap(
+          children: tags,
+        );
+      },
+    );
+  }
+
+  // 컬럼명에 따라 해당하는 부동산 정보를 가져오는 헬퍼 메서드 (차트 컬럼 기준)
+  String? _getColumnValueForProperty(String columnName, PropertyData property) {
+    switch (columnName) {
+      case '집 이름':
+        return property.name.isNotEmpty ? property.name : '부동산 ${property.order}';
+      case '보증금':
+        return property.deposit;
+      case '월세':
+        return property.rent;
+      case '재계/방향':
+        return property.direction;
+      case '집주인 환경':
+        return property.landlordEnvironment;
+      case '별점':
+        return property.rating > 0 ? property.rating.toString() : null;
+      case '주거형태':
+      case '건축물용도':
+      case '임차권 등기명령 이력여부':
+      case '수도 수납':
+      case '공광비':
+      case '재산/방화':
+      case '소음':
+      case '편의점':
+      default:
+        // additionalData에서 컬럼에 해당하는 값 찾기
+        // 컬럼 인덱스를 통해 데이터 키를 찾아야 함
+        return _getAdditionalDataByColumnName(columnName, property);
+    }
+  }
+
+  // 컬럼명을 통해 additionalData에서 값을 찾는 헬퍼 메서드
+  String? _getAdditionalDataByColumnName(String columnName, PropertyData property) {
+    // 기본 컬럼들의 인덱스 매핑
+    const columnIndexMap = {
+      '집 이름': 1,
+      '보증금': 2, 
+      '월세': 3,
+      '주거형태': 4,
+      '건축물용도': 5,
+      '임차권 등기명령 이력여부': 6,
+      '재계/방향': 7,
+      '집주인 환경': 8,
+      '별점': 9,
+      '수도 수납': 10,
+      '공광비': 11,
+      '재산/방화': 12,
+      '소음': 13,
+      '편의점': 14,
+    };
+    
+    final columnIndex = columnIndexMap[columnName];
+    if (columnIndex != null && columnIndex >= 7) {
+      // additionalData는 7번 인덱스부터 시작 (col_7, col_8, ...)
+      final dataKey = 'col_$columnIndex';
+      return property.additionalData[dataKey];
+    }
+    
+    // 동적으로 추가된 컬럼의 경우 컬럼명으로 직접 찾기
+    return property.additionalData[columnName];
+  }
+
+  // 우선순위 이름에 따라 해당하는 부동산 정보를 가져오는 헬퍼 메서드 (기존 호환성용)
+  String? _getPropertyValueForPriority(String priority, PropertyData property) {
+    switch (priority) {
+      case '월세':
+      case '월세비용':
+        return property.rent;
+      case '보증금':
+        return property.deposit;
+      case '방향':
+      case '재계/방향':
+        return property.direction;
+      case '집주인 환경':
+      case '환경':
+        return property.landlordEnvironment;
+      case '별점':
+      case '평점':
+        return property.rating > 0 ? property.rating.toString() : null;
+      case '집 이름':
+      case '이름':
+        return property.name;
+      default:
+        // 추가 데이터에서 찾기
+        return property.additionalData[priority];
+    }
+  }
+
+  // 우선순위 이름을 차트 컬럼명으로 매핑하는 헬퍼 메서드
+  String _mapPriorityToColumn(String priority) {
+    switch (priority) {
+      case '월세':
+      case '월세비용':
+        return '월세';
+      case '보증금':
+        return '보증금';
+      case '방향':
+      case '재계/방향':
+        return '재계/방향';
+      case '집주인 환경':
+      case '환경':
+        return '집주인 환경';
+      case '별점':
+      case '평점':
+        return '별점';
+      case '집 이름':
+      case '이름':
+        return '집 이름';
+      case '수도 수납':
+        return '수도 수납';
+      case '공광비':
+        return '공광비';
+      case '재산/방화':
+        return '재산/방화';
+      case '소음':
+        return '소음';
+      case '편의점':
+        return '편의점';
+      default:
+        return priority; // 기본적으로는 그대로 반환
+    }
+  }
+
+  void _showAddCardDialog(BuildContext context, WidgetRef ref, String userId) {
+    final nameController = TextEditingController();
+    final companyController = TextEditingController();
+    final lastFourController = TextEditingController();
+    final typeController = TextEditingController(text: 'credit');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('새 부동산 추가'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: '부동산 이름')),
+                TextField(
+                    controller: companyController,
+                    decoration: const InputDecoration(labelText: '위치')),
+                TextField(
+                  controller: lastFourController,
+                  decoration: const InputDecoration(labelText: '월세 금액'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                    controller: typeController,
+                    decoration: const InputDecoration(labelText: '부동산 종류')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                child: const Text('취소'),
+                onPressed: () => Navigator.of(ctx).pop()),
+            TextButton(
+              child: const Text('추가'),
+              onPressed: () {
+                final newCard = CardModel(
+                  id: '',
+                  userId: userId,
+                  name: nameController.text,
+                  company: companyController.text,
+                  numberLastFour: lastFourController.text,
+                  type: typeController.text,
+                  benefits: [],
+                );
+                ref.read(cardListViewModelProvider.notifier).addCard(newCard);
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}

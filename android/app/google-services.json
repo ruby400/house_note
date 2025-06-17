@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "567850827737",
+    "project_id": "house-note-e2e9e",
+    "storage_bucket": "house-note-e2e9e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567850827737:android:c833409b46fe4346c9e3c8",
+        "android_client_info": {
+          "package_name": "com.example.house_note"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "567850827737-2eifg1fh3268aoslqgralk2onrgs8bvg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.house_note",
+            "certificate_hash": "ccf439628a66cc56f1aae96ea3efa9e20ed92a51"
+          }
+        },
+        {
+          "client_id": "567850827737-81u28nimr6jj6pfqbshijjdp4nm7t4ud.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGz-a8BIg2jGq9BuFHbrpWENgEz2FbAUU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "567850827737-81u28nimr6jj6pfqbshijjdp4nm7t4ud.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "567850827737-q6f95t09hf5fjqhvv3lhf2l6r6d01ksv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.houseNote"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
