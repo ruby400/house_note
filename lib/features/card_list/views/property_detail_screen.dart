@@ -121,7 +121,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           children: [
             // 이미지 갤러리 (3개 사진)
             Container(
-              height: 120,
+              height: 150,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
@@ -135,8 +135,21 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             ),
             
             // 부동산 제목과 별점
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -145,37 +158,72 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       const Text(
                         '집 이름 : ',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           color: Colors.black87,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Text(
-                        widget.propertyData.name.isNotEmpty 
-                            ? widget.propertyData.name 
-                            : '부동산 ${widget.propertyData.order}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                      Expanded(
+                        child: Text(
+                          widget.propertyData.name.isNotEmpty 
+                              ? widget.propertyData.name 
+                              : '부동산 ${widget.propertyData.order}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
                       Row(
                         children: List.generate(5, (index) => Icon(
                           index < widget.propertyData.rating ? Icons.star : Icons.star_border,
                           color: Colors.amber,
-                          size: 16,
+                          size: 20,
                         )),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${widget.propertyData.rating}/5',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '📍 송파구동',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFFFF8A65),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getPropertyValue('location'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 주요 정보 요약
+                  Row(
+                    children: [
+                      _buildSummaryItem('보증금', widget.propertyData.deposit),
+                      const SizedBox(width: 16),
+                      _buildSummaryItem('월세', widget.propertyData.rent),
+                    ],
                   ),
                 ],
               ),
@@ -201,16 +249,61 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!, width: 2, style: BorderStyle.solid),
       ),
-      child: const Center(
-        child: Text(
-          '사진',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_outlined,
+            size: 32,
+            color: Colors.grey[400],
           ),
+          const SizedBox(height: 4),
+          Text(
+            '사진',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value.isNotEmpty ? value : '-',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -218,10 +311,18 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
 
   Widget _buildInfoSection(String title, List<Map<String, dynamic>> items, Color backgroundColor) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,10 +330,15 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           // 섹션 헤더
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
               border: Border(
-                bottom: BorderSide(color: Colors.grey[400]!, width: 1),
+                bottom: BorderSide(color: Colors.grey[300]!, width: 1),
               ),
             ),
             child: Text(
@@ -261,36 +367,57 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, Map<String, dynamic> itemConfig) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 120,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Colors.black87,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
               onTap: () => _showEditDialog(label, value, itemConfig),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                 decoration: BoxDecoration(
+                  color: Colors.white,
                   border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  value.isNotEmpty ? value : '입력하세요',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: value.isNotEmpty ? Colors.black87 : Colors.grey[500],
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        value.isNotEmpty ? value : '입력하세요',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: value.isNotEmpty ? Colors.black87 : Colors.grey[500],
+                          fontWeight: value.isNotEmpty ? FontWeight.w500 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: Colors.grey[400],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -310,6 +437,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         return widget.propertyData.direction;
       case 'landlord_environment':
         return widget.propertyData.landlordEnvironment;
+      case 'location':
+        return widget.propertyData.additionalData['location'] ?? '송파구동';
       default:
         // additionalData에서 값 찾기
         return widget.propertyData.additionalData[key] ?? '';

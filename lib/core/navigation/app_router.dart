@@ -87,7 +87,15 @@ class AppRouter {
                   name: CardDetailScreen.routeName,
                   builder: (context, state) {
                     final cardId = state.pathParameters['cardId']!;
-                    return CardDetailScreen(cardId: cardId);
+                    final extra = state.extra;
+                    
+                    // PropertyData가 extra로 전달되었는지 확인
+                    if (extra is PropertyData) {
+                      return CardDetailScreen(cardId: cardId, propertyData: extra);
+                    } else {
+                      // PropertyData가 없으면 cardId만으로 생성
+                      return CardDetailScreen(cardId: cardId);
+                    }
                   },
                 ),
                 GoRoute(

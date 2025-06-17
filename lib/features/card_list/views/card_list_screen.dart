@@ -6,7 +6,7 @@ import 'package:house_note/data/models/card_model.dart';
 import 'package:house_note/providers/card_providers.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/providers/user_providers.dart';
-import 'package:house_note/features/card_list/views/property_detail_screen.dart';
+import 'package:house_note/features/card_list/views/card_detail_screen.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 
@@ -359,7 +359,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         return GestureDetector(
           onTap: () {
             context.goNamed(
-              PropertyDetailScreen.routeName,
+              CardDetailScreen.routeName,
+              pathParameters: {'cardId': property.id},
               extra: property,
             );
           },
