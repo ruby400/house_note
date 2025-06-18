@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -954,19 +955,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.home,
-                              color: Colors.grey[400],
-                              size: 38,
-                            ),
-                          ),
+                          _buildPropertyThumbnail(property),
                         ],
                       ),
                       if (userPriorities.isNotEmpty) ...[
@@ -1664,6 +1653,45 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildPropertyThumbnail(PropertyData property) {
+    final galleryImages = property.cellImages['gallery'] ?? [];
+    
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+      ),
+      child: galleryImages.isNotEmpty
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: Image.file(
+                File(galleryImages[0]),
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.grey[400],
+                      size: 32,
+                    ),
+                  );
+                },
+              ),
+            )
+          : Icon(
+              Icons.home,
+              color: Colors.grey[400],
+              size: 38,
+            ),
     );
   }
 }
