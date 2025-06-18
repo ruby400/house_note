@@ -105,6 +105,12 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
     try {
       if (updatedChart.id.isEmpty) return; // 빈 ID는 무시
       
+      // 디버깅을 위한 로그
+      print('Updating chart ${updatedChart.id} with ${updatedChart.properties.length} properties');
+      for (var property in updatedChart.properties) {
+        print('Property ${property.id} cellImages: ${property.cellImages}');
+      }
+      
       state = state.map((chart) {
         if (chart.id == updatedChart.id) {
           return updatedChart;
@@ -113,6 +119,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       }).toList();
     } catch (e) {
       // 업데이트 실패시 원본 상태 유지
+      print('Error updating chart: $e');
     }
   }
 
