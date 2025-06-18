@@ -141,7 +141,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           backgroundColor: Colors.transparent,
           centerTitle: true,
           title: const Text(
-            '부동산 상세정보',
+            '집 상세정보',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           leading: IconButton(
@@ -173,9 +173,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         title: Text(
-          propertyData!.name.isNotEmpty
-              ? propertyData!.name
-              : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
+          (editedValues['name']?.isNotEmpty == true ? editedValues['name']! : propertyData!.name).isNotEmpty
+              ? (editedValues['name']?.isNotEmpty == true ? editedValues['name']! : propertyData!.name)
+              : '집 이름',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -189,9 +189,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF9575), // 좋은 중간조 주황색 (왼쪽 위)
                 Color(0xFFFF8A65), // 메인 주황색 (중간)
-                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+                Color(0xFFFF8064), // 따뜻한 주황색 (오른쪽 아래)
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -243,16 +243,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                           ),
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
-                            hintText: '부동산 이름',
+                            hintText: '집 이름',
                           ),
                           onChanged: (value) {
-                            editedValues['name'] = value;
+                            setState(() {
+                              editedValues['name'] = value;
+                            });
                           },
                         )
                       : Text(
                           propertyData!.name.isNotEmpty
                               ? propertyData!.name
-                              : '부동산 ${propertyData!.order.isNotEmpty ? propertyData!.order : widget.cardId}',
+                              : '집 이름',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -366,7 +368,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: const Text('부동산 저장'),
+                      child: const Text('저장'),
                     ),
                   ),
                 ],
@@ -1005,21 +1007,21 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Color _getCategoryColor(String category) {
     switch (category) {
       case '기본 정보':
-        return const Color(0xFFE3F2FD);
+        return const Color(0xFFE8F4FD); // 부드러운 블루
       case '필수 정보':
-        return const Color(0xFFFFCDD2);
+        return const Color(0xFFFFE4E6); // 따뜻한 핑크
       case '부동산 상세 정보':
-        return const Color(0xFFFFF9C4);
+        return const Color(0xFFFFF8E1); // 밝은 엠버
       case '교통 및 편의시설':
-        return const Color(0xFFFFF3E0);
+        return const Color(0xFFF3E5F5); // 연한 퍼플
       case '치안 관련':
-        return const Color(0xFFE8F5E8);
+        return const Color(0xFFE8F5E8); // 부드러운 그린
       case '환경 및 청결':
-        return const Color(0xFFE1F5FE);
+        return const Color(0xFFE0F2F1); // 민트 그린
       case '미관 및 기타':
-        return const Color(0xFFF3E5F5);
+        return const Color(0xFFFFF3E0); // 따뜻한 오렌지
       default:
-        return const Color(0xFFF5F5F5);
+        return const Color(0xFFF8F9FA); // 중성 그레이
     }
   }
 

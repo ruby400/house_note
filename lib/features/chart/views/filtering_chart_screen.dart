@@ -725,9 +725,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF9575), // 좋은 중간조 주황색 (왼쪽 위)
                 Color(0xFFFF8A65), // 메인 주황색 (중간)
-                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+                Color(0xFFFF8064), // 따뜻한 주황색 (오른쪽 아래)
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -3498,14 +3498,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                    colors: [Color(0xFFFF9C8A), Color(0xFFFF8A65)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF8A65).withOpacity(0.3),
+                      color: const Color(0xFFFF8A65).withOpacity(0.25),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -3538,24 +3538,24 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
               controller: controller,
               decoration: InputDecoration(
                 labelText: '새 제목',
-                labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                labelStyle: const TextStyle(color: Color(0xFFFF7043), fontWeight: FontWeight.w500),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  borderSide: const BorderSide(color: Color(0xFFFFD7CC)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  borderSide: const BorderSide(color: Color(0xFFFF7043), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  borderSide: const BorderSide(color: Color(0xFFFFD7CC), width: 1.5),
                 ),
                 hintText: '차트 제목을 입력하세요',
-                hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
-                prefixIcon: const Icon(Icons.title, color: Color(0xFFFF8A65)),
+                hintStyle: const TextStyle(color: Color(0xFFBCAAA4), fontSize: 14),
+                prefixIcon: const Icon(Icons.title, color: Color(0xFFFF7043), size: 20),
                 filled: true,
-                fillColor: const Color(0xFFFFF8F5),
+                fillColor: const Color(0xFFFFFAF7),
               ),
               autofocus: true,
             ),
@@ -3593,7 +3593,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -3740,7 +3740,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                    colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -3817,7 +3817,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -3935,13 +3935,23 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   Color _getCategoryBackgroundColor(String categoryName) {
     switch (categoryName) {
       case '필수정보':
-        return const Color(0xFFE3F2FD); // 연한 파란색
+        return const Color(0xFFFFE4E6); // 따뜻한 핑크
       case '기본정보':
-        return const Color(0xFFE8F5E8); // 연한 초록색
+        return const Color(0xFFE8F4FD); // 부드러운 블루
       case '기타사항':
-        return const Color(0xFFFFF3E0); // 연한 주황색
+        return const Color(0xFFFFF3E0); // 따뜻한 오렌지
+      case '치안':
+        return const Color(0xFFE8F5E8); // 부드러운 그린
+      case '소음•외풍•미세먼지':
+        return const Color(0xFFE0F2F1); // 민트 그린
+      case '청결':
+        return const Color(0xFFFFF8E1); // 밝은 엠버
+      case '교통/편의시설':
+        return const Color(0xFFF3E5F5); // 연한 퍼플
+      case '미관':
+        return const Color(0xFFF8F9FA); // 중성 그레이
       default:
-        return Colors.grey[50]!;
+        return const Color(0xFFF8F9FA); // 중성 그레이
     }
   }
 
@@ -4660,7 +4670,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                    colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -4737,7 +4747,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

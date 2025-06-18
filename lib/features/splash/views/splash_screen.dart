@@ -27,7 +27,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500), // 애니메이션 시간 조정
+      duration: const Duration(milliseconds: 1100), // 애니메이션 시간 조정
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -80,36 +80,101 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFF8A65),
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/goyung.png',
-                width: 120,
-                height: 120,
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                'House Note',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(2, 2),
-                      blurRadius: 4,
-                      // ❗️ const 오류 해결: .withOpacity() 대신 16진수 코드로 변경
-                      color: Color(0x4D000000), // 검은색의 30% 투명도
-                    ),
-                  ],
-                ),
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFF9575), // 앱 테마와 맞는 주황색
+              Color.fromARGB(255, 255, 133, 96), // 메인 주황색
+              Color.fromARGB(255, 254, 130, 102), // 따뜻한 주황색
             ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      // 후광 효과 - 바깥쪽 큰 글로우
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.3),
+                        blurRadius: 80,
+                        spreadRadius: 60,
+                        offset: const Offset(0, 0),
+                      ),
+                      // 안쪽 소프트 글로우
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.6),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                        offset: const Offset(0, 0),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/goyung.png',
+                    width: 140,
+                    height: 140,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Text(
+                  'House Note',
+                  style: TextStyle(
+                    fontSize: 43,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    color: Colors.white,
+                    shadows: [
+                      // 후광 효과 - 바깥쪽 큰 글로우
+                      Shadow(
+                        offset: const Offset(0, 0),
+                        blurRadius: 20,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
+                      // 중간 글로우
+                      Shadow(
+                        offset: const Offset(0, 0),
+                        blurRadius: 10,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      // 기본 그림자
+                      const Shadow(
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                        color: Color(0x40000000),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '당신의 완벽한 집을 찾아보세요',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: const Color.fromARGB(255, 255, 252, 252)
+                        .withOpacity(0.9),
+                    letterSpacing: 0.5,
+                    shadows: const [
+                      Shadow(
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                        color: Color(0x30000000),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

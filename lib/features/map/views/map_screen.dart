@@ -38,9 +38,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF9575), // 좋은 중간조 주황색 (왼쪽 위)
                 Color(0xFFFF8A65), // 메인 주황색 (중간)
-                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+                Color(0xFFFF8064), // 따뜻한 주황색 (오른쪽 아래)
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
