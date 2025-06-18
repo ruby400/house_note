@@ -21,6 +21,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           rating: 5,
           memo: '교통이 편리하고 시설이 좋음',
           createdAt: DateTime.now().subtract(const Duration(days: 10)),
+          cellImages: {},
         ),
         PropertyData(
           id: '2',
@@ -33,6 +34,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           rating: 3,
           memo: '가격 대비 적당함',
           createdAt: DateTime.now().subtract(const Duration(days: 8)),
+          cellImages: {},
         ),
         PropertyData(
           id: '3',
@@ -45,6 +47,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           rating: 4,
           memo: '전세로 좋은 조건',
           createdAt: DateTime.now().subtract(const Duration(days: 5)),
+          cellImages: {},
         ),
         PropertyData(
           id: '4',
@@ -57,6 +60,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           rating: 3,
           memo: '집주인이 친절하나 북향이 아쉬움',
           createdAt: DateTime.now().subtract(const Duration(days: 3)),
+          cellImages: {},
         ),
       ],
       columnOptions: {
@@ -87,6 +91,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           rating: 3,
           memo: '새로 추가된 샘플 데이터',
           createdAt: DateTime.now(),
+          cellImages: {},
         ),
       ],
       columnOptions: {
