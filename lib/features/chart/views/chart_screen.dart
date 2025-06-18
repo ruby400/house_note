@@ -622,10 +622,24 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       appBar: AppBar(
         title: const Text('차트 목록',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFFF8A65),
+        backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
         automaticallyImplyLeading: false,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF8A65), // 메인 주황색 (중간)
+                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -1046,215 +1060,142 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        elevation: 16,
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 380),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        contentPadding: EdgeInsets.zero,
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFFAFAFA)],
             ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              // Header
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF66BB6A), Color(0xFF4CAF50)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.sort,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '새 정렬 옵션 추가',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '새로운 정렬 방식을 추가합니다',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
+                child: const Icon(Icons.sort, color: Colors.white, size: 20),
               ),
-
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '정렬 옵션 정보',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3748),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Input field
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          labelText: '정렬 이름',
-                          hintText: '예: 가격순, 평점순, 인기순',
-                          prefixIcon:
-                              const Icon(Icons.label, color: Color(0xFF66BB6A)),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(16),
-                          labelStyle: const TextStyle(color: Color(0xFF718096)),
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                        ),
-                        autofocus: true,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Info text
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF66BB6A).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFF66BB6A).withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: Color(0xFF66BB6A),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '새로운 정렬 옵션이 필터 목록에 추가됩니다',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Actions
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF66BB6A)),
-                          foregroundColor: const Color(0xFF66BB6A),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '취소',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (controller.text.trim().isNotEmpty) {
-                            setState(
-                                () => _sortOptions.add(controller.text.trim()));
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF66BB6A),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: const Text(
-                          '옵션 추가',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 12),
+              const Text(
+                '정렬항목추가',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
         ),
+        content: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '새로운 정렬 항목을 추가하여 차트를 정렬할 수 있습니다.',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: '정렬 이름',
+                  labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                  hintText: '예: 가격순, 평점순, 인기순',
+                  hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                  prefixIcon: const Icon(Icons.label, color: Color(0xFFFF8A65)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFFFF8F5),
+                ),
+                autofocus: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  setState(() => _sortOptions.add(controller.text.trim()));
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('"${controller.text.trim()}" 정렬항목이 추가되었습니다.', 
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                      backgroundColor: const Color(0xFFFF8A65),
+                      duration: const Duration(milliseconds: 1000),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      margin: const EdgeInsets.all(16),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1265,259 +1206,194 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 16,
-            child: Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            elevation: 8,
+            contentPadding: EdgeInsets.zero,
+            title: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Colors.white, Color(0xFFFAFAFA)],
                 ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
                 children: [
-                  // Header
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: const BoxDecoration(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20)),
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.add_chart,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '새 차트 추가',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '새로운 부동산 차트를 생성합니다',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: const Icon(Icons.add_chart, color: Colors.white, size: 20),
                   ),
-
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '차트 정보',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2D3748),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Title Input
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: titleController,
-                            decoration: InputDecoration(
-                              labelText: '차트 제목',
-                              hintText: '예: 강남구 부동산 차트',
-                              prefixIcon: const Icon(Icons.title,
-                                  color: Color(0xFFFF8A65)),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(16),
-                              labelStyle:
-                                  const TextStyle(color: Color(0xFF718096)),
-                              hintStyle: TextStyle(color: Colors.grey[400]),
-                            ),
-                            autofocus: true,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Date Picker
-                        const Text(
-                          '생성 날짜',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2D3748),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: selectedDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2030),
-                              builder: (context, child) {
-                                return Theme(
-                                  data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(
-                                      primary: Color(0xFFFF8A65),
-                                      onPrimary: Colors.white,
-                                      surface: Colors.white,
-                                      onSurface: Color(0xFF2D3748),
-                                    ),
-                                  ),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            if (date != null)
-                              setState(() => selectedDate = date);
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
-                              color: Colors.grey[50],
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  spreadRadius: 1,
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_today,
-                                    color: Color(0xFFFF8A65), size: 20),
-                                const SizedBox(width: 12),
-                                Text(
-                                  '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF2D3748),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Icon(Icons.arrow_drop_down,
-                                    color: Colors.grey[400]),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Actions
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFFF8A65)),
-                              foregroundColor: const Color(0xFFFF8A65),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              '취소',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (titleController.text.trim().isNotEmpty) {
-                                _addNewChart(
-                                    titleController.text.trim(), selectedDate);
-                                Navigator.of(context).pop();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF8A65),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: const Text(
-                              '차트 생성',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(width: 12),
+                  const Text(
+                    '새 차트 추가',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
+            content: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFECE0),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      '새로운 부동산 차트를 생성합니다.',
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: '차트 제목',
+                      labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                      hintText: '예: 강남구 부동산 차트',
+                      hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                      prefixIcon: const Icon(Icons.title, color: Color(0xFFFF8A65)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFFFF8F5),
+                    ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: Color(0xFFFF8A65),
+                                onPrimary: Colors.white,
+                                surface: Colors.white,
+                                onSurface: Color(0xFF2D3748),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) setState(() => selectedDate = date);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFCCBC)),
+                        color: const Color(0xFFFFF8F5),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: Color(0xFFFF8A65), size: 18),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF424242),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.arrow_drop_down, color: Color(0xFFFF8A65), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF8A65).withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.trim().isNotEmpty) {
+                      _addNewChart(titleController.text.trim(), selectedDate);
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('"${titleController.text.trim()}" 차트가 생성되었습니다.', 
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                          backgroundColor: const Color(0xFFFF8A65),
+                          duration: const Duration(milliseconds: 1000),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          margin: const EdgeInsets.all(16),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('생성', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           );
         },
       ),

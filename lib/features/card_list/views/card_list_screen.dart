@@ -43,9 +43,23 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       appBar: AppBar(
         title: const Text('카드 목록',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFFF8A65),
+        backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF8A65), // 메인 주황색 (중간)
+                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -408,7 +422,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                         },
                       ),
                       const SizedBox(width: 12),
-                      // 새차트 만들기 버튼
+                      // 새카드 만들기 버튼
                       GestureDetector(
                         onTap: () {
                           _showCreateChartDialog();
@@ -441,7 +455,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                               ),
                               SizedBox(width: 4),
                               Text(
-                                '새차트 만들기',
+                                '새카드 만들기',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -531,31 +545,140 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('정렬 옵션 추가'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: '정렬 방식 이름',
-              hintText: '예: 별점순, 방향순 등',
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          elevation: 8,
+          title: Container(
+            padding: const EdgeInsets.only(bottom: 16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
             ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.sort, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '정렬 옵션 추가',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242)),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '새로운 정렬 방식을 추가하여 사용할 수 있습니다.',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: '정렬 방식 이름',
+                  labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                  hintText: '예: 별점순, 방향순 등',
+                  hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                  prefixIcon: const Icon(Icons.add, color: Color(0xFFFF8A65)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFFFF8F5),
+                ),
+                autofocus: true,
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              child: const Text('취소'),
               onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
             ),
-            TextButton(
-              child: const Text('추가'),
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  if (mounted) {
-                    setState(() {
-                      _customSortOptions.add(controller.text.trim());
-                    });
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (controller.text.trim().isNotEmpty) {
+                    if (mounted) {
+                      setState(() {
+                        _customSortOptions.add(controller.text.trim());
+                      });
+                    }
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('"${controller.text.trim()}" 정렬 방식이 추가되었습니다.', 
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                        backgroundColor: const Color(0xFFFF8A65),
+                        duration: const Duration(milliseconds: 1000),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.all(16),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   }
-                  Navigator.of(ctx).pop();
-                }
-              },
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         );
@@ -1021,37 +1144,136 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('새 차트 만들기'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          elevation: 8,
+          title: Container(
+            padding: const EdgeInsets.only(bottom: 16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.add_chart, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '새 차트 만들기',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242)),
+                ),
+              ],
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: '차트 제목',
-                  hintText: '예: 강남구 원룸, 2024년 부동산 목록',
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '새 차트를 만든 후, 카드를 추가하여 부동산 정보를 입력할 수 있습니다.',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                '새 차트를 만든 후, 카드를 추가하여 부동산 정보를 입력할 수 있습니다.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              const SizedBox(height: 20),
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  labelText: '차트 제목',
+                  labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                  hintText: '예: 강남구 원룸, 2024년 부동산 목록',
+                  hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                  prefixIcon: const Icon(Icons.title, color: Color(0xFFFF8A65)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFFFF8F5),
+                ),
+                autofocus: true,
               ),
             ],
           ),
           actions: [
             TextButton(
-              child: const Text('취소'),
               onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
             ),
-            TextButton(
-              child: const Text('만들기'),
-              onPressed: () {
-                if (titleController.text.trim().isNotEmpty) {
-                  _createNewChart(titleController.text.trim());
-                  Navigator.of(ctx).pop();
-                }
-              },
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (titleController.text.trim().isNotEmpty) {
+                    _createNewChart(titleController.text.trim());
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('"${titleController.text.trim()}" 차트가 생성되었습니다.', 
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                        backgroundColor: const Color(0xFFFF8A65),
+                        duration: const Duration(milliseconds: 1000),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.all(16),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('만들기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         );

@@ -138,7 +138,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     if (propertyData == null) {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFF8A65),
+          backgroundColor: Colors.transparent,
           centerTitle: true,
           title: const Text(
             '부동산 상세정보',
@@ -148,6 +148,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
           ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                  Color(0xFFFF8A65), // 메인 주황색 (중간)
+                  Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -156,7 +170,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFF8A65),
+        backgroundColor: Colors.transparent,
         centerTitle: true,
         title: Text(
           propertyData!.name.isNotEmpty
@@ -170,6 +184,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF8A65), // 메인 주황색 (중간)
+                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -969,6 +997,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       case 'memo':
         return propertyData!.memo ?? '';
       default:
+        // Handle all other additional data
         return propertyData!.additionalData[key] ?? '';
     }
   }
@@ -1026,35 +1055,145 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('새 옵션 추가'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: '새 옵션을 입력하세요',
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          elevation: 8,
+          title: Container(
+            padding: const EdgeInsets.only(bottom: 16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
             ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '새 옵션 추가',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242)),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '새로운 옵션을 추가하여 선택할 수 있습니다.',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: '옵션 이름',
+                  labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                  hintText: '새 옵션을 입력하세요',
+                  hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                  prefixIcon: const Icon(Icons.edit, color: Color(0xFFFF8A65)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFFFF8F5),
+                ),
+                autofocus: true,
+              ),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
             ),
-            TextButton(
-              onPressed: () {
-                if (controller.text.isNotEmpty) {
-                  if (mounted) {
-                    setState(() {
-                      if (!dropdownOptions.containsKey(key)) {
-                        dropdownOptions[key] = [];
-                      }
-                      dropdownOptions[key]!.add(controller.text);
-                      editedValues[key] = controller.text;
-                      showPlaceholder[key] = false;
-                    });
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    if (mounted) {
+                      setState(() {
+                        if (!dropdownOptions.containsKey(key)) {
+                          dropdownOptions[key] = [];
+                        }
+                        dropdownOptions[key]!.add(controller.text);
+                        editedValues[key] = controller.text;
+                        showPlaceholder[key] = false;
+                      });
+                    }
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('"${controller.text}" 옵션이 추가되었습니다.', 
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                        backgroundColor: const Color(0xFFFF8A65),
+                        duration: const Duration(milliseconds: 1000),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.all(16),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   }
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('추가'),
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         );

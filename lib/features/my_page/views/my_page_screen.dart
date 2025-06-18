@@ -27,9 +27,23 @@ class MyPageScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFFF8A65),
+        backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                Color(0xFFFF8A65), // 메인 주황색 (중간)
+                Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+        ),
       ),
       body: userModelAsyncValue.when(
         data: (user) {

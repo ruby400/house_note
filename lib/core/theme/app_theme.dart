@@ -14,7 +14,7 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.grey[100],
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        backgroundColor: AppColors.primaryColor,
+        backgroundColor: Color(0xFFFF8A65),
         titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -38,7 +38,7 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.grey[850],
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFFFF8A65),
         titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
