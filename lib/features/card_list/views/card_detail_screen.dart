@@ -1204,7 +1204,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   void _saveChanges() {
-    // TODO: 실제 데이터 저장 로직 구현
     // PropertyData는 immutable이므로 copyWith를 사용해서 업데이트
     Map<String, String> additionalDataUpdate =
         Map.from(propertyData!.additionalData);
@@ -1246,6 +1245,25 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     if (additionalDataUpdate != propertyData!.additionalData) {
       propertyData =
           propertyData!.copyWith(additionalData: additionalDataUpdate);
+    }
+
+    // 실제 차트 데이터에 변경사항 반영
+    final chartList = ref.read(propertyChartListProvider);
+    for (var chart in chartList) {
+      final propertyIndex = chart.properties.indexWhere((p) => p.id == propertyData!.id);
+      if (propertyIndex != -1) {
+        // 해당 차트에서 부동산 데이터 업데이트
+        final updatedProperties = List<PropertyData>.from(chart.properties);
+        updatedProperties[propertyIndex] = propertyData!;
+        
+        final updatedChart = chart.copyWith(properties: updatedProperties);
+        ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+        
+        // 디버깅을 위한 로그
+        print('Property ${propertyData!.id} updated in chart ${chart.id}');
+        print('Saved cellImages: ${propertyData!.cellImages}');
+        break;
+      }
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1319,6 +1337,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final updatedChart = ref.read(currentChartProvider)!;
     ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
 
+    // 디버깅을 위한 로그
+    print('New property ${propertyData!.id} saved to chart ${widget.chartId}');
+    print('New property cellImages: ${propertyData!.cellImages}');
+
     // Show success message and navigate back
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('새 부동산이 저장되었습니다')),
@@ -1363,6 +1385,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
                   propertyData =
                       propertyData!.copyWith(cellImages: updatedCellImages);
+                  
+                  // 디버깅을 위한 로그
+                  print('Image added to ${propertyData!.id}: $imagePath');
+                  print('Current cellImages: ${propertyData!.cellImages}');
                 });
               }
             },

@@ -1659,6 +1659,10 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   Widget _buildPropertyThumbnail(PropertyData property) {
     final galleryImages = property.cellImages['gallery'] ?? [];
     
+    // 디버깅을 위한 로그
+    print('Property ${property.id} - Gallery images: $galleryImages');
+    print('Property cellImages keys: ${property.cellImages.keys}');
+    
     return Container(
       width: 100,
       height: 100,
