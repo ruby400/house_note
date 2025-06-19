@@ -85,7 +85,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
         widget.onImageAdded(imagePath);
       }
       AppLogger.d('✅ ${imagePaths.length} images added to list');
-      
+
       // 사용자에게 성공 메시지 표시
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,7 +98,8 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
               ],
             ),
             backgroundColor: const Color(0xFF66BB6A),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             duration: const Duration(milliseconds: 1200),
@@ -124,7 +125,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.delete_outline,
-                    color: const Color(0xFFFF8A65), size: 24),
+                    color: Color(0xFFFF8A65), size: 24),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -333,7 +334,8 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                              color: const Color(0xFFFF8A65)
+                                  .withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -402,9 +404,9 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // 두 번째 줄: 갤러리 다중 선택
                 Container(
                   width: double.infinity,
@@ -456,9 +458,9 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
               margin: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.photo_library,
-                    color: const Color(0xFFFF8A65),
+                    color: Color(0xFFFF8A65),
                     size: 16,
                   ),
                   const SizedBox(width: 4),
@@ -633,11 +635,11 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                       color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
+                    child: const Text(
                       '💡 팁 : 사진 터치시 크게 보기 가능',
                       style: TextStyle(
                         fontSize: 16,
-                        color: const Color(0xFFFF8A65),
+                        color: Color(0xFFFF8A65),
                         fontWeight: FontWeight.w700,
                       ),
                     ),

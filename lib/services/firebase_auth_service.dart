@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:house_note/core/utils/logger.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _firebaseAuth;
@@ -14,17 +15,17 @@ class FirebaseAuthService {
   Future<UserCredential?> signInWithEmailAndPassword(
       String email, String password) async {
     try {
-      print('🔐 로그인 시도: $email'); // 디버깅용
+      AppLogger.info('🔐 로그인 시도: $email');
       final result = await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
-      print('✅ 로그인 성공: ${result.user?.email}'); // 디버깅용
+      AppLogger.info('✅ 로그인 성공: ${result.user?.email}');
       return result;
     } on FirebaseAuthException catch (e) {
-      print('❌ Firebase Auth 오류: ${e.code} - ${e.message}'); // 디버깅용
+      AppLogger.error('❌ Firebase Auth 오류: ${e.code}', error: e);
       // Firebase 오류 코드를 포함하여 던지기
       throw Exception('${e.code}: ${e.message}');
     } catch (e) {
-      print('❌ 일반 오류: $e'); // 디버깅용
+      AppLogger.error('❌ 로그인 일반 오류', error: e);
       throw Exception('로그인 중 예상치 못한 오류: $e');
     }
   }
@@ -32,16 +33,16 @@ class FirebaseAuthService {
   Future<UserCredential?> createUserWithEmailAndPassword(
       String email, String password) async {
     try {
-      print('📝 회원가입 시도: $email'); // 디버깅용
+      AppLogger.info('📝 회원가입 시도: $email');
       final result = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
-      print('✅ 회원가입 성공: ${result.user?.email}'); // 디버깅용
+      AppLogger.info('✅ 회원가입 성공: ${result.user?.email}');
       return result;
     } on FirebaseAuthException catch (e) {
-      print('❌ Firebase Auth 오류 (회원가입): ${e.code} - ${e.message}'); // 디버깅용
+      AppLogger.error('❌ Firebase Auth 오류 (회원가입): ${e.code}', error: e);
       throw Exception('${e.code}: ${e.message}');
     } catch (e) {
-      print('❌ 일반 오류 (회원가입): $e'); // 디버깅용
+      AppLogger.error('❌ 회원가입 일반 오류', error: e);
       throw Exception('회원가입 중 예상치 못한 오류: $e');
     }
   }

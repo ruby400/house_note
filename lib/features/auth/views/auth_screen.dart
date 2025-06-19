@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/features/auth/viewmodels/auth_viewmodel.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
+import 'package:house_note/core/utils/logger.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   static const routeName = 'auth';
@@ -33,7 +34,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final password = _passwordController.text.trim();
       final viewModel = ref.read(authViewModelProvider.notifier);
 
-      print('🔄 인증 시작: ${_isLogin ? "로그인" : "회원가입"} - $email'); // 디버깅용
+      AppLogger.d('🔄 인증 시작: ${_isLogin ? "로그인" : "회원가입"} - $email'); // 디버깅용
 
       bool success = false;
       if (_isLogin) {
@@ -46,7 +47,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
       }
 
-      print('🏁 인증 결과: ${success ? "성공" : "실패"}'); // 디버깅용
+      AppLogger.d('🏁 인증 결과: ${success ? "성공" : "실패"}'); // 디버깅용
 
       if (success && mounted) {
         // 로그인/회원가입 성공 후 리다이렉트는 GoRouter의 redirect 로직에 의해 처리되거나,
@@ -145,7 +146,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -184,7 +185,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -274,9 +275,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       final success = await viewModel.signInWithEmail('test@example.com', '123456');
                       
                       if (success) {
-                        print('✅ 테스트 계정 로그인 완료');
+                        AppLogger.d('✅ 테스트 계정 로그인 완료');
                       } else {
-                        print('❌ 테스트 계정 로그인 실패');
+                        AppLogger.d('❌ 테스트 계정 로그인 실패');
                       }
                     },
                     child: const Text(

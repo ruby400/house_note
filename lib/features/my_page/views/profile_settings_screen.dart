@@ -181,7 +181,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           if (profileSettingsState.isLoading)
             Positioned.fill(
               child: Container(
-                color: const Color(0x4D000000),
+                color: const Color.fromARGB(77, 0, 0, 0),
                 child: const LoadingIndicator(),
               ),
             ),

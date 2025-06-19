@@ -3,19 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // FlutterFire CLI로 자동 생성
 import 'core/theme/app_theme.dart';
+import 'core/utils/logger.dart';
 import 'providers/general_providers.dart'; // appRouterProvider 포함
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    print('🚀 Firebase 초기화 중...');
+    AppLogger.info('🚀 Firebase 초기화 중...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('✅ Firebase 초기화 완료');
+    AppLogger.info('✅ Firebase 초기화 완료');
   } catch (e) {
-    print('❌ Firebase 초기화 실패: $e');
+    AppLogger.error('❌ Firebase 초기화 실패', error: e);
   }
 
   runApp(

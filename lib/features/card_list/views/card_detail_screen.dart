@@ -154,47 +154,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     return dropdownWidth;
   }
 
-  // 드롭다운 위치 계산 (항목 네모칸에 딱 붙게)
-  Offset _calculateDropdownOffset(BuildContext context, double dropdownHeight) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final safeAreaTop = MediaQuery.of(context).padding.top;
-    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-
-    // 현재 버튼의 화면상 위치를 알아내기 위해 RenderBox 사용
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null) {
-      final position = renderBox.localToGlobal(Offset.zero);
-      final buttonHeight = renderBox.size.height;
-      final buttonBottom = position.dy + buttonHeight;
-
-      // 아래쪽 여유 공간 계산
-      final spaceBelow = screenHeight - buttonBottom - safeAreaBottom - 10;
-      // 위쪽 여유 공간 계산
-      final spaceAbove = position.dy - safeAreaTop - 10;
-
-      // PopupMenuPosition.over를 사용하므로 좌표 시스템이 다름
-      // 드롭다운이 아래에 표시될 수 있는지 확인
-      if (spaceBelow >= dropdownHeight) {
-        // 아래에 충분한 공간이 있으면 네모칸 바로 아래에 딱 붙여서 표시
-        // over 모드에서는 버튼 높이만큼 아래로 이동
-        return Offset(0, 0);
-      } else if (spaceAbove >= dropdownHeight) {
-        // 위에 충분한 공간이 있으면 네모칸 바로 위에 딱 붙여서 표시
-        // over 모드에서는 드롭다운 높이 + 버튼 높이만큼 위로 이동
-        return Offset(0, -(dropdownHeight + buttonHeight));
-      } else {
-        // 둘 다 부족하면 더 큰 공간 쪽으로 표시
-        if (spaceBelow > spaceAbove) {
-          return Offset(0, 0);
-        } else {
-          return Offset(0, -(dropdownHeight + buttonHeight));
-        }
-      }
-    }
-
-    // 기본값: 아래에 표시
-    return const Offset(0, 0);
-  }
 
   void _initializePropertyData() {
     if (widget.propertyData != null) {
@@ -1337,12 +1296,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
     // 드롭다운 위치 계산
     final screenWidth = MediaQuery.of(context).size.width;
-    final safeAreaTop = MediaQuery.of(context).padding.top;
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
 
     final buttonBottom = position.dy + buttonSize.height;
     final spaceBelow = screenHeight - buttonBottom - safeAreaBottom - 10;
-    final spaceAbove = position.dy - safeAreaTop - 10;
 
     late RelativeRect relativePosition;
 
@@ -1368,8 +1325,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       position: relativePosition,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side:
-            BorderSide(color: const Color(0xFFFFCC80), width: 2), // 연한 주황색 테두리
+        side: const BorderSide(color: Color(0xFFFFCC80), width: 2), // 연한 주황색 테두리
       ),
       color: Colors.white,
       elevation: 8,
@@ -1447,17 +1403,17 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(Icons.apps,
-                            size: 16, color: const Color(0xFFFF8A65)),
-                        const SizedBox(width: 8),
+                            size: 16, color: Color(0xFFFF8A65)),
+                        SizedBox(width: 8),
                         Text(
                           '기본 옵션',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFFFF8A65),
+                            color: Color(0xFFFF8A65),
                           ),
                         ),
                       ],
@@ -1707,9 +1663,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         minLines: 1,
         autofocus: true,
         onChanged: (newValue) {
-          if (key != null) {
-            editedValues[key] = newValue;
-          }
+          editedValues[key] = newValue;
         },
       );
     } else {

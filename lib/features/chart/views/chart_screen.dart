@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,71 +39,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     super.dispose();
   }
 
-  void _showMenuOptions() {
-    // 이 메서드는 더 이상 사용되지 않음 (PopupMenuButton으로 대체됨)
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 20),
-            const Row(
-              children: [
-                SizedBox(width: 20),
-                Icon(Icons.menu, color: Color(0xFFFF8A65)),
-                SizedBox(width: 12),
-                Text(
-                  '메뉴',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading:
-                  Icon(Icons.picture_as_pdf, color: const Color(0xFFBDBDBD)),
-              title: const Text('PDF로 내보내기'),
-              subtitle: const Text('선택한 차트들을 PDF 파일로 저장합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                _exportToPDF();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.image, color: Colors.green[600]),
-              title: const Text('PNG로 내보내기'),
-              subtitle: const Text('선택한 차트들을 PNG 이미지로 저장합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                _exportToPNG();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete, color: const Color(0xFFFF8A65)),
-              title: const Text('삭제하기'),
-              subtitle: const Text('선택한 차트들을 삭제합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                _showDeleteDialog();
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showDeleteDialog() {
     if (_checkedItems.isEmpty || !_checkedItems.containsValue(true)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +58,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.warning, color: const Color(0xFFFF8A65)),
+            Icon(Icons.warning, color: Color(0xFFFF8A65)),
             SizedBox(width: 8),
             Text('차트 삭제'),
           ],
@@ -277,7 +211,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       }
 
       final fileName = 'house_charts_${now.millisecondsSinceEpoch}.pdf';
-      final file = File('${saveDir!.path}/$fileName');
+      final file = File('${saveDir.path}/$fileName');
       await file.writeAsBytes(await pdf.save());
 
       if (mounted) {
@@ -648,7 +582,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final chartList = ref.watch(propertyChartListProvider);
-                
+
                 // 검색어로 필터링
                 List<PropertyChartModel> filteredChartList = chartList;
                 if (_searchQuery.isNotEmpty) {
@@ -657,7 +591,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                     return title.contains(_searchQuery);
                   }).toList();
                 }
-                
+
                 return _buildChartList(filteredChartList);
               },
             ),
@@ -688,8 +622,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                       hintText: '차트 제목으로 검색...',
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear, color: Colors.grey),
@@ -716,18 +650,15 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   height: 48,
                   width: 48,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFFF8A65),
-                        const Color(0xFFFF7043)
-                      ],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -742,7 +673,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                 ),
                 color: Colors.white,
                 elevation: 16,
-                shadowColor: Colors.black.withOpacity(0.25),
+                shadowColor: Colors.black.withValues(alpha: 0.25),
                 surfaceTintColor: Colors.white,
                 constraints: const BoxConstraints(
                   minWidth: 280,
@@ -766,7 +697,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF66BB6A).withOpacity(0.15),
+                              color: const Color(0xFF66BB6A)
+                                  .withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.add_chart,
@@ -838,7 +770,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF8A65).withOpacity(0.15),
+                              color: const Color(0xFFFF8A65)
+                                  .withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.picture_as_pdf,
@@ -883,7 +816,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF42A5F5).withOpacity(0.15),
+                              color: const Color(0xFF42A5F5)
+                                  .withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.image,
@@ -942,7 +876,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                         color: const Color.fromARGB(255, 248, 248, 248),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: const Color.fromARGB(255, 243, 243, 243)!,
+                            color: const Color.fromARGB(255, 243, 243, 243),
                             width: 1),
                       ),
                       child: Row(
@@ -950,7 +884,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.15),
+                              color: Colors.red.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.delete_outline,
@@ -1080,7 +1014,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.sort, color: Colors.white, size: 20),
@@ -1129,7 +1063,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFFF8A65), width: 2),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1148,9 +1083,12 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+            child: const Text('취소',
+                style: TextStyle(
+                    color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
           ),
           Container(
             decoration: BoxDecoration(
@@ -1162,7 +1100,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                  color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -1175,11 +1113,13 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('"${controller.text.trim()}" 정렬항목이 추가되었습니다.', 
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                      content: Text(
+                          '"${controller.text.trim()}" 정렬항목이 추가되었습니다.',
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
                       backgroundColor: const Color(0xFFFF8A65),
                       duration: const Duration(milliseconds: 1000),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                       margin: const EdgeInsets.all(16),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -1189,10 +1129,14 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('추가',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -1209,7 +1153,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             backgroundColor: Colors.white,
             elevation: 8,
             contentPadding: EdgeInsets.zero,
@@ -1228,10 +1173,11 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.add_chart, color: Colors.white, size: 20),
+                    child: const Icon(Icons.add_chart,
+                        color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
                   const Text(
@@ -1270,14 +1216,16 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                       labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
                       hintText: '예: 강남구 부동산 차트',
                       hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
-                      prefixIcon: const Icon(Icons.title, color: Color(0xFFFF8A65)),
+                      prefixIcon:
+                          const Icon(Icons.title, color: Color(0xFFFF8A65)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFFF8A65), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1322,7 +1270,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today, color: Color(0xFFFF8A65), size: 18),
+                          const Icon(Icons.calendar_today,
+                              color: Color(0xFFFF8A65), size: 18),
                           const SizedBox(width: 12),
                           Text(
                             '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
@@ -1333,7 +1282,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                             ),
                           ),
                           const Spacer(),
-                          const Icon(Icons.arrow_drop_down, color: Color(0xFFFF8A65), size: 20),
+                          const Icon(Icons.arrow_drop_down,
+                              color: Color(0xFFFF8A65), size: 20),
                         ],
                       ),
                     ),
@@ -1345,10 +1295,14 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                child: const Text('취소',
+                    style: TextStyle(
+                        color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -1360,7 +1314,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF8A65).withOpacity(0.3),
+                      color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -1373,11 +1327,14 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('"${titleController.text.trim()}" 차트가 생성되었습니다.', 
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                          content: Text(
+                              '"${titleController.text.trim()}" 차트가 생성되었습니다.',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
                           backgroundColor: const Color(0xFFFF8A65),
                           duration: const Duration(milliseconds: 1000),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                           margin: const EdgeInsets.all(16),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1387,10 +1344,14 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('생성', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('생성',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1412,7 +1373,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   Widget _buildChartList(List<PropertyChartModel> chartList) {
     // 빈 리스트 처리
     if (chartList.isEmpty) {
-      return _searchQuery.isNotEmpty 
+      return _searchQuery.isNotEmpty
           ? _buildNoSearchResults()
           : const Center(
               child: Column(
@@ -1552,10 +1513,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.error, color: const Color(0xFFFF8A65)),
+                Icon(Icons.error, color: Color(0xFFFF8A65)),
                 SizedBox(width: 8),
-                Text('차트 로드 오류',
-                    style: TextStyle(color: const Color(0xFFFF8A65))),
+                Text('차트 로드 오류', style: TextStyle(color: Color(0xFFFF8A65))),
               ],
             ),
           );
@@ -1630,7 +1590,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('권한 확인 중 오류가 발생했습니다.'),
-            backgroundColor: const Color(0xFFFF8A65),
+            backgroundColor: Color(0xFFFF8A65),
           ),
         );
       }
@@ -1763,7 +1723,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('권한 확인 중 오류가 발생했습니다.'),
-            backgroundColor: const Color(0xFFFF8A65),
+            backgroundColor: Color(0xFFFF8A65),
           ),
         );
       }
@@ -1772,110 +1732,4 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   // 저장소 권한 거부 시 설정 페이지 이동 다이얼로그
-  Future<void> _showStoragePermissionDialog(Permission permission,
-      {required bool isPermanentlyDenied}) async {
-    if (!mounted) return;
-
-    final String permissionName =
-        permission == Permission.storage ? '저장소' : '파일';
-
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                  isPermanentlyDenied
-                      ? Icons.block
-                      : Icons.warning_amber_rounded,
-                  color: isPermanentlyDenied ? Colors.red : Colors.orange),
-              const SizedBox(width: 8),
-              Text(isPermanentlyDenied ? '권한 차단됨' : '권한 필요'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isPermanentlyDenied) ...[
-                Text('$permissionName 접근 권한이 차단되어 있습니다.'),
-                const SizedBox(height: 12),
-                const Text(
-                  'PDF 파일을 저장하려면 설정에서 권한을 허용해주세요.',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ] else ...[
-                Text('PDF 파일을 저장하기 위해 $permissionName 접근 권한이 필요합니다.'),
-                const SizedBox(height: 12),
-                const Text(
-                  '권한을 허용하시겠습니까?',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        '설정 > 개인정보 보호 및 보안 > 권한에서 설정할 수 있습니다.',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                '취소',
-                style: TextStyle(color: Colors.grey),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF8A65),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('설정으로 이동'),
-              onPressed: () async {
-                Navigator.of(context).pop();
-
-                // 앱 설정 페이지로 이동
-                final opened = await openAppSettings();
-
-                if (!opened) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('설정 페이지를 열 수 없습니다. 수동으로 설정해주세요.'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 }

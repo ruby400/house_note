@@ -468,7 +468,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     final visibleColumns = <String>['제목']; // 제목은 항상 표시
 
     // 사용자가 설정한 _columns 순서를 따르되, 카테고리 접기 상태를 고려
-    print('📋 _getVisibleColumns 호출, 현재 _columns: $_columns');
+    // AppLogger.d('📋 _getVisibleColumns 호출, 현재 _columns: $_columns');
     for (final column in _columns) {
       if (column == '제목') continue; // 이미 추가됨
 
@@ -502,7 +502,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       }
     }
 
-    print('📋 최종 visibleColumns: $visibleColumns');
+    // AppLogger.d('📋 최종 visibleColumns: $visibleColumns');
     return visibleColumns;
   }
 
@@ -610,11 +610,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           // 저장된 컬럼 순서가 있으면 적용
           if (chartToUse.columnOrder != null &&
               chartToUse.columnOrder!.isNotEmpty) {
-            print('🔄 차트 로드 시 저장된 컬럼 순서 적용: ${chartToUse.columnOrder}');
+            // AppLogger.d('🔄 차트 로드 시 저장된 컬럼 순서 적용: ${chartToUse.columnOrder}');
             _columns = List.from(chartToUse.columnOrder!);
-            print('🔄 적용된 _columns: $_columns');
+            // AppLogger.d('🔄 적용된 _columns: $_columns');
           } else {
-            print('⚠️ 저장된 컬럼 순서가 없음, 기본 순서 유지: $_columns');
+            // AppLogger.d('⚠️ 저장된 컬럼 순서가 없음, 기본 순서 유지: $_columns');
           }
         });
 
@@ -1775,7 +1775,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 child: const Icon(
                   Icons.delete_outline,
                   size: 32,
-                  color: const Color(0xFFFF8A65),
+                  color: Color(0xFFFF8A65),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1970,11 +1970,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
+              const Row(
                 children: [
                   Icon(Icons.sort, color: Color(0xFFFF8A65)),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     '빠른 정렬',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
@@ -2066,7 +2066,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$columnName ${ascending ? "오름차순" : "내림차순"}으로 정렬되었습니다.'),
-        backgroundColor: Color(0xFFFF8A65),
+        backgroundColor: const Color(0xFFFF8A65),
         duration: const Duration(milliseconds: 800),
       ),
     );
@@ -2173,11 +2173,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
+              const Row(
                 children: [
-                  Icon(Icons.remove_circle, color: const Color(0xFFBDBDBD)),
-                  const SizedBox(width: 8),
-                  const Text(
+                  Icon(Icons.remove_circle, color: Color(0xFFBDBDBD)),
+                  SizedBox(width: 8),
+                  Text(
                     '컬럼 삭제',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
@@ -2247,7 +2247,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"$columnName" 컬럼이 삭제되었습니다.'),
-        backgroundColor: Color(0xFFFF8A65),
+        backgroundColor: const Color(0xFFFF8A65),
         duration: const Duration(milliseconds: 800),
       ),
     );
@@ -2375,7 +2375,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$columnName 맞춤 순서로 정렬되었습니다.'),
-        backgroundColor: Color(0xFFFF8A65),
+        backgroundColor: const Color(0xFFFF8A65),
         duration: const Duration(milliseconds: 800),
       ),
     );
@@ -2472,10 +2472,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.reorder, color: Color(0xFFFF8A65)),
+                    const Icon(Icons.reorder, color: Color(0xFFFF8A65)),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: const Text(
+                    const Expanded(
+                      child: Text(
                         '표 제목 순서 정하기',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
@@ -2488,8 +2488,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Color(0xFFFF8A65),
-                        side: BorderSide(color: Color(0xFFFF8A65)),
+                        foregroundColor: const Color(0xFFFF8A65),
+                        side: const BorderSide(color: Color(0xFFFF8A65)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                       ),
@@ -2572,7 +2572,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                                                   content: Text(
                                                       '필수 컬럼 외 최대 6개까지만 추가 선택할 수 있습니다.'),
                                                   backgroundColor:
-                                                      const Color(0xFFFF8A65),
+                                                      Color(0xFFFF8A65),
                                                   duration: Duration(
                                                       milliseconds: 1500),
                                                 ),
@@ -2591,7 +2591,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               ),
                               const SizedBox(width: 8),
                               CircleAvatar(
-                                backgroundColor: Color(0xFFFF8A65),
+                                backgroundColor: const Color(0xFFFF8A65),
                                 radius: 16,
                                 child: Text(
                                   '${index + 1}',
@@ -2657,7 +2657,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
                           // 컬럼 순서와 표시 여부를 차트에 저장
                           if (_currentChart != null) {
-                            print('💾 컬럼 순서 저장: $_columns');
+                            // AppLogger.d('💾 컬럼 순서 저장: $_columns');
 
                             // 필수 컬럼들을 항상 true로 설정하여 저장
                             Map<String, bool> finalColumnVisibility =
@@ -2668,15 +2668,13 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               }
                             }
 
-                            print('💾 컬럼 표시 여부 저장: $finalColumnVisibility');
+                            // AppLogger.d('💾 컬럼 표시 여부 저장: $finalColumnVisibility');
                             _currentChart = _currentChart!.copyWith(
                               columnOrder: List.from(_columns),
                               columnVisibility: finalColumnVisibility,
                             );
-                            print(
-                                '💾 차트에 저장된 컬럼 순서: ${_currentChart!.columnOrder}');
-                            print(
-                                '💾 차트에 저장된 컬럼 표시 여부: ${_currentChart!.columnVisibility}');
+                            // AppLogger.d('💾 차트에 저장된 컬럼 순서: ${_currentChart!.columnOrder}');
+                            // AppLogger.d('💾 차트에 저장된 컬럼 표시 여부: ${_currentChart!.columnVisibility}');
                             _saveCurrentChart();
                           }
 
@@ -2689,7 +2687,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFF8A65),
+                          backgroundColor: const Color(0xFFFF8A65),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -2926,14 +2924,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       // 보증금 (낮을수록 좋음, 30% 가중치)
       final aDeposit = int.tryParse(a.deposit) ?? 0;
       final bDeposit = int.tryParse(b.deposit) ?? 0;
-      final maxDeposit = 10000; // 최대 보증금 기준
+      const maxDeposit = 10000; // 최대 보증금 기준
       aScore += (maxDeposit - aDeposit) / maxDeposit * 0.3;
       bScore += (maxDeposit - bDeposit) / maxDeposit * 0.3;
 
       // 월세 (낮을수록 좋음, 40% 가중치)
       final aRent = int.tryParse(a.rent) ?? 0;
       final bRent = int.tryParse(b.rent) ?? 0;
-      final maxRent = 100; // 최대 월세 기준
+      const maxRent = 100; // 최대 월세 기준
       aScore += (maxRent - aRent) / maxRent * 0.4;
       bScore += (maxRent - bRent) / maxRent * 0.4;
 
@@ -3341,7 +3339,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 child: const Icon(
                   Icons.delete_outline,
                   size: 32,
-                  color: const Color(0xFFFF8A65),
+                  color: Color(0xFFFF8A65),
                 ),
               ),
               const SizedBox(height: 16),
@@ -3455,7 +3453,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
       updatedProperties.add(updatedProperty);
       AppLogger.d(
-          'Property ${property.id}: Final additionalData = ${newAdditionalData}');
+          'Property ${property.id}: Final additionalData = $newAdditionalData');
     }
 
     // 컬럼 목록에서 제거
@@ -3508,7 +3506,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.warning, color: const Color(0xFFFF8A65)),
+            Icon(Icons.warning, color: Color(0xFFFF8A65)),
             SizedBox(width: 8),
             Text('차트 삭제'),
           ],
@@ -3521,7 +3519,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
             const SizedBox(height: 8),
             const Text(
               '삭제된 차트는 복구할 수 없습니다.',
-              style: TextStyle(fontSize: 12, color: const Color(0xFFFF8A65)),
+              style: TextStyle(fontSize: 12, color: Color(0xFFFF8A65)),
             ),
           ],
         ),
@@ -3558,7 +3556,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('차트가 삭제되었습니다.'),
-          backgroundColor: const Color(0xFFFF8A65),
+          backgroundColor: Color(0xFFFF8A65),
           duration: Duration(milliseconds: 800),
         ),
       );
@@ -3601,7 +3599,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF8A65).withOpacity(0.3),
+                      color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -3684,11 +3682,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                  color: Color(0x4DFF8A65),
                   blurRadius: 6,
-                  offset: const Offset(0, 2),
+                  offset: Offset(0, 2),
                 ),
               ],
             ),
@@ -3881,10 +3879,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                             color: const Color.fromARGB(255, 255, 157, 157),
                             width: 1),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.add,
                         size: 12,
-                        color: const Color.fromARGB(255, 255, 255, 255),
+                        color: Color.fromARGB(255, 255, 255, 255),
                       ),
                     ),
                   ),
@@ -3910,7 +3908,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
             child: Row(
               children: [
                 // 고정된 순번 컬럼 (헤더 + 데이터)
-                Container(
+                SizedBox(
                   width: _getColumnWidth(0),
                   child: Column(
                     children: [
@@ -3935,18 +3933,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           border: Border(
-                            bottom: BorderSide(color: Colors.grey, width: 1),
+                            bottom:
+                                const BorderSide(color: Colors.grey, width: 1),
                             right: BorderSide(
                                 color: Colors.grey.shade400, width: 1),
                           ),
                         ),
-                        child: Center(
+                        child: const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 '제',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: Color.fromARGB(255, 84, 84, 84),
@@ -3955,7 +3954,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               ),
                               Text(
                                 '목',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: Color.fromARGB(255, 84, 84, 84),
@@ -4059,7 +4058,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                         child: Column(
                           children: [
                             // 카테고리 헤더 (스크롤됨)
-                            Container(
+                            SizedBox(
                               height: 35,
                               child: Row(
                                 children: _buildCategoryHeaders(
@@ -4185,7 +4184,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 스크롤되는 데이터 행 빌더 (순번 제외)
   Widget _buildScrollableDataRow(int index) {
-    final property = _currentChart!.properties[index];
+    // final property = _currentChart!.properties[index];
 
     return Container(
       height: 60,
@@ -4316,7 +4315,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error, size: 48, color: const Color(0xFFFF8A65)),
+          const Icon(Icons.error, size: 48, color: Color(0xFFFF8A65)),
           const SizedBox(height: 16),
           const Text('테이블 렌더링 오류'),
           const SizedBox(height: 8),
@@ -4597,15 +4596,18 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 floatingLabelStyle: TextStyle(color: Colors.grey[600]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8A65), width: 2),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8A65), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8A65), width: 2),
                 ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.clear),
@@ -4652,7 +4654,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                   final option = entry.value;
                   final isSelected = _selectedValue == option;
                   final isDefaultOption = index < widget.defaultOptionsCount;
-                  
+
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -4660,7 +4662,9 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                         _controller.text = option;
                       });
                     },
-                    onLongPress: isDefaultOption ? null : () => _showDeleteOptionDialog(option),
+                    onLongPress: isDefaultOption
+                        ? null
+                        : () => _showDeleteOptionDialog(option),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -4680,9 +4684,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                       child: Text(
                         option,
                         style: TextStyle(
-                          color: isSelected 
-                            ? Colors.white 
-                            : Colors.black87,
+                          color: isSelected ? Colors.white : Colors.black87,
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),

@@ -2,11 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:house_note/data/models/card_model.dart';
 // import 'package:house_note/data/models/user_model.dart'; // 사용되지 않으므로 제거
-import 'package:house_note/providers/card_providers.dart';
-import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/providers/user_providers.dart';
+import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/features/card_list/views/card_detail_screen.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
@@ -37,8 +35,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = ref.watch(authStateChangesProvider).asData?.value?.uid;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -113,51 +109,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     children: [
                       // 정렬 드롭다운
                       PopupMenuButton<String>(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF8A65).withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _selectedSort,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
                         offset: const Offset(0, 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
                         color: Colors.white,
                         elevation: 16,
-                        shadowColor: Colors.black.withOpacity(0.25),
+                        shadowColor: Colors.black.withValues(alpha: 0.25),
                         surfaceTintColor: Colors.white,
                         constraints: const BoxConstraints(
                           minWidth: 200,
@@ -176,13 +134,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                       decoration: BoxDecoration(
                                         color: _selectedSort == option
                                             ? const Color(0xFFFF8A65)
-                                                .withOpacity(0.1)
+                                                .withValues(alpha: 0.1)
                                             : Colors.grey[50],
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                           color: _selectedSort == option
                                               ? const Color(0xFFFF8A65)
-                                                  .withOpacity(0.3)
+                                                  .withValues(alpha: 0.3)
                                               : Colors.grey[200]!,
                                           width: 1,
                                         ),
@@ -279,6 +237,44 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             }
                           }
                         },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _selectedSort,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       // 차트 선택 드롭다운
@@ -309,63 +305,16 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                         ),
                                       )
                                       .title
-                                  : '차트 ${_selectedChartId}';
+                                  : '차트 $_selectedChartId';
 
                           return PopupMenuButton<String?>(
-                            child: Container(
-                              constraints: const BoxConstraints(maxWidth: 200),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFFF8A65),
-                                    Color(0xFFFF7043)
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFF8A65)
-                                        .withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      displayText,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.arrow_drop_down,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
                             offset: const Offset(0, 48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
                             color: Colors.white,
                             elevation: 16,
-                            shadowColor: Colors.black.withOpacity(0.25),
+                            shadowColor: Colors.black.withValues(alpha: 0.25),
                             surfaceTintColor: Colors.white,
                             constraints: const BoxConstraints(
                               minWidth: 200,
@@ -383,13 +332,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                   decoration: BoxDecoration(
                                     color: _selectedChartId == null
                                         ? const Color(0xFFFF8A65)
-                                            .withOpacity(0.1)
+                                            .withValues(alpha: 0.1)
                                         : Colors.grey[50],
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: _selectedChartId == null
                                           ? const Color(0xFFFF8A65)
-                                              .withOpacity(0.3)
+                                              .withValues(alpha: 0.3)
                                           : Colors.grey[200]!,
                                       width: 1,
                                     ),
@@ -433,13 +382,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                       decoration: BoxDecoration(
                                         color: _selectedChartId == chart.id
                                             ? const Color(0xFFFF8A65)
-                                                .withOpacity(0.1)
+                                                .withValues(alpha: 0.1)
                                             : Colors.grey[50],
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                           color: _selectedChartId == chart.id
                                               ? const Color(0xFFFF8A65)
-                                                  .withOpacity(0.3)
+                                                  .withValues(alpha: 0.3)
                                               : Colors.grey[200]!,
                                           width: 1,
                                         ),
@@ -492,6 +441,53 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                 });
                               }
                             },
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 200),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF8A65),
+                                    Color(0xFFFF7043)
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF8A65)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      displayText,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -513,7 +509,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -643,7 +639,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -728,7 +724,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -1077,64 +1073,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
-  Widget _buildCompactPriorityTags(PropertyData property) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final realtimeChartList = ref.watch(propertyChartListProvider);
-
-        PropertyChartModel? currentChart;
-        for (var chart in realtimeChartList) {
-          if (chart.properties.any((p) => p.id == property.id)) {
-            currentChart = chart;
-            break;
-          }
-        }
-
-        List<String> tags = [];
-        Set<String> addedTags = {};
-
-        const fixedItems = {'집 이름', '월세', '보증금', '순'};
-
-        final visibilityMap = currentChart?.columnVisibility;
-
-        if (visibilityMap != null && visibilityMap.isNotEmpty) {
-          final visibleColumns = visibilityMap.entries
-              .where((entry) => entry.value == true)
-              .map((entry) => entry.key)
-              .where((column) => !fixedItems.contains(column))
-              .take(3)
-              .toList();
-
-          for (String column in visibleColumns) {
-            if (addedTags.contains(column)) continue;
-
-            String? value = _getColumnValueForProperty(column, property);
-
-            final displayValue =
-                (value != null && value.isNotEmpty && value != '-')
-                    ? value
-                    : '미입력';
-
-            addedTags.add(column);
-            tags.add('$column: $displayValue');
-          }
-        }
-
-        if (tags.isEmpty) return const SizedBox.shrink();
-
-        return Text(
-          tags.join('\n'),
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-            color: Colors.black54,
-          ),
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-        );
-      },
-    );
-  }
 
   String? _getColumnValueForProperty(String columnName, PropertyData property) {
     switch (columnName) {
@@ -1247,7 +1185,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1333,7 +1271,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF8A65).withOpacity(0.3),
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -1425,7 +1363,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1474,7 +1412,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1598,70 +1536,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
-  void _showAddCardDialog(BuildContext context, WidgetRef ref, String userId) {
-    final nameController = TextEditingController();
-    final companyController = TextEditingController();
-    final lastFourController = TextEditingController();
-    final typeController = TextEditingController(text: 'credit');
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('새 부동산 추가'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: '부동산 이름')),
-                TextField(
-                    controller: companyController,
-                    decoration: const InputDecoration(labelText: '위치')),
-                TextField(
-                  controller: lastFourController,
-                  decoration: const InputDecoration(labelText: '월세 금액'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                    controller: typeController,
-                    decoration: const InputDecoration(labelText: '부동산 종류')),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                child: const Text('취소'),
-                onPressed: () => Navigator.of(ctx).pop()),
-            TextButton(
-              child: const Text('추가'),
-              onPressed: () {
-                final newCard = CardModel(
-                  id: '',
-                  userId: userId,
-                  name: nameController.text,
-                  company: companyController.text,
-                  numberLastFour: lastFourController.text,
-                  type: typeController.text,
-                  benefits: [],
-                );
-                ref.read(cardListViewModelProvider.notifier).addCard(newCard);
-                Navigator.of(ctx).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildPropertyThumbnail(PropertyData property) {
     final galleryImages = property.cellImages['gallery'] ?? [];
     
     // 디버깅을 위한 로그
-    print('Property ${property.id} - Gallery images: $galleryImages');
-    print('Property cellImages keys: ${property.cellImages.keys}');
+    AppLogger.d('Property ${property.id} - Gallery images: $galleryImages');
+    AppLogger.d('Property cellImages keys: ${property.cellImages.keys}');
     
     return Container(
       width: 100,

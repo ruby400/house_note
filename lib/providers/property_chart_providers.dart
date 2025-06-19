@@ -110,11 +110,6 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
     try {
       if (updatedChart.id.isEmpty) return; // 빈 ID는 무시
       
-      // 디버깅을 위한 로그
-      print('Updating chart ${updatedChart.id} with ${updatedChart.properties.length} properties');
-      for (var property in updatedChart.properties) {
-        print('Property ${property.id} cellImages: ${property.cellImages}');
-      }
       
       state = state.map((chart) {
         if (chart.id == updatedChart.id) {
@@ -124,7 +119,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       }).toList();
     } catch (e) {
       // 업데이트 실패시 원본 상태 유지
-      print('Error updating chart: $e');
+      AppLogger.error('Error updating chart: $e');
     }
   }
 
@@ -237,7 +232,6 @@ final currentChartProvider = StateNotifierProvider<CurrentChartNotifier, Propert
 // 특정 chartId로 차트를 가져오는 Provider
 final propertyChartProvider = Provider.family<AsyncValue<PropertyChartModel?>, String>((ref, chartId) {
   try {
-    final chartList = ref.watch(propertyChartListProvider);
     final chart = ref.read(propertyChartListProvider.notifier).getChart(chartId);
     return AsyncValue.data(chart);
   } catch (error, stackTrace) {

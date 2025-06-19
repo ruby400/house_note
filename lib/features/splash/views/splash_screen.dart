@@ -105,14 +105,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     boxShadow: [
                       // 후광 효과 - 바깥쪽 큰 글로우
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         blurRadius: 80,
                         spreadRadius: 60,
                         offset: const Offset(0, 0),
                       ),
                       // 안쪽 소프트 글로우
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         blurRadius: 20,
                         spreadRadius: 5,
                         offset: const Offset(0, 0),
@@ -138,13 +138,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       Shadow(
                         offset: const Offset(0, 0),
                         blurRadius: 20,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                       // 중간 글로우
                       Shadow(
                         offset: const Offset(0, 0),
                         blurRadius: 10,
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                       // 기본 그림자
                       const Shadow(
@@ -162,7 +162,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: const Color.fromARGB(255, 255, 252, 252)
-                        .withOpacity(0.9),
+                        .withValues(alpha: 0.9),
                     letterSpacing: 0.5,
                     shadows: const [
                       Shadow(
