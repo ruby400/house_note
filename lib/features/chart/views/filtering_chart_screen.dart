@@ -4670,7 +4670,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                   Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(30),
                       border: Border.all(
                         color: const Color(0xFFFF8A65),
                         width: 1,
@@ -4780,7 +4780,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                       foregroundColor: Colors.grey[600],
                       side: BorderSide(color: Colors.grey[400]!),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: const Text('취소'),
