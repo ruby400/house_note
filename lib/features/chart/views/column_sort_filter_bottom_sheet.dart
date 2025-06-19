@@ -140,9 +140,9 @@ class _ColumnSortFilterBottomSheetState
             children: [
               const Icon(Icons.sort, color: Color(0xFFFF8A65)),
               const SizedBox(width: 8),
-              const Text(
-                '정렬',
-                style: TextStyle(
+              Text(
+                '${widget.columnName} 정렬 순서 정하기',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
