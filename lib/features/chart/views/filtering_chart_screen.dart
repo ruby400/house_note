@@ -90,7 +90,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 확장된 컬럼 정의 (사용자 요구사항 기반)
   List<String> _columns = [
-    '제목',
     '집 이름',
     '보증금',
     '월세',
@@ -266,7 +265,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 카테고리 정의 (순서대로 정렬)
   final Map<String, List<String>> _categoryGroups = {
     '필수정보': [
-      '제목',
       '집 이름',
       '보증금',
       '월세',
@@ -357,7 +355,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 확장된 컬럼별 바텀시트 타입 정의
   final Map<String, String> _columnTypes = {
-    '순': 'number',
     '집 이름': 'text',
     '보증금': 'price',
     '월세': 'price',
@@ -465,12 +462,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 카테고리 관련 헬퍼 메서드들
   List<String> _getVisibleColumns() {
-    final visibleColumns = <String>['제목']; // 제목은 항상 표시
+    final visibleColumns = <String>[]; // 빈 목록으로 시작
 
     // 사용자가 설정한 _columns 순서를 따르되, 카테고리 접기 상태를 고려
     // AppLogger.d('📋 _getVisibleColumns 호출, 현재 _columns: $_columns');
     for (final column in _columns) {
-      if (column == '제목') continue; // 이미 추가됨
 
       // 해당 컬럼이 속한 카테고리 찾기
       String? belongsToCategory;
@@ -491,7 +487,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           // 접힌 경우: 해당 카테고리의 첫 번째 컬럼만 표시
           final categoryColumns = _categoryGroups[belongsToCategory]!;
           final firstColumnInCategory = categoryColumns
-              .firstWhere((col) => col != '제목', orElse: () => '');
+              .firstWhere((col) => col != '순', orElse: () => '');
           if (column == firstColumnInCategory) {
             visibleColumns.add(column);
           }
@@ -648,10 +644,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       // 필수 컬럼들('집 이름', '월세', '보증금')을 기본으로 표시하도록 설정
       Map<String, bool> defaultColumnVisibility = {};
       for (String column in _columns) {
-        if (column != '순') {
-          // '순' 컬럼은 항상 표시되므로 제외
-          defaultColumnVisibility[column] = _isRequiredColumn(column);
-        }
+        defaultColumnVisibility[column] = _isRequiredColumn(column);
       }
 
       final defaultChart = PropertyChartModel(
@@ -1056,21 +1049,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       return _currentChart!.columnWidths[index]!;
     }
 
-    // 기본 너비 (순번 칸 최대한 좁게)
+    // 기본 너비
     switch (index) {
       case 0:
-        return 45; // 순 (매우 좁게)
-      case 1:
         return 140; // 집 이름
-      case 2:
+      case 1:
         return 100; // 보증금
-      case 3:
+      case 2:
         return 80; // 월세
-      case 4:
+      case 3:
         return 120; // 재계/방향
-      case 5:
+      case 4:
         return 140; // 집주인 환경
-      case 6:
+      case 5:
         return 120; // 별점
       default:
         return 98;
@@ -1891,7 +1882,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         'Properties before deletion: ${_currentChart!.properties.length}');
     AppLogger.d('Properties after deletion: ${updatedProperties.length}');
 
-    // 순번을 재정렬 (선택사항 - 원한다면)
+    // 데이터를 재정렬 (선택사항 - 원한다면)
     for (int i = 0; i < updatedProperties.length; i++) {
       final property = updatedProperties[i];
       if (property.order != (i + 1).toString()) {
@@ -2390,7 +2381,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
     final properties = List<PropertyData>.from(_currentChart!.properties);
 
-    // 순번 필드로 정렬 (입력된 순서대로)
+    // 기본 순서로 정렬 (입력된 순서대로)
     properties.sort((a, b) {
       final aOrder = int.tryParse(a.order) ?? 0;
       final bOrder = int.tryParse(b.order) ?? 0;
@@ -2417,9 +2408,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     );
   }
 
-  // 기본 컬럼 순서 반환 ('순' 제외)
+  // 기본 컬럼 순서 반환 ('순' 포함)
   List<String> _getDefaultColumnOrder() {
     return [
+      '순',
       '집 이름',
       '보증금',
       '월세',
@@ -2444,9 +2436,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 전체 항목 우선순위 설정
   void _showGlobalPrioritySettings() {
-    // 임시 컬럼 순서 (팝업 내에서만 사용, '순' 컬럼 제외)
-    List<String> tempColumns =
-        _columns.where((column) => column != '순').toList();
+    // 임시 컬럼 순서 (팝업 내에서만 사용)
+    List<String> tempColumns = List.from(_columns);
 
     // 컬럼 표시 여부를 관리하는 Map (저장된 값이 있으면 사용, 없으면 기본값 false)
     // 필수 컬럼들('집 이름', '월세', '보증금')은 항상 true로 설정
@@ -2653,8 +2644,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            // '순' 컬럼을 맨 앞에 유지하고 나머지 순서 적용
-                            _columns = ['순', ...tempColumns];
+                            // 새로운 컬럼 순서 적용
+                            _columns = List.from(tempColumns);
                           });
                           Navigator.pop(context);
 
@@ -3043,8 +3034,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         }).toList();
       }
 
-      // 정렬 적용 (순번 컬럼 제외)
-      if (_sortColumn != null && _sortColumn != '순') {
+      // 정렬 적용
+      if (_sortColumn != null) {
         properties.sort((a, b) {
           final aValue = _getPropertyValue(a, _sortColumn!);
           final bValue = _getPropertyValue(b, _sortColumn!);
@@ -3054,10 +3045,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           return _sortAscending ? comparison : -comparison;
         });
 
-        // 정렬 후 순번을 다시 1, 2, 3... 순서로 재할당
-        for (int i = 0; i < properties.length; i++) {
-          properties[i] = properties[i].copyWith(order: '${i + 1}');
-        }
       }
 
       // 차트 업데이트
@@ -3799,16 +3786,16 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       final categoryColumns = entry.value;
       final isExpanded = _categoryExpanded[categoryName] ?? true;
 
-      // 이 카테고리에 표시될 컬럼들 찾기 (순번 제외)
+      // 이 카테고리에 표시될 컬럼들 찾기
       final visibleCategoryColumns = <String>[];
       if (isExpanded) {
         visibleCategoryColumns.addAll(categoryColumns
-            .where((col) => visibleColumns.contains(col) && col != '제목'));
+            .where((col) => visibleColumns.contains(col) && col != '순'));
       }
 
       // 카테고리가 속한 컬럼이 하나라도 있으면 헤더 표시
       final allCategoryColumns =
-          categoryColumns.where((col) => col != '제목').toList();
+          categoryColumns.where((col) => col != '순').toList();
       if (allCategoryColumns.isNotEmpty) {
         // 카테고리의 총 너비 계산
         double totalWidth = 0;
@@ -3943,28 +3930,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                           ),
                         ),
                         child: const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '제',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color.fromARGB(255, 84, 84, 84),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                '목',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color.fromARGB(255, 84, 84, 84),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                          child: Text(
+                            '순',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color.fromARGB(255, 84, 84, 84),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -4079,10 +4052,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  // 순번 제외한 나머지 컬럼들 (가시성 적용)
+                                  // 모든 컬럼들 (가시성 적용)
                                   ..._getVisibleColumns()
-                                      .skip(1)
-                                      .toList()
                                       .asMap()
                                       .entries
                                       .map((entry) {
@@ -4131,7 +4102,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                             Expanded(
                               child: NotificationListener<ScrollNotification>(
                                 onNotification: (notification) {
-                                  // 데이터 영역 스크롤시 순번 컬럼도 동기화
+                                  // 데이터 영역 스크롤 동기화
                                   if (notification
                                       is ScrollUpdateNotification) {
                                     _synchronizeDataScrollOffset();
@@ -4185,7 +4156,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     return totalWidth + 51; // + 버튼 너비 포함
   }
 
-  // 스크롤되는 데이터 행 빌더 (순번 제외)
+  // 스크롤되는 데이터 행 빌더
   Widget _buildScrollableDataRow(int index) {
     // final property = _currentChart!.properties[index];
 
@@ -4200,10 +4171,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       ),
       child: Row(
         children: [
-          // 순번 제외한 나머지 셀들 (가시성 적용)
-          ...List.generate(_getVisibleColumns().length - 1, (i) {
+          // 모든 셀들 (가시성 적용)
+          ...List.generate(_getVisibleColumns().length, (i) {
             final visibleColumns = _getVisibleColumns();
-            final columnName = visibleColumns[i + 1]; // 순 제외
+            final columnName = visibleColumns[i];
             final columnIndex = _columns.indexOf(columnName);
             final width = _getColumnWidth(columnIndex);
             final value = _getCurrentCellValue(index, columnIndex);
