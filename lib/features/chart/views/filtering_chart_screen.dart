@@ -4500,18 +4500,43 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('새 항목 추가'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: '새 항목',
-            border: OutlineInputBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          '새 항목 추가',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: '새 항목',
+                labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -4523,6 +4548,13 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 Navigator.pop(context);
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF8A65),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: const Text('추가'),
           ),
         ],
@@ -4635,12 +4667,23 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: _showAddOptionDialog,
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('항목 추가'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFFF8A65),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFFF8A65),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextButton.icon(
+                      onPressed: _showAddOptionDialog,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('항목 추가'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFFF8A65),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ),
                     ),
                   ),
                 ],
@@ -4703,12 +4746,23 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
             ] else ...[
               // 옵션이 없을 때 새 항목 추가 버튼
               Center(
-                child: TextButton.icon(
-                  onPressed: _showAddOptionDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('새 항목 추가'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF8A65),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFFF8A65),
+                      width: 1,
+                    ),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: _showAddOptionDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('새 항목 추가'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFFF8A65),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
                   ),
                 ),
               ),
