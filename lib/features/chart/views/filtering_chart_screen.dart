@@ -2386,33 +2386,56 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _resetToOriginalOrder() {
     if (_currentChart == null) return;
 
-    final properties = List<PropertyData>.from(_currentChart!.properties);
+    try {
+      final properties = List<PropertyData>.from(_currentChart!.properties);
 
-    // 순번 필드로 정렬 (입력된 순서대로)
-    properties.sort((a, b) {
-      final aOrder = int.tryParse(a.order) ?? 0;
-      final bOrder = int.tryParse(b.order) ?? 0;
-      return aOrder.compareTo(bOrder);
-    });
+      // ID나 createdAt 기준으로 원래 생성 순서대로 정렬
+      properties.sort((a, b) {
+        // createdAt이 있으면 그것으로, 없으면 ID로 정렬
+        if (a.createdAt != null && b.createdAt != null) {
+          return a.createdAt!.compareTo(b.createdAt!);
+        } else {
+          return a.id.compareTo(b.id);
+        }
+      });
 
-    setState(() {
-      _currentChart = _currentChart!.copyWith(properties: properties);
-      // 정렬 상태 초기화
-      _sortColumn = null;
-      _sortAscending = true;
-      _filters.clear();
-      _customSortOrders.clear();
-    });
+      // 순번을 1부터 다시 할당
+      for (int i = 0; i < properties.length; i++) {
+        properties[i] = properties[i].copyWith(order: '${i + 1}');
+      }
 
-    _saveCurrentChart();
+      setState(() {
+        _currentChart = _currentChart!.copyWith(properties: properties);
+        // 정렬 상태 초기화
+        _sortColumn = null;
+        _sortAscending = true;
+        _filters.clear();
+        _customSortOrders.clear();
+      });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('원래 순서로 되돌렸습니다.'),
-        backgroundColor: Color(0xFFFF8A65),
-        duration: Duration(milliseconds: 800),
-      ),
-    );
+      _saveCurrentChart();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('원래 순서로 되돌렸습니다.'),
+            backgroundColor: Color(0xFFFF8A65),
+            duration: Duration(milliseconds: 800),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('순서 초기화 실패', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('순서 초기화 중 오류가 발생했습니다.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(milliseconds: 1500),
+          ),
+        );
+      }
+    }
   }
 
   // 기본 컬럼 순서 반환 ('순' 제외)

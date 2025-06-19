@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/features/my_page/viewmodels/my_page_viewmodel.dart';
 import 'package:house_note/providers/user_providers.dart'; // userModelProvider
+import 'dart:io';
 
 class MyPageScreen extends ConsumerWidget {
   static const routeName = 'my-page';
@@ -77,10 +78,9 @@ class MyPageScreen extends ConsumerWidget {
                             color: Colors.white,
                           ),
                           child: user?.photoURL != null
-                              ? CircleAvatar(
-                                  radius: 36,
-                                  backgroundImage:
-                                      NetworkImage(user!.photoURL!),
+                              ? ClipOval(
+                                  child:
+                                      _buildProfileImageWidget(user!.photoURL!),
                                 )
                               : const Icon(
                                   Icons.person,
@@ -97,7 +97,7 @@ class MyPageScreen extends ConsumerWidget {
                               Text(
                                 user?.displayName ?? '닉네임 없음',
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black87,
                                 ),
@@ -106,7 +106,7 @@ class MyPageScreen extends ConsumerWidget {
                               Text(
                                 user?.email ?? '이메일 정보 없음',
                                 style: const TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 17,
                                   color: Colors.grey,
                                 ),
                               ),
@@ -114,16 +114,44 @@ class MyPageScreen extends ConsumerWidget {
                           ),
                         ),
                         // 편집 버튼
-                        TextButton(
-                          onPressed: () {
-                            context.push('/profile-settings');
-                          },
-                          child: const Text(
-                            '편집',
-                            style: TextStyle(
-                              color: Color(0xFFFF8A65),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              context.push('/profile-settings');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            label: const Text(
+                              '편집',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -205,5 +233,32 @@ class MyPageScreen extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
+  }
+
+  Widget _buildProfileImageWidget(String photoURL) {
+    // 로컬 파일 경로인지 URL인지 확인
+    if (photoURL.startsWith('http')) {
+      // 네트워크 이미지
+      return Image.network(
+        photoURL,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 40, color: Colors.grey);
+        },
+      );
+    } else {
+      // 로컬 파일
+      return Image.file(
+        File(photoURL),
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 40, color: Colors.grey);
+        },
+      );
+    }
   }
 }

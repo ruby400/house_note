@@ -83,4 +83,28 @@ class UserModel {
       // uid는 문서 ID로 사용되므로 map에 포함하지 않을 수 있음
     };
   }
+
+  UserModel copyWith({
+    String? uid,
+    String? email,
+    String? displayName,
+    String? photoURL,
+    bool? onboardingCompleted,
+    List<String>? priorities,
+    List<PriorityItem>? priorityItems,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      displayName: displayName ?? this.displayName,
+      photoURL: photoURL ?? this.photoURL,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      priorities: priorities ?? this.priorities,
+      priorityItems: priorityItems ?? this.priorityItems,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

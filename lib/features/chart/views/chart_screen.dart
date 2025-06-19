@@ -996,43 +996,55 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 8,
         contentPadding: EdgeInsets.zero,
-        title: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        title: null,
+        content: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // 헤더
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                child: const Icon(Icons.sort, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '정렬항목추가',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.sort, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '정렬항목추가',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              // 내용
+              Padding(
+                padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1078,68 +1090,85 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('취소',
-                style: TextStyle(
-                    color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+        // 하단 버튼들
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('취소',
+                      style: TextStyle(
+                          color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
                 ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  setState(() => _sortOptions.add(controller.text.trim()));
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '"${controller.text.trim()}" 정렬항목이 추가되었습니다.',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      backgroundColor: const Color(0xFFFF8A65),
-                      duration: const Duration(milliseconds: 1000),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (controller.text.trim().isNotEmpty) {
+                        setState(() => _sortOptions.add(controller.text.trim()));
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                '"${controller.text.trim()}" 정렬항목이 추가되었습니다.',
+                                style: const TextStyle(fontWeight: FontWeight.w600)),
+                            backgroundColor: const Color(0xFFFF8A65),
+                            duration: const Duration(milliseconds: 1000),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            margin: const EdgeInsets.all(16),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
-                      margin: const EdgeInsets.all(16),
-                      behavior: SnackBarBehavior.floating,
                     ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                    child: const Text('추가',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
               ),
-              child: const Text('추가',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+              ],
             ),
           ),
-        ],
       ),
     );
   }

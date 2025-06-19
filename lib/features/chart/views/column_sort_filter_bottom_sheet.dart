@@ -169,6 +169,75 @@ class _ColumnSortFilterBottomSheetState
             ],
           ),
           const SizedBox(height: 12),
+          // 순서 직접 설정 및 초기화 버튼 (위치 변경)
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showCustomSortOrderDialog();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.tune, size: 20),
+                    label: const Text(
+                      '순서 직접 설정',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onResetOrder();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey[600],
+                    side: BorderSide(color: Colors.grey[400]!),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('순서 초기화'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -184,6 +253,10 @@ class _ColumnSortFilterBottomSheetState
                     foregroundColor: isCurrentSort && widget.sortAscending
                         ? Colors.white
                         : Colors.grey[700],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   icon: const Icon(Icons.arrow_upward, size: 16),
                   label: Text(_getSortLabel(true)),
@@ -203,45 +276,13 @@ class _ColumnSortFilterBottomSheetState
                     foregroundColor: isCurrentSort && !widget.sortAscending
                         ? Colors.white
                         : Colors.grey[700],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   icon: const Icon(Icons.arrow_downward, size: 16),
                   label: Text(_getSortLabel(false)),
-                ),
-              ),
-            ],
-          ),
-          // 정렬 순서 직접 설정 및 초기화 버튼
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showCustomSortOrderDialog();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF8A65),
-                    side: BorderSide(
-                        color: const Color(0xFFFF8A65).withAlpha(128)),
-                  ),
-                  icon: const Icon(Icons.tune, size: 16),
-                  label: const Text('순서 직접 설정'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    widget.onResetOrder();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey[600],
-                    side: BorderSide(color: Colors.grey[400]!),
-                  ),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('순서 초기화'),
                 ),
               ),
             ],
@@ -393,41 +434,106 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.sort, color: Color(0xFFFF8A65)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '${widget.columnName} 정렬 순서',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
+          ],
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              '선호하는 순서대로 드래그해서 배치하세요',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            if (widget.existingValues.isNotEmpty) ...[
-              const Text(
-                '정렬할 항목들을 선택하세요:',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(8),
+            // 헤더
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8A65),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.sort, color: Colors.white, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${widget.columnName} 정렬 순서',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18, 
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 내용
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFFFCC80),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        '선호하는 순서대로 드래그해서 배치하세요',
+                        style: TextStyle(
+                          color: Color(0xFFE65100),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (widget.existingValues.isNotEmpty) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: const Text(
+                          '정렬할 항목들을 선택하세요:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(12),
                   child: Wrap(
@@ -464,123 +570,198 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
               ),
               const SizedBox(height: 16),
             ],
-            Container(
-              height: 300,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _sortOrder.isEmpty
-                  ? const Center(
-                      child: Text(
-                        '위에서 항목들을 선택하여 순서를 정하세요',
-                        style: TextStyle(color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : ReorderableListView.builder(
-                      itemCount: _sortOrder.length,
-                      onReorder: _reorderItems,
-                      itemBuilder: (context, index) {
-                        return ReorderableDragStartListener(
-                          key: ValueKey(_sortOrder[index]),
-                          index: index,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: ListTile(
-                              leading: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFF8A65),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(20)),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: _sortOrder.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  '위에서 항목들을 선택하여 순서를 정하세요',
+                                  style: TextStyle(color: Colors.grey),
+                                  textAlign: TextAlign.center,
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                              )
+                            : ReorderableListView(
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                onReorder: (oldIndex, newIndex) {
+                                  setState(() {
+                                    if (newIndex > oldIndex) {
+                                      newIndex -= 1;
+                                    }
+                                    final item = _sortOrder.removeAt(oldIndex);
+                                    _sortOrder.insert(newIndex, item);
+                                  });
+                                },
+                                children: _sortOrder.asMap().entries.map((entry) {
+                                  int index = entry.key;
+                                  String item = entry.value;
+                                  
+                                  return Container(
+                                    key: ValueKey(item),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey[300]!),
                                     ),
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                _sortOrder[index],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.drag_handle,
-                                      color: Color(0xFFFF8A65), size: 24),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => _removeItem(index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red[50],
-                                        borderRadius: BorderRadius.circular(12),
+                                    child: Dismissible(
+                                      key: ValueKey('dismissible_$item'),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.only(right: 20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red[100],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(Icons.delete, color: Colors.red[400]),
                                       ),
-                                      child: Icon(Icons.close,
-                                          color: Colors.red[400], size: 16),
+                                      onDismissed: (direction) {
+                                        _removeItem(index);
+                                      },
+                                      child: ListTile(
+                                        leading: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFFF8A65),
+                                            borderRadius:
+                                                BorderRadius.all(Radius.circular(20)),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${index + 1}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          item,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              margin: const EdgeInsets.only(right: 12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[200],
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.drag_handle,
+                                                color: Colors.grey[600],
+                                                size: 24,
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                              onTap: () => _removeItem(index),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red[50],
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Icon(Icons.close,
+                                                    color: Colors.red[400], size: 16),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  );
+                                }).toList(),
                               ),
-                            ),
-                          ),
-                        );
-                      },
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // 버튼들
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                        side: BorderSide(color: Colors.grey[400]!),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        widget.onOrderSet(_sortOrder);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8A65),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        '적용',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            widget.onOrderSet(_sortOrder);
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF8A65),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('적용'),
-        ),
-      ],
     );
   }
 
   void _removeItem(int index) {
     setState(() {
       _sortOrder.removeAt(index);
-    });
-  }
-
-  void _reorderItems(int oldIndex, int newIndex) {
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final item = _sortOrder.removeAt(oldIndex);
-      _sortOrder.insert(newIndex, item);
     });
   }
 }

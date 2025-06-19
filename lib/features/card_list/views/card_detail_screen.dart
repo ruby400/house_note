@@ -36,6 +36,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Map<String, bool> showPlaceholder = {};
   String? activeDropdownKey; // 현재 활성된 드롭다운의 키
   final ScrollController _scrollController = ScrollController();
+  late TextEditingController _nameController;
+  late TextEditingController _depositController;
+  late TextEditingController _rentController;
 
   // 각 컬럼별 기본 옵션 정의
   static const Map<String, List<String>> defaultOptions = {
@@ -106,16 +109,32 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   void initState() {
     super.initState();
     _initializePropertyData();
+    
+    // TextEditingController 초기화
+    _nameController = TextEditingController();
+    _depositController = TextEditingController();
+    _rentController = TextEditingController();
 
     // 새 부동산인 경우 자동으로 편집 모드 활성화
     if (widget.isNewProperty) {
       isEditMode = true;
+      // 새 부동산의 경우 컨트롤러에 초기값 설정
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (propertyData != null) {
+          _nameController.text = propertyData!.name;
+          _depositController.text = propertyData!.deposit;
+          _rentController.text = propertyData!.rent;
+        }
+      });
     }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _nameController.dispose();
+    _depositController.dispose();
+    _rentController.dispose();
     super.dispose();
   }
 
@@ -641,9 +660,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   // 이름 편집
                   isEditMode
                       ? TextField(
-                          controller: TextEditingController(
-                            text: editedValues['name'] ?? propertyData!.name,
-                          ),
+                          controller: _nameController,
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -654,9 +671,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                             hintText: '집 이름',
                           ),
                           onChanged: (value) {
-                            setState(() {
-                              editedValues['name'] = value;
-                            });
+                            editedValues['name'] = value;
                           },
                         )
                       : Text(
@@ -792,6 +807,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               onPressed: () {
                 if (isEditMode) {
                   _saveChanges();
+                } else {
+                  // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
+                  _nameController.text = editedValues['name'] ?? propertyData!.name;
+                  _depositController.text = editedValues['deposit'] ?? propertyData!.deposit;
+                  _rentController.text = editedValues['rent'] ?? propertyData!.rent;
                 }
                 if (mounted) {
                   setState(() {
@@ -810,35 +830,42 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildImageGallery() {
-    // 갤러리 이미지 가져오기
-    List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
+    // 갤러리 이미지와 차트 셀 이미지들을 모두 수집
+    final List<String> allImages = <String>[];
     
-    // cellImages Map에서 차트 셀 이미지들 추가
-    final Map<String, List<String>> cellImages = propertyData?.cellImages ?? {};
-    cellImages.forEach((key, images) {
-      if (key != 'gallery' && key.endsWith('_images') && images.isNotEmpty) {
-        allImages.addAll(images);
-      }
-    });
+    // 기존 갤러리 이미지 추가
+    final galleryImages = propertyData?.cellImages['gallery'] ?? [];
+    allImages.addAll(galleryImages);
     
-    // additionalData에서 차트 셀 이미지들도 추가 (JSON 디코딩)
-    final Map<String, String> additionalData = propertyData?.additionalData ?? {};
-    additionalData.forEach((key, value) {
-      if (key.endsWith('_images') && value.isNotEmpty) {
-        try {
-          final List<dynamic> imageList = jsonDecode(value);
-          final List<String> images = imageList.cast<String>();
-          allImages.addAll(images);
-        } catch (e) {
-          // JSON 디코딩 실패시 무시
+    // 차트 셀에서 등록된 모든 이미지들 추가
+    if (propertyData != null) {
+      // additionalData에서 _images로 끝나는 키들을 찾아서 이미지 경로들을 추출
+      for (final entry in propertyData!.additionalData.entries) {
+        if (entry.key.endsWith('_images') && entry.value.isNotEmpty) {
+          try {
+            // JSON 문자열을 List<String>으로 파싱
+            final List<dynamic> imageList = jsonDecode(entry.value);
+            final List<String> imagePaths = imageList.map((e) => e.toString()).toList();
+            allImages.addAll(imagePaths);
+          } catch (e) {
+            // JSON 파싱 실패 시 무시
+          }
         }
       }
-    });
+      
+      // cellImages의 다른 키들도 추가 (gallery 제외)
+      for (final entry in propertyData!.cellImages.entries) {
+        if (entry.key != 'gallery') {
+          allImages.addAll(entry.value);
+        }
+      }
+    }
     
     // 중복 제거
-    allImages = allImages.toSet().toList();
+    final Set<String> uniqueImages = Set<String>.from(allImages);
+    final List<String> finalImages = uniqueImages.toList();
 
-    if (allImages.isEmpty) {
+    if (finalImages.isEmpty) {
       // 편집 모드 여부에 관계없이 3개의 네모 박스 표시
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -902,10 +929,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: isEditMode
-          ? allImages.length + 1
-          : allImages.length, // 편집모드일 때만 추가 버튼
+          ? finalImages.length + 1
+          : finalImages.length, // 편집모드일 때만 추가 버튼
       itemBuilder: (context, index) {
-        if (index < allImages.length) {
+        if (index < finalImages.length) {
           // 기존 이미지 썸네일
           return Container(
             width: 110,
@@ -914,7 +941,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             child: GestureDetector(
               onTap: () => isEditMode
                   ? _showImageManager('gallery') // 편집모드: 이미지 관리
-                  : _showImageViewer(allImages, index), // 보기모드: 이미지 뷰어
+                  : _showImageGalleryPopup(finalImages, index), // 보기모드: 갤러리 팝업
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
@@ -932,7 +959,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   child: Stack(
                     children: [
                       Image.file(
-                        File(allImages[index]),
+                        File(finalImages[index]),
                         width: 110,
                         height: 110,
                         fit: BoxFit.cover,
@@ -1071,9 +1098,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             const SizedBox(height: 4),
             isEditMode && key != null
                 ? TextField(
-                    controller: TextEditingController(
-                      text: editedValues[key] ?? value,
-                    ),
+                    controller: key == 'deposit' 
+                        ? _depositController 
+                        : key == 'rent' 
+                            ? _rentController 
+                            : TextEditingController(text: editedValues[key] ?? value),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black87,
@@ -2121,98 +2150,395 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
   }
 
+  void _showImageGalleryPopup(List<String> images, int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (context) => _ImageGalleryPopup(
+        images: images,
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+
   void _showImageViewer(List<String> images, int initialIndex) {
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          int currentIndex = initialIndex;
+      builder: (context) => _ImageViewerDialog(
+        images: images,
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+}
 
-          return Dialog.fullscreen(
-            backgroundColor: Colors.black,
-            child: Stack(
-              children: [
-                // 이미지 페이지뷰
-                PageView.builder(
-                  controller: PageController(initialPage: initialIndex),
+class _ImageGalleryPopup extends StatelessWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ImageGalleryPopup({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 헤더
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8A65),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.photo_library,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '사진 갤러리 (${images.length}장)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 갤러리 그리드
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.0,
+                  ),
                   itemCount: images.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentIndex = index;
-                    });
-                  },
                   itemBuilder: (context, index) {
-                    return Center(
-                      child: InteractiveViewer(
-                        minScale: 0.5,
-                        maxScale: 3.0,
-                        child: Image.file(
-                          File(images[index]),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[800],
-                              child: const Icon(
-                                Icons.broken_image,
-                                color: Colors.white,
-                                size: 64,
+                    return GestureDetector(
+                      onTap: () {
+                        // 풀스크린 이미지 뷰어 열기 (갤러리 팝업은 닫지 않음)
+                        showDialog(
+                          context: context,
+                          builder: (context) => _ImageViewerDialog(
+                            images: images,
+                            initialIndex: index,
+                            onClose: () {
+                              // 풀스크린 뷰어 닫기만 하고 갤러리는 유지
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: index == initialIndex 
+                                ? const Color(0xFFFF8A65)
+                                : Colors.grey[300]!,
+                            width: index == initialIndex ? 3 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(11),
+                          child: Stack(
+                            children: [
+                              Image.file(
+                                File(images[index]),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[200],
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey[400],
+                                      size: 32,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
+                              // 현재 선택된 이미지 표시
+                              if (index == initialIndex)
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF8A65),
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              // 이미지 번호 표시
+                              Positioned(
+                                bottom: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   },
                 ),
-                // 닫기 버튼
-                Positioned(
-                  top: 50,
-                  right: 20,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+              ),
+            ),
+            
+            // 하단 정보
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.touch_app,
+                    color: Colors.grey[600],
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '사진을 탭하여 크게 보기',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageViewerDialog extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+  final VoidCallback? onClose;
+
+  const _ImageViewerDialog({
+    required this.images,
+    required this.initialIndex,
+    this.onClose,
+  });
+
+  @override
+  State<_ImageViewerDialog> createState() => _ImageViewerDialogState();
+}
+
+class _ImageViewerDialogState extends State<_ImageViewerDialog> {
+  late int currentIndex;
+  late PageController pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex = widget.initialIndex;
+    pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: Stack(
+        children: [
+          // 이미지 페이지뷰
+          PageView.builder(
+            controller: pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (index) {
+              setState(() {
+                currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 3.0,
+                  child: Image.file(
+                    File(widget.images[index]),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.white,
+                          size: 64,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+          // 닫기 버튼
+          Positioned(
+            top: 50,
+            right: 20,
+            child: GestureDetector(
+              onTap: () {
+                if (widget.onClose != null) {
+                  widget.onClose!(); // 갤러리로 돌아가기
+                } else {
+                  Navigator.of(context).pop(); // 기본 동작
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+          // 이미지 인덱스 표시
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '${currentIndex + 1} / ${widget.images.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                // 이미지 인덱스 표시
-                if (images.length > 1)
-                  Positioned(
-                    bottom: 50,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${currentIndex + 1} / ${images.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-          );
-        },
+        ],
       ),
     );
   }

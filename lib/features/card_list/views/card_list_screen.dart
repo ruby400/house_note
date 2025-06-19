@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -1281,7 +1282,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                 onPressed: () {
                   if (titleController.text.trim().isNotEmpty) {
                     _createNewChart(titleController.text.trim());
-                    Navigator.of(ctx).pop();
+                    Navigator.of(ctx).pop(); // 새 차트 만들기 다이얼로그 닫기
+                    
+                    // 잠시 후 차트 선택 다이얼로그 다시 열기
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      _showChartSelectionDialog();
+                    });
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -1342,101 +1349,99 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
           elevation: 8,
-          title: Container(
-            padding: const EdgeInsets.only(bottom: 16),
-            decoration: const BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            width: 400,
+            height: 450,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.analytics,
-                      color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 16),
-                const Text(
-                  '차트 선택',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF424242)),
-                ),
-              ],
-            ),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 400,
             child: Column(
               children: [
+                // 헤더
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFECE0),
-                    borderRadius: BorderRadius.circular(12),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF8A65),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                   ),
-                  child: const Text(
-                    '카드를 추가할 차트를 선택하거나 새 차트를 만드세요.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.analytics, color: Colors.white, size: 22),
+                      const SizedBox(width: 16),
+                      const Text(
+                        '차트 선택',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFECE0),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            '카드를 추가할 차트를 선택하거나 새 차트를 만드세요.',
+                            style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                          ),
+                        ),
+                const SizedBox(height: 16),
                 // 새 차트 만들기 버튼
                 Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                  width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
-                  ),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      _showCreateChartDialog();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('새 차트 만들기',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _showCreateChartDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: const Text('새 차트 만들기',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
                   ),
-                ),
                 const Divider(),
                 const SizedBox(height: 8),
                 // 기존 차트 목록
@@ -1488,23 +1493,40 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                           },
                         ),
                 ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 하단 버튼
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('취소',
+                            style: TextStyle(
+                                color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              style: TextButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('취소',
-                  style: TextStyle(
-                      color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
-            ),
-          ],
         );
       },
     );
@@ -1538,10 +1560,36 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
 
 
   Widget _buildPropertyThumbnail(PropertyData property) {
-    final galleryImages = property.cellImages['gallery'] ?? [];
+    // 갤러리 이미지 가져오기
+    List<String> allImages = property.cellImages['gallery'] ?? [];
+    
+    // cellImages Map에서 차트 셀 이미지들 추가
+    final Map<String, List<String>> cellImages = property.cellImages;
+    cellImages.forEach((key, images) {
+      if (key != 'gallery' && key.endsWith('_images') && images.isNotEmpty) {
+        allImages.addAll(images);
+      }
+    });
+    
+    // additionalData에서 차트 셀 이미지들도 추가 (JSON 디코딩)
+    final Map<String, String> additionalData = property.additionalData;
+    additionalData.forEach((key, value) {
+      if (key.endsWith('_images') && value.isNotEmpty) {
+        try {
+          final List<dynamic> imageList = jsonDecode(value);
+          final List<String> images = imageList.cast<String>();
+          allImages.addAll(images);
+        } catch (e) {
+          // JSON 디코딩 실패시 무시
+        }
+      }
+    });
+    
+    // 중복 제거
+    allImages = allImages.toSet().toList();
     
     // 디버깅을 위한 로그
-    AppLogger.d('Property ${property.id} - Gallery images: $galleryImages');
+    AppLogger.d('Property ${property.id} - All images: $allImages');
     AppLogger.d('Property cellImages keys: ${property.cellImages.keys}');
     
     return Container(
@@ -1552,11 +1600,11 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[300]!, width: 1),
       ),
-      child: galleryImages.isNotEmpty
+      child: allImages.isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(7),
               child: Image.file(
-                File(galleryImages[0]),
+                File(allImages[0]),
                 width: 100,
                 height: 100,
                 fit: BoxFit.cover,

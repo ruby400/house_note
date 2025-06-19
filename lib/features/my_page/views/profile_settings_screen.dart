@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/features/my_page/viewmodels/profile_settings_viewmodel.dart';
 import 'package:house_note/providers/user_providers.dart';
+import 'package:house_note/services/image_service.dart';
+import 'dart:io';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   static const routeName = 'profile-settings';
@@ -191,32 +193,31 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   }
 
   Widget _buildProfileImage() {
+    final userAsync = ref.watch(userModelProvider);
+    final user = userAsync.asData?.value;
+    
     return Center(
-      child: Stack(
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFFF8A65), width: 3),
-              color: Colors.grey[300],
+      child: GestureDetector(
+        onTap: _showImageSelectionDialog,
+        child: Stack(
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFF8A65), width: 3),
+                color: Colors.grey[300],
+              ),
+              child: ClipOval(
+                child: user?.photoURL != null
+                    ? _buildProfileImageWidget(user!.photoURL!)
+                    : const Icon(Icons.person, size: 60, color: Colors.grey),
+              ),
             ),
-            child: const Icon(Icons.person, size: 60, color: Colors.grey),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: () {
-                // TODO: 이미지 선택 기능 구현
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('이미지 선택 기능 구현 예정'),
-                    duration: Duration(milliseconds: 800),
-                  ),
-                );
-              },
+            Positioned(
+              bottom: 0,
+              right: 0,
               child: Container(
                 width: 36,
                 height: 36,
@@ -227,8 +228,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                 child: const Icon(Icons.edit, color: Colors.white, size: 20),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -408,5 +409,287 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         );
       },
     );
+  }
+
+  Widget _buildProfileImageWidget(String photoURL) {
+    // 로컬 파일 경로인지 URL인지 확인
+    if (photoURL.startsWith('http')) {
+      // 네트워크 이미지
+      return Image.network(
+        photoURL,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 60, color: Colors.grey);
+        },
+      );
+    } else {
+      // 로컬 파일
+      return Image.file(
+        File(photoURL),
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 60, color: Colors.grey);
+        },
+      );
+    }
+  }
+
+  void _showImageSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.transparent,
+        elevation: 8,
+        contentPadding: EdgeInsets.zero,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+        content: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 헤더
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF8A65),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.photo_camera, color: Colors.white, size: 22),
+                    const SizedBox(width: 16),
+                    const Text(
+                      '프로필 사진 변경',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              // 내용
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFECE0),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        '카메라로 촬영하거나 갤러리에서 사진을 선택하세요.',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // 버튼들
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _takePicture();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                              label: const Text(
+                                '카메라',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.grey[700]!, Colors.grey[800]!],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _pickFromGallery();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.photo_library, color: Colors.white, size: 20),
+                              label: const Text(
+                                '갤러리',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // 하단 버튼
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('취소',
+                          style: TextStyle(
+                              color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _takePicture() async {
+    try {
+      final imagePath = await ImageService.takePicture();
+      if (imagePath != null) {
+        await _updateProfileImage(imagePath);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('카메라 사용 중 오류가 발생했습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final imagePath = await ImageService.pickImageFromGallery();
+      if (imagePath != null) {
+        await _updateProfileImage(imagePath);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('갤러리 사용 중 오류가 발생했습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateProfileImage(String imagePath) async {
+    try {
+      // 여기서 실제로는 서버에 이미지를 업로드하고 URL을 받아야 하지만,
+      // 현재는 로컬 파일 경로를 사용합니다.
+      final userAsync = ref.read(userModelProvider);
+      final user = userAsync.asData?.value;
+      if (user != null) {
+        // TODO: 실제 구현에서는 서버에 이미지 업로드 후 URL 업데이트
+        // 현재는 로컬 파일 경로로 임시 저장
+        final userRepository = ref.read(userRepositoryProvider);
+        await userRepository.updateUserProfile(user.uid, photoURL: imagePath);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('프로필 사진이 변경되었습니다.'),
+              backgroundColor: Color(0xFFFF8A65),
+              duration: Duration(milliseconds: 1000),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 사진 업데이트 중 오류가 발생했습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
