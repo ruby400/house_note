@@ -20,6 +20,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true; // true면 로그인, false면 회원가입
+  bool _isTermsAgreed = false; // 약관동의 체크 상태
 
   @override
   void dispose() {
@@ -30,6 +31,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
+      // 회원가입일 때 약관동의 확인
+      if (!_isLogin && !_isTermsAgreed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('약관에 동의해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
       final viewModel = ref.read(authViewModelProvider.notifier);
@@ -66,6 +78,63 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       // 구글 로그인 성공 후 처리 (GoRouter redirect에 의해 처리될 수 있음)
       // 예시: context.go(PrioritySettingScreen.routePath);
     }
+  }
+
+  void _showTermsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('서비스 이용약관'),
+          content: const SingleChildScrollView(
+            child: Text(
+              '''제1조 (목적)
+이 약관은 하우스노트 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
+
+제2조 (정의)
+1. "서비스"란 하우스노트가 제공하는 부동산 정보 서비스를 의미합니다.
+2. "이용자"란 이 약관에 따라 서비스를 이용하는 회원을 말합니다.
+
+제3조 (약관의 효력 및 변경)
+1. 이 약관은 서비스를 이용하고자 하는 모든 이용자에 대하여 그 효력을 발생합니다.
+2. 회사는 합리적인 사유가 발생할 경우 이 약관을 변경할 수 있습니다.
+
+제4조 (서비스의 제공 및 변경)
+1. 회사는 다음과 같은 서비스를 제공합니다:
+   - 부동산 정보 제공
+   - 매물 비교 및 분석
+   - 기타 부동산 관련 서비스
+
+제5조 (개인정보 보호)
+회사는 이용자의 개인정보를 관련 법령에 따라 보호합니다.
+
+제6조 (이용자의 의무)
+이용자는 서비스 이용 시 관련 법령을 준수해야 합니다.''',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isTermsAgreed = true;
+                });
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF8A65),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('동의'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -215,6 +284,51 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     },
                   ),
                 ),
+                if (!_isLogin) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _isTermsAgreed,
+                            onChanged: (value) {
+                              setState(() {
+                                _isTermsAgreed = value ?? false;
+                              });
+                            },
+                            activeColor: const Color(0xFFFF8A65),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _showTermsDialog,
+                              child: const Text(
+                                '서비스 이용약관에 동의합니다.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 if (authState.isLoading)
                   const LoadingIndicator()
@@ -224,14 +338,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8A65),
-                        foregroundColor: Colors.white,
+                        backgroundColor: (!_isLogin && !_isTermsAgreed) 
+                            ? Colors.grey[300] 
+                            : const Color(0xFFFF8A65),
+                        foregroundColor: (!_isLogin && !_isTermsAgreed) 
+                            ? Colors.grey[600] 
+                            : Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
                       ),
-                      onPressed: _submit,
+                      onPressed: (!_isLogin && !_isTermsAgreed) ? null : _submit,
                       child: Text(
                         _isLogin ? '로그인' : '회원가입',
                         style: const TextStyle(
@@ -246,6 +364,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   onPressed: () {
                     setState(() {
                       _isLogin = !_isLogin;
+                      // 로그인/회원가입 모드 변경 시 약관동의 상태 초기화
+                      _isTermsAgreed = false;
                     });
                   },
                   child:
