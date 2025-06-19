@@ -160,13 +160,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   ];
 
   // 기본 컬럼 목록 (삭제할 수 없는 컬럼들)
-  final Set<String> _baseColumns = {'순', '집 이름', '보증금', '월세', '별점'};
+  final Set<String> _baseColumns = {'집 이름', '보증금', '월세', '별점'};
 
   // 컬럼명을 데이터 키로 매핑 (인덱스 대신 컬럼명 사용)
   Map<String, String> _getColumnDataKey(String columnName) {
     // 진짜 기본 컬럼들만 base로 처리 (PropertyData의 기본 필드들)
     const baseColumnKeys = {
-      '순': 'order',
       '집 이름': 'name',
       '보증금': 'deposit',
       '월세': 'rent',
@@ -357,7 +356,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 확장된 컬럼별 바텀시트 타입 정의
   final Map<String, String> _columnTypes = {
-    '순': 'number',
     '집 이름': 'text',
     '보증금': 'price',
     '월세': 'price',
