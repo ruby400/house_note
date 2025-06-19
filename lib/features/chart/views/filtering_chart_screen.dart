@@ -4724,7 +4724,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                         color: isSelected
                             ? const Color(0xFFFF8A65)
                             : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: isSelected
                               ? const Color(0xFFFF8A65)
