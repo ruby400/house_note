@@ -809,7 +809,19 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildImageGallery() {
-    final List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
+    // 갤러리 이미지 가져오기
+    List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
+    
+    // 모든 차트 셀 이미지들도 추가
+    final Map<String, List<String>> cellImages = propertyData?.cellImages ?? {};
+    cellImages.forEach((key, images) {
+      if (key != 'gallery' && key.endsWith('_images') && images.isNotEmpty) {
+        allImages.addAll(images);
+      }
+    });
+    
+    // 중복 제거
+    allImages = allImages.toSet().toList();
 
     if (allImages.isEmpty) {
       // 편집 모드 여부에 관계없이 3개의 네모 박스 표시
