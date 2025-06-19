@@ -253,7 +253,7 @@ class _ColumnSortFilterBottomSheetState
 
   Widget _buildEditSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
@@ -262,20 +262,6 @@ class _ColumnSortFilterBottomSheetState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.edit, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              const Text(
-                '컬럼 편집',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _renameController,
             decoration: InputDecoration(
