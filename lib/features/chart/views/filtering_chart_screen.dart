@@ -4717,8 +4717,8 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                         : () => _showDeleteOptionDialog(option),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 16,
+                        vertical: 10,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
