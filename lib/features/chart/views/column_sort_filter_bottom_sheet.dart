@@ -45,21 +45,16 @@ class ColumnSortFilterBottomSheet extends StatefulWidget {
 class _ColumnSortFilterBottomSheetState
     extends State<ColumnSortFilterBottomSheet> {
   late TextEditingController _renameController;
-  late TextEditingController _filterController;
 
   @override
   void initState() {
     super.initState();
     _renameController = TextEditingController(text: widget.columnName);
-    _filterController = TextEditingController(
-      text: widget.currentFilter?.toString() ?? '',
-    );
   }
 
   @override
   void dispose() {
     _renameController.dispose();
-    _filterController.dispose();
     super.dispose();
   }
 
@@ -112,9 +107,6 @@ class _ColumnSortFilterBottomSheetState
 
               // 정렬 섹션
               _buildSortSection(),
-
-              // 필터링 섹션
-              _buildFilterSection(),
 
               // 컬럼 편집 섹션
               _buildEditSection(),
@@ -289,15 +281,15 @@ class _ColumnSortFilterBottomSheetState
             decoration: InputDecoration(
               labelText: '컬럼 이름',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(color: Colors.grey[400]!),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
                 borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
               ),
               filled: true,
@@ -378,132 +370,7 @@ class _ColumnSortFilterBottomSheetState
     }
   }
 
-  String _getFilterLabel() {
-    switch (widget.columnType) {
-      case 'price':
-        return '가격 필터';
-      case 'rating':
-        return '별점 필터';
-      case 'date':
-        return '날짜 필터';
-      case 'select':
-        return '옵션 필터';
-      default:
-        return '텍스트 필터';
-    }
-  }
 
-  String _getFilterHint() {
-    switch (widget.columnType) {
-      case 'price':
-        return '예: 1000000 (이상), <5000000 (미만)';
-      case 'rating':
-        return '예: 4 (이상), <3 (미만)';
-      case 'date':
-        return '예: 2024-01-01';
-      case 'select':
-        return '옵션값 입력';
-      default:
-        return '검색할 텍스트 입력';
-    }
-  }
-
-  Widget _buildFilterSection() {
-    final bool hasFilter = widget.currentFilter != null &&
-        widget.currentFilter.toString().isNotEmpty;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withAlpha(25),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withAlpha(76)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.filter_list, color: Colors.blue),
-              const SizedBox(width: 8),
-              Text(
-                _getFilterLabel(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (hasFilter) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: const Text(
-                    '활성',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _filterController,
-            decoration: InputDecoration(
-              hintText: _getFilterHint(),
-              border: const OutlineInputBorder(),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    widget.onFilter(_filterController.text.trim().isEmpty
-                        ? null
-                        : _filterController.text.trim());
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: const Icon(Icons.check, size: 16),
-                  label: const Text('필터 적용'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    widget.onFilter(null);
-                    Navigator.pop(context);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    side: const BorderSide(color: Colors.blue),
-                  ),
-                  icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('필터 해제'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
 }
 
