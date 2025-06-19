@@ -281,15 +281,15 @@ class _ColumnSortFilterBottomSheetState
             decoration: InputDecoration(
               labelText: '컬럼 이름',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide(color: Colors.grey[400]!),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
               ),
               filled: true,
