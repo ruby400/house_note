@@ -2112,6 +2112,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                         backgroundColor: const Color(0xFFFF8A65),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
                       ),
                       icon: const Icon(Icons.add),
                       label: const Text('항목 추가'),
@@ -4749,7 +4752,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(50),
                     border: Border.all(
                       color: const Color(0xFFFF8A65),
                       width: 1,
