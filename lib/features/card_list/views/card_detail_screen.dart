@@ -711,7 +711,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                         '${int.tryParse(editedValues['rating'] ?? '') ?? propertyData!.rating}/5',
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: Color(0xFFFF8A65),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1035,9 +1035,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           children: [
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Color(0xFFFF8A65),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1057,6 +1057,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       hintText: '입력하세요',
+                      hintStyle: TextStyle(color: Color(0xFFFF8A65)),
                     ),
                     onChanged: (newValue) {
                       editedValues[key] = newValue;
@@ -1113,7 +1114,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Color(0xFFFF8A65),
               ),
             ),
           ),
@@ -1179,9 +1180,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[700],
+                    color: Color(0xFFFF8A65),
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -1656,6 +1657,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         decoration: const InputDecoration(
           border: InputBorder.none,
           hintText: '입력하세요',
+          hintStyle: TextStyle(color: Color(0xFFFF8A65)),
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
