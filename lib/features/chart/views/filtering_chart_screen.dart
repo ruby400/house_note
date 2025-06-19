@@ -164,7 +164,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 컬럼명을 데이터 키로 매핑 (인덱스 대신 컬럼명 사용)
   Map<String, String> _getColumnDataKey(String columnName) {
-    // 기본 컬럼들은 고정된 필드명 사용
+    // 진짜 기본 컬럼들만 base로 처리 (PropertyData의 기본 필드들)
     const baseColumnKeys = {
       '순': 'order',
       '집 이름': 'name',
@@ -175,10 +175,77 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '별점': 'rating',
     };
 
+    // 표준 항목들은 additionalData에 저장되지만 고정된 키 사용
+    const standardColumnKeys = {
+      '주거 형태': 'housing_type',
+      '건축물용도': 'building_use',
+      '임차권등기명령 이력': 'lease_registration',
+      '근저당권': 'mortgage',
+      '가압류, 압류, 경매 이력': 'seizure_history',
+      '계약 조건': 'contract_conditions',
+      '등기부등본(말소사항 포함으로)': 'property_register',
+      '입주 가능일': 'move_in_date',
+      '전입신고': 'resident_registration',
+      '관리비': 'maintenance_fee',
+      '주택보증보험': 'housing_insurance',
+      '특약': 'special_terms',
+      '특이사항': 'special_notes',
+      '평수': 'area',
+      '방개수': 'room_count',
+      '방구조': 'room_structure',
+      '창문 뷰': 'window_view',
+      '방향(나침반)': 'compass_direction',
+      '채광': 'lighting',
+      '층수': 'floor',
+      '엘리베이터': 'elevator',
+      '에어컨 방식': 'air_conditioning',
+      '난방방식': 'heating',
+      '베란다': 'veranda',
+      '발코니': 'balcony',
+      '주차장': 'parking',
+      '화장실': 'bathroom',
+      '가스': 'gas_type',
+      '지하철 거리': 'subway_distance',
+      '버스 정류장': 'bus_distance',
+      '편의점 거리': 'convenience_store',
+      '위치': 'location_type',
+      'cctv 여부': 'cctv',
+      '창문 상태': 'window_condition',
+      '문 상태': 'door_condition',
+      '집주인 성격': 'landlord_environment',
+      '집주인 거주': 'landlord_residence',
+      '집근처 술집': 'nearby_bars',
+      '저층 방범창': 'security_bars',
+      '집주변 낮분위기': 'day_atmosphere',
+      '집주변 밤분위기': 'night_atmosphere',
+      '2종 잠금장치': 'double_lock',
+      '집 근처 소음원': 'noise_source',
+      '실내소음': 'indoor_noise',
+      '이중창(소음, 외풍)': 'double_window',
+      '창문 밀폐(미세먼지)': 'window_seal',
+      '수압': 'water_pressure',
+      '누수': 'water_leak',
+      '에어컨 내부 곰팡이': 'ac_mold',
+      '에어컨 냄새': 'ac_smell',
+      '환기(공기순환)': 'ventilation',
+      '곰팡이(벽,화장실,베란다)': 'mold',
+      '냄새': 'smell',
+      '벌레(바퀴똥)': 'insects',
+      '몰딩': 'molding',
+      '창문': 'window_film',
+      '관련 링크': 'related_links',
+      '부동산 정보': 'real_estate_info',
+      '집주인 정보': 'landlord_info',
+      '계약시 중개보조인인지 중개사인지 체크': 'agent_check',
+      '메모': 'memo',
+    };
+
     if (baseColumnKeys.containsKey(columnName)) {
       return {'type': 'base', 'key': baseColumnKeys[columnName]!};
+    } else if (standardColumnKeys.containsKey(columnName)) {
+      return {'type': 'additional', 'key': standardColumnKeys[columnName]!};
     } else {
-      // 추가 컬럼은 컬럼명을 그대로 키로 사용 (안전한 키로 변환)
+      // 완전히 새로운 컬럼은 custom_ 접두사 사용
       final safeKey = columnName.replaceAll(RegExp(r'[^a-zA-Z0-9가-힣]'), '_');
       return {'type': 'additional', 'key': 'custom_$safeKey'};
     }
@@ -248,12 +315,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '집주변 밤분위기',
       '2종 잠금장치'
     ],
-    '소음•외풍•미세먼지': [
-      '집 근처 소음원',
-      '실내소음',
-      '이중창(소음, 외풍)',
-      '창문 밀폐(미세먼지)'
-    ],
+    '소음•외풍•미세먼지': ['집 근처 소음원', '실내소음', '이중창(소음, 외풍)', '창문 밀폐(미세먼지)'],
     '청결': [
       '수압',
       '누수',
@@ -264,23 +326,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '냄새',
       '벌레(바퀴똥)'
     ],
-    '교통, 편의시설': [
-      '지하철 거리',
-      '버스 정류장',
-      '편의점 거리'
-    ],
-    '미관': [
-      '몰딩',
-      '창문'
-    ],
-    '기타사항': [
-      '관련 링크',
-      '부동산 정보',
-      '집주인 정보',
-      '계약시 중개보조인인지 중개사인지 체크',
-      '별점',
-      '메모'
-    ],
+    '교통, 편의시설': ['지하철 거리', '버스 정류장', '편의점 거리'],
+    '미관': ['몰딩', '창문'],
+    '기타사항': ['관련 링크', '부동산 정보', '집주인 정보', '계약시 중개보조인인지 중개사인지 체크', '별점', '메모'],
   };
 
   // 카테고리별 토글 상태 (기본적으로 모두 펼쳐짐)
@@ -442,7 +490,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         } else {
           // 접힌 경우: 해당 카테고리의 첫 번째 컬럼만 표시
           final categoryColumns = _categoryGroups[belongsToCategory]!;
-          final firstColumnInCategory = categoryColumns.firstWhere((col) => col != '제목', orElse: () => '');
+          final firstColumnInCategory = categoryColumns
+              .firstWhere((col) => col != '제목', orElse: () => '');
           if (column == firstColumnInCategory) {
             visibleColumns.add(column);
           }
@@ -455,35 +504,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
     print('📋 최종 visibleColumns: $visibleColumns');
     return visibleColumns;
-  }
-
-  // 카드 목록에서 사용할 선택된 컬럼만 반환하는 메서드
-  List<String> _getCardVisibleColumns() {
-    final visibleColumns = <String>['순']; // 순번은 항상 표시
-
-    // 사용자가 설정한 _columns 순서를 정확히 따르되, 컬럼 표시 설정만 적용
-    for (final column in _columns) {
-      if (column == '제목') continue; // 이미 추가됨
-
-      // 컬럼 표시 여부 체크 - 필수 컬럼이거나 사용자가 선택한 컬럼만 표시
-      final isColumnVisible = _isRequiredColumn(column) ||
-          (_currentChart?.columnVisibility?[column] ?? false);
-
-      if (isColumnVisible) {
-        visibleColumns.add(column);
-      }
-    }
-
-    return visibleColumns;
-  }
-
-  String? _getCategoryForColumn(String column) {
-    for (final entry in _categoryGroups.entries) {
-      if (entry.value.contains(column)) {
-        return entry.key;
-      }
-    }
-    return null;
   }
 
   void _toggleCategory(String categoryName) {
@@ -666,7 +686,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (_currentChart == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('차트 로딩 중...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: const Text('차트 로딩 중...',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           backgroundColor: Colors.transparent,
           centerTitle: true,
           elevation: 0,
@@ -1110,14 +1132,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _showEditBottomSheet(int rowIndex, int columnIndex, String columnName) {
     final currentValue = _getCurrentCellValue(rowIndex, columnIndex);
     final options = _columnOptions[columnName] ?? [];
-    
+
     // 기본 옵션과 사용자 옵션 합치기
     final defaultOptions = _columnDefaultOptions[columnName] ?? [];
     final allOptions = <String>[];
-    
+
     // 기본 옵션을 먼저 추가
     allOptions.addAll(defaultOptions);
-    
+
     // 중복되지 않는 사용자 옵션 추가
     for (final option in options) {
       if (!allOptions.contains(option)) {
@@ -1221,15 +1243,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _showDirectionBottomSheet(
       int rowIndex, int columnIndex, String columnName) {
     final currentValue = _getCurrentCellValue(rowIndex, columnIndex);
-    final options = _columnOptions[columnName] ?? [];
+    final defaultOptions = _columnDefaultOptions[columnName] ?? [];
+    final customOptions = _columnOptions[columnName] ?? [];
+    final allOptions = [...defaultOptions, ...customOptions];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _DirectionBottomSheet(
+      builder: (context) => _EditBottomSheet(
+        columnName: columnName,
         currentValue: currentValue,
-        options: options,
+        options: allOptions,
+        defaultOptionsCount: defaultOptions.length,
         onSave: (value) {
           _updateCellValue(rowIndex, columnIndex, value);
         },
@@ -1258,15 +1284,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _showEnvironmentBottomSheet(
       int rowIndex, int columnIndex, String columnName) {
     final currentValue = _getCurrentCellValue(rowIndex, columnIndex);
-    final options = _columnOptions[columnName] ?? [];
+    final defaultOptions = _columnDefaultOptions[columnName] ?? [];
+    final customOptions = _columnOptions[columnName] ?? [];
+    final allOptions = [...defaultOptions, ...customOptions];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _EnvironmentBottomSheet(
+      builder: (context) => _EditBottomSheet(
+        columnName: columnName,
         currentValue: currentValue,
-        options: options,
+        options: allOptions,
+        defaultOptionsCount: defaultOptions.length,
         onSave: (value) {
           _updateCellValue(rowIndex, columnIndex, value);
         },
@@ -1300,9 +1330,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _PriceBottomSheet(
+      builder: (context) => _EditBottomSheet(
+        columnName: columnName,
         currentValue: currentValue,
         options: options,
+        defaultOptionsCount: 0,
         onSave: (value) {
           _updateCellValue(rowIndex, columnIndex, value);
         },
@@ -1336,12 +1368,15 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _NumberBottomSheet(
-        title: _columns[columnIndex],
+      builder: (context) => _EditBottomSheet(
+        columnName: columnName,
         currentValue: currentValue,
+        options: const [],
+        defaultOptionsCount: 0,
         onSave: (value) {
           _updateCellValue(rowIndex, columnIndex, value);
         },
+        onAddOption: (newOption) {},
       ),
     );
   }
@@ -1898,8 +1933,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _TitleEditBottomSheet(
-        currentTitle: _currentChart?.title ?? '',
+      builder: (context) => _EditBottomSheet(
+        columnName: '제목',
+        currentValue: _currentChart?.title ?? '',
+        options: const [],
+        defaultOptionsCount: 0,
         onSave: (newTitle) {
           _updateTitle(newTitle);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1910,10 +1948,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
             ),
           );
         },
-        onQuickSort: _showQuickSortOptions,
-        onColumnManagement: _showColumnManagementSheet,
-        onDirectSort: _showDirectSortSelection,
-        onResetOrder: _resetToOriginalOrder,
+        onAddOption: (newOption) {},
       ),
     );
   }
@@ -3191,28 +3226,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     );
   }
 
-  // 컬럼 삭제
-  void _deleteColumn(int columnIndex) {
-    if (!mounted || _currentChart == null) return;
-
-    if (columnIndex < 0 || columnIndex >= _columns.length) return;
-
-    final columnName = _columns[columnIndex];
-
-    // 기본 컬럼들은 삭제할 수 없음 (컬럼명으로 체크)
-    if (_baseColumns.contains(columnName)) {
-      _showPrettyWarningDialog(
-        '기본 컬럼 삭제 불가',
-        '"$columnName"은(는) 기본 컬럼으로 삭제할 수 없습니다.',
-        Icons.lock,
-      );
-      return;
-    }
-
-    // 삭제 확인 다이얼로그 표시
-    _showDeleteColumnConfirmDialog(columnName, columnIndex);
-  }
-
   // 예쁜 경고 다이얼로그
   void _showPrettyWarningDialog(String title, String message, IconData icon) {
     showDialog(
@@ -3477,166 +3490,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     );
   }
 
-  // 제목 편집 다이얼로그 (기존)
-  void _showEditTitleDialog() {
-    final controller = TextEditingController(text: _currentChart?.title ?? '');
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        elevation: 8,
-        title: Container(
-          padding: const EdgeInsets.only(bottom: 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9C8A), Color(0xFFFF8A65)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF8A65).withOpacity(0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 16),
-              const Text('차트 제목 수정', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
-            ],
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFECE0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                '제목을 수정하거나 차트를 삭제할 수 있습니다.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: '새 제목',
-                labelStyle: const TextStyle(color: Color(0xFFFF7043), fontWeight: FontWeight.w500),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFD7CC)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFF7043), width: 2),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFD7CC), width: 1.5),
-                ),
-                hintText: '차트 제목을 입력하세요',
-                hintStyle: const TextStyle(color: Color(0xFFBCAAA4), fontSize: 14),
-                prefixIcon: const Icon(Icons.title, color: Color(0xFFFF7043), size: 20),
-                filled: true,
-                fillColor: const Color(0xFFFFFAF7),
-              ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 24),
-            const Divider(color: Color(0xFFFFECE0), thickness: 1),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _showDeleteConfirmDialog();
-                },
-                icon: const Icon(Icons.delete, color: Color(0xFFE53935)),
-                label: const Text('차트 삭제',
-                    style: TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.w600)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: const BorderSide(color: Color(0xFFE53935), width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: const Color(0xFFFDEDED),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF8A65).withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  _updateTitle(controller.text.trim());
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('제목이 수정되었습니다.', style: TextStyle(fontWeight: FontWeight.w600)),
-                      backgroundColor: const Color(0xFFFF8A65),
-                      duration: const Duration(milliseconds: 1000),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      margin: const EdgeInsets.all(16),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('저장', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 차트 제목 업데이트
   void _updateTitle(String newTitle) {
     if (_currentChart == null || !mounted) return;
@@ -3732,7 +3585,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         title: Container(
           padding: const EdgeInsets.only(bottom: 16),
           decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
+            border:
+                Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
           ),
           child: Row(
             children: [
@@ -3753,12 +3607,16 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                child: const Icon(Icons.add_circle_outline,
+                    color: Colors.white, size: 22),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text('$categoryName에 컬럼 추가', 
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
+                child: Text('$categoryName에 컬럼 추가',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF424242))),
               ),
             ],
           ),
@@ -3791,7 +3649,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8A65), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -3810,9 +3669,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+            child: const Text('취소',
+                style: TextStyle(
+                    color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
           ),
           Container(
             decoration: BoxDecoration(
@@ -3837,11 +3699,13 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('$categoryName에 "${controller.text.trim()}" 컬럼이 추가되었습니다.', 
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                      content: Text(
+                          '$categoryName에 "${controller.text.trim()}" 컬럼이 추가되었습니다.',
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
                       backgroundColor: const Color(0xFFFF8A65),
                       duration: const Duration(milliseconds: 1000),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       margin: const EdgeInsets.all(16),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -3851,10 +3715,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('추가',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -3898,39 +3766,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     }
   }
 
-  // 카테고리 헤더 빌드
-  Widget _buildCategoryHeader() {
-    final visibleColumns = _getVisibleColumns();
-
-    return Container(
-      height: 35,
-      child: Row(
-        children: [
-          // 순번 컬럼 영역 (빈 공간)
-          Container(
-            width: _getColumnWidth(0),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 250, 243, 243),
-              border: Border.all(
-                color: Colors.grey.shade300, 
-                width: 0.5,
-              ),
-            ),
-          ),
-          // 카테고리 헤더들 (메인 차트와 함께 스크롤)
-          Expanded(
-            child: Container(
-              width: _getTotalScrollableWidth(),
-              child: Row(
-                children: _buildCategoryHeaders(visibleColumns),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 카테고리별 배경색 반환
   Color _getCategoryBackgroundColor(String categoryName) {
     switch (categoryName) {
@@ -3966,12 +3801,13 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       // 이 카테고리에 표시될 컬럼들 찾기 (순번 제외)
       final visibleCategoryColumns = <String>[];
       if (isExpanded) {
-        visibleCategoryColumns.addAll(
-            categoryColumns.where((col) => visibleColumns.contains(col) && col != '제목'));
+        visibleCategoryColumns.addAll(categoryColumns
+            .where((col) => visibleColumns.contains(col) && col != '제목'));
       }
 
       // 카테고리가 속한 컬럼이 하나라도 있으면 헤더 표시
-      final allCategoryColumns = categoryColumns.where((col) => col != '제목').toList();
+      final allCategoryColumns =
+          categoryColumns.where((col) => col != '제목').toList();
       if (allCategoryColumns.isNotEmpty) {
         // 카테고리의 총 너비 계산
         double totalWidth = 0;
@@ -3985,7 +3821,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           }
         } else {
           // 접힌 경우: 첫 번째 컬럼의 너비만 계산
-          final firstColumnInCategory = allCategoryColumns.isNotEmpty ? allCategoryColumns.first : '';
+          final firstColumnInCategory =
+              allCategoryColumns.isNotEmpty ? allCategoryColumns.first : '';
           if (firstColumnInCategory.isNotEmpty) {
             final originalIndex = _columns.indexOf(firstColumnInCategory);
             if (originalIndex != -1) {
@@ -4004,7 +3841,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
               decoration: BoxDecoration(
                 color: _getCategoryBackgroundColor(categoryName),
                 border: Border.all(
-                  color: Colors.grey.shade300, 
+                  color: Colors.grey.shade300,
                   width: 0.5,
                 ),
               ),
@@ -4157,10 +3994,18 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                                       ? Colors.white
                                       : Colors.grey[50],
                                   border: Border(
-                                    top: BorderSide(color: Colors.grey.shade300, width: 0.5),
-                                    bottom: BorderSide(color: Colors.grey.shade300, width: 0.5),
-                                    right: BorderSide(color: Colors.grey.shade300, width: 0.5),
-                                    left: BorderSide(color: Colors.grey.shade300, width: 0.5),
+                                    top: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 0.5),
+                                    bottom: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 0.5),
+                                    right: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 0.5),
+                                    left: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 0.5),
                                   ),
                                 ),
                                 child: GestureDetector(
@@ -4656,195 +4501,62 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        elevation: 8,
-        title: Container(
-          padding: const EdgeInsets.only(bottom: 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFFFECE0), width: 2)),
+        title: const Text('새 항목 추가'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: '새 항목',
+            border: OutlineInputBorder(),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF8A65).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 16),
-              const Text(
-                '새 항목 추가',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF424242)),
-              ),
-            ],
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFECE0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                '새로운 항목을 추가하여 선택할 수 있습니다.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: '항목 이름',
-                labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
-                hintText: '새 항목을 입력하세요',
-                hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
-                prefixIcon: const Icon(Icons.edit, color: Color(0xFFFF8A65)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFFFF8F5),
-              ),
-              autofocus: true,
-            ),
-          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('취소', style: TextStyle(color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+            child: const Text('취소'),
           ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF9C8A), Color(0xFFFF8064)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF8A65).withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  final newOption = controller.text.trim();
-                  // 로컬 상태 업데이트
-                  setState(() {
-                    _currentOptions.add(newOption);
-                  });
-                  // 부모에게 콜백 호출
-                  widget.onAddOption(newOption);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('"$newOption" 항목이 추가되었습니다.', 
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                      backgroundColor: const Color(0xFFFF8A65),
-                      duration: const Duration(milliseconds: 1000),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      margin: const EdgeInsets.all(16),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                setState(() {
+                  _currentOptions.add(controller.text.trim());
+                });
+                widget.onAddOption(controller.text.trim());
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('추가'),
           ),
         ],
       ),
     );
   }
 
-  // 항목 삭제 다이얼로그
+  // 간단한 삭제 다이얼로그
   void _showDeleteOptionDialog(String option) {
-    final optionIndex = _currentOptions.indexOf(option);
-    final isDefaultOption = optionIndex < widget.defaultOptionsCount;
-    
-    if (isDefaultOption) {
-      // 기본 옵션은 삭제할 수 없음을 알리는 다이얼로그
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('삭제 불가'),
-          content: Text('\'$option\'은(는) 기본 옵션으로 삭제할 수 없습니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('확인'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('항목 삭제'),
-        content: Text('\'$option\' 항목을 삭제하시겠습니까?'),
+        content: Text('$option을(를) 삭제하시겠습니까?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('취소'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
-              // 로컬 상태 업데이트
               setState(() {
                 _currentOptions.remove(option);
               });
-              // 부모에게 콜백 호출
               if (widget.onDeleteOption != null) {
                 widget.onDeleteOption!(option);
               }
               Navigator.pop(context);
             },
-            style:
-                TextButton.styleFrom(foregroundColor: const Color(0xFFFF8A65)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('삭제'),
           ),
         ],
@@ -4878,9 +4590,23 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
             // 직접 입력
             TextField(
               controller: _controller,
+              cursorColor: Colors.grey[600],
               decoration: InputDecoration(
                 labelText: '직접 입력',
-                border: const OutlineInputBorder(),
+                labelStyle: TextStyle(color: Colors.grey[600]),
+                floatingLabelStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () => _controller.clear(),
@@ -4895,7 +4621,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
 
             const SizedBox(height: 16),
 
-            // 미리 설정된 옵션들
+            // 빠른 선택 옵션들
             if (_currentOptions.isNotEmpty) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -4979,7 +4705,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
               ),
             ],
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 저장/취소 버튼
             Row(
@@ -4987,6 +4713,13 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey[600],
+                      side: BorderSide(color: Colors.grey[400]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
                     child: const Text('취소'),
                   ),
                 ),
@@ -5018,300 +4751,7 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 간단한 바텀시트들 (필요에 따라 확장 가능)
-class _DirectionBottomSheet extends StatelessWidget {
-  final String currentValue;
-  final List<String> options;
-  final Function(String) onSave;
-  final Function(String) onAddOption;
-  final Function(String)? onDeleteOption;
-
-  const _DirectionBottomSheet({
-    required this.currentValue,
-    required this.options,
-    required this.onSave,
-    required this.onAddOption,
-    this.onDeleteOption,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _EditBottomSheet(
-      columnName: '재계/방향',
-      currentValue: currentValue,
-      options: options,
-      defaultOptionsCount: 10, // 방향 기본 옵션 개수
-      onSave: onSave,
-      onAddOption: onAddOption,
-      onDeleteOption: onDeleteOption,
-    );
-  }
-}
-
-class _EnvironmentBottomSheet extends StatelessWidget {
-  final String currentValue;
-  final List<String> options;
-  final Function(String) onSave;
-  final Function(String) onAddOption;
-  final Function(String)? onDeleteOption;
-
-  const _EnvironmentBottomSheet({
-    required this.currentValue,
-    required this.options,
-    required this.onSave,
-    required this.onAddOption,
-    this.onDeleteOption,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _EditBottomSheet(
-      columnName: '집주인 환경',
-      currentValue: currentValue,
-      options: options,
-      defaultOptionsCount: 3, // 집주인 성격 기본 옵션 개수
-      onSave: onSave,
-      onAddOption: onAddOption,
-      onDeleteOption: onDeleteOption,
-    );
-  }
-}
-
-class _PriceBottomSheet extends StatelessWidget {
-  final String currentValue;
-  final List<String> options;
-  final Function(String) onSave;
-  final Function(String) onAddOption;
-  final Function(String)? onDeleteOption;
-
-  const _PriceBottomSheet({
-    required this.currentValue,
-    required this.options,
-    required this.onSave,
-    required this.onAddOption,
-    this.onDeleteOption,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _EditBottomSheet(
-      columnName: '가격',
-      currentValue: currentValue,
-      options: options,
-      defaultOptionsCount: 0, // 가격은 기본 옵션 없음
-      onSave: onSave,
-      onAddOption: onAddOption,
-      onDeleteOption: onDeleteOption,
-    );
-  }
-}
-
-class _NumberBottomSheet extends StatefulWidget {
-  final String title;
-  final String currentValue;
-  final Function(String) onSave;
-
-  const _NumberBottomSheet({
-    required this.title,
-    required this.currentValue,
-    required this.onSave,
-  });
-
-  @override
-  State<_NumberBottomSheet> createState() => _NumberBottomSheetState();
-}
-
-class _NumberBottomSheetState extends State<_NumberBottomSheet> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.currentValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${widget.title} 설정',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                labelText: '값',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('취소'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      widget.onSave(_controller.text);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8A65),
-                    ),
-                    child:
-                        const Text('저장', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TitleEditBottomSheet extends StatefulWidget {
-  final String currentTitle;
-  final Function(String) onSave;
-  final VoidCallback onQuickSort;
-  final VoidCallback onColumnManagement;
-  final VoidCallback onDirectSort;
-  final VoidCallback onResetOrder;
-
-  const _TitleEditBottomSheet({
-    required this.currentTitle,
-    required this.onSave,
-    required this.onQuickSort,
-    required this.onColumnManagement,
-    required this.onDirectSort,
-    required this.onResetOrder,
-  });
-
-  @override
-  State<_TitleEditBottomSheet> createState() => _TitleEditBottomSheetState();
-}
-
-class _TitleEditBottomSheetState extends State<_TitleEditBottomSheet> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.currentTitle);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.edit, color: Color(0xFFFF8A65)),
-                const SizedBox(width: 8),
-                const Text(
-                  '차트 제목 편집',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                labelText: '차트 제목',
-                border: OutlineInputBorder(),
-                hintText: '새 제목을 입력하세요',
-                prefixIcon: Icon(Icons.title),
-              ),
-              autofocus: true,
-            ),
             const SizedBox(height: 20),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('취소'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_controller.text.trim().isNotEmpty) {
-                        widget.onSave(_controller.text.trim());
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8A65),
-                    ),
-                    child:
-                        const Text('저장', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
