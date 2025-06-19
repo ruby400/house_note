@@ -35,19 +35,19 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'lease_registration',
         'label': '임차권등기명령 이력',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'mortgage',
         'label': '근저당권',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'seizure_history',
         'label': '가압류, 압류, 경매 이력',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {'key': 'contract_conditions', 'label': '계약 조건', 'type': 'text'},
       {'key': 'property_register', 'label': '등기부등본(말소사항 포함으로)', 'type': 'text'},
@@ -95,7 +95,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'elevator',
         'label': '엘리베이터',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'air_conditioning',
@@ -113,13 +113,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'veranda',
         'label': '베란다',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'balcony',
         'label': '발코니',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'parking',
@@ -131,7 +131,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'bathroom',
         'label': '화장실',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'gas_type',
@@ -175,19 +175,19 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'landlord_residence',
         'label': '집주인 거주',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'nearby_bars',
         'label': '집근처 술집',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'security_bars',
         'label': '저층 방범창',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'day_atmosphere',
@@ -205,7 +205,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'double_lock',
         'label': '2종 잠금장치',
         'type': 'select',
-        'options': ['유', '무', '설치해준다함']
+        'options': ['있음', '없음', '설치해준다함']
       },
     ],
     '소음 • 외풍 • 미세먼지': [
@@ -225,13 +225,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'double_window',
         'label': '이중창(소음, 외풍)',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'window_seal',
         'label': '창문 밀폐(미세먼지)',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
     ],
     '청결': [
@@ -251,13 +251,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'ac_mold',
         'label': '에어컨 내부 곰팡이',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'ac_smell',
         'label': '에어컨 냄새',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'ventilation',
@@ -269,7 +269,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'mold',
         'label': '곰팡이(벽,화장실,베란다)',
         'type': 'select',
-        'options': ['유', '무']
+        'options': ['있음', '없음']
       },
       {
         'key': 'smell',
