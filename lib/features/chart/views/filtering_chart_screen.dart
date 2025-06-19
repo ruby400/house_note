@@ -4657,10 +4657,17 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
 
                   return GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _selectedValue = option;
-                        _controller.text = option;
-                      });
+                      try {
+                        // 선택된 값으로 즉시 저장하고 바텀시트 닫기
+                        widget.onSave(option);
+                        Navigator.pop(context);
+                      } catch (e) {
+                        // 오류 발생 시 기존 방식으로 폴백
+                        setState(() {
+                          _selectedValue = option;
+                          _controller.text = option;
+                        });
+                      }
                     },
                     onLongPress: isDefaultOption
                         ? null
