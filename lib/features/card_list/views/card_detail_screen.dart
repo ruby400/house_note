@@ -4,6 +4,7 @@ import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/features/chart/views/image_manager_widgets.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'dart:io';
+import 'dart:convert';
 
 class CardDetailScreen extends ConsumerStatefulWidget {
   static const routeName = 'card-detail';
@@ -812,11 +813,25 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // 갤러리 이미지 가져오기
     List<String> allImages = propertyData?.cellImages['gallery'] ?? [];
     
-    // 모든 차트 셀 이미지들도 추가
+    // cellImages Map에서 차트 셀 이미지들 추가
     final Map<String, List<String>> cellImages = propertyData?.cellImages ?? {};
     cellImages.forEach((key, images) {
       if (key != 'gallery' && key.endsWith('_images') && images.isNotEmpty) {
         allImages.addAll(images);
+      }
+    });
+    
+    // additionalData에서 차트 셀 이미지들도 추가 (JSON 디코딩)
+    final Map<String, String> additionalData = propertyData?.additionalData ?? {};
+    additionalData.forEach((key, value) {
+      if (key.endsWith('_images') && value.isNotEmpty) {
+        try {
+          final List<dynamic> imageList = jsonDecode(value);
+          final List<String> images = imageList.cast<String>();
+          allImages.addAll(images);
+        } catch (e) {
+          // JSON 디코딩 실패시 무시
+        }
       }
     });
     
