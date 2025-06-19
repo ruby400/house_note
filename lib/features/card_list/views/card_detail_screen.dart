@@ -1114,7 +1114,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFFF8A65),
+                color: Colors.black87,
               ),
             ),
           ),
