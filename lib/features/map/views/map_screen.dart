@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 // TODO: ViewModel, 지도 데이터 Provider import
 // import 'package:google_maps_flutter/google_maps_flutter.dart'; // google_maps_flutter 사용시
 
@@ -17,11 +18,70 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   final TextEditingController _searchController = TextEditingController();
   
   // GoogleMapController? _mapController; // 컨트롤러 필요시
+  
+  // 가이드용 GlobalKey들
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _locationKey = GlobalKey();
+  final GlobalKey _mapKey = GlobalKey();
+  final GlobalKey _menuKey = GlobalKey();
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '장소 검색',
+        description: '주소나 장소명으로 위치 검색 가능',
+        targetKey: _searchKey,
+        icon: Icons.search,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '내 위치',
+        description: '현재 위치로 빠른 이동 가능',
+        targetKey: _locationKey,
+        icon: Icons.my_location,
+        tooltipPosition: GuideTooltipPosition.left,
+      ),
+      GuideStep(
+        title: '지도 보기',
+        description: '등록된 매물 위치 확인 가능',
+        targetKey: _mapKey,
+        icon: Icons.map,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '지도 옵션',
+        description: '지도 타입 변경 및 기능 설정 가능',
+        targetKey: _menuKey,
+        icon: Icons.settings,
+        tooltipPosition: GuideTooltipPosition.left,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('지도 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -50,6 +110,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(
+              Icons.help_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            onPressed: () => _showInteractiveGuide(),
+          ),
+          IconButton(
+            key: _menuKey,
             onPressed: () {
               // TODO: 지도 옵션 메뉴
             },
@@ -70,6 +139,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   children: [
                     Expanded(
                       child: Container(
+                        key: _searchKey,
                         height: 48,
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
@@ -91,6 +161,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                     const SizedBox(width: 12),
                     Container(
+                      key: _locationKey,
                       height: 48,
                       width: 48,
                       decoration: BoxDecoration(
@@ -107,6 +178,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           // 지도 영역
           Expanded(
             child: Container(
+              key: _mapKey,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[100],

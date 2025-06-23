@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/features/onboarding/viewmodels/priority_setting_viewmodel.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 
 class PrioritySettingScreen extends ConsumerStatefulWidget {
   static const routeName = 'priority-setting';
@@ -15,6 +16,10 @@ class PrioritySettingScreen extends ConsumerStatefulWidget {
 }
 
 class _PrioritySettingScreenState extends ConsumerState<PrioritySettingScreen> {
+  // 튜토리얼 관련
+  final GlobalKey _priorityListKey = GlobalKey();
+  final GlobalKey _completeButtonKey = GlobalKey();
+
   final Map<String, String> _prioritySelections = {
     '수도 수납': '보통',
     '공광비': '보통',
@@ -62,13 +67,19 @@ class _PrioritySettingScreenState extends ConsumerState<PrioritySettingScreen> {
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           backgroundColor: const Color(0xFFFF8A65),
           centerTitle: true,
-          elevation: 0),
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline, color: Colors.white),
+              onPressed: _showTutorial,
+            ),
+          ]),
       body: viewModel.isLoading
           ? const LoadingIndicator()
           : Column(children: [
               _buildHeader(),
-              Expanded(child: _buildPriorityList()),
-              _buildActionButtons(),
+              Expanded(child: Container(key: _priorityListKey, child: _buildPriorityList())),
+              Container(key: _completeButtonKey, child: _buildActionButtons()),
             ]),
     );
   }
@@ -199,4 +210,41 @@ class _PrioritySettingScreenState extends ConsumerState<PrioritySettingScreen> {
                       isSelected ? FontWeight.w600 : FontWeight.normal)),
         ),
       );
+
+  void _showTutorial() {
+    final steps = [
+      GuideStep(
+        title: '우선순위 설정',
+        description: '중요하게 생각하는 항목들의 우선순위를 설정할 수 있습니다.\n각 항목별로 중요도를 선택해주세요.',
+        targetKey: _priorityListKey,
+        icon: Icons.tune,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '설정 완료',
+        description: '모든 우선순위 설정을 완료하고 앱 사용을 시작하세요.',
+        targetKey: _completeButtonKey,
+        icon: Icons.check_circle,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('우선순위 설정 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('가이드를 건너뛰었습니다.')),
+        );
+      },
+    );
+  }
 }

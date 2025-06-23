@@ -173,7 +173,7 @@ class _ColumnSortFilterBottomSheetState
           Row(
             children: [
               Expanded(
-                flex: 3,
+                flex: 2,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -184,7 +184,7 @@ class _ColumnSortFilterBottomSheetState
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF8A65).withOpacity(0.3),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -204,7 +204,6 @@ class _ColumnSortFilterBottomSheetState
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    icon: const Icon(Icons.tune, size: 20),
                     label: const Text(
                       '순서 직접 설정',
                       style: TextStyle(
@@ -317,7 +316,8 @@ class _ColumnSortFilterBottomSheetState
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                borderSide:
+                    const BorderSide(color: Color(0xFFFF8A65), width: 2),
               ),
               filled: true,
               fillColor: Colors.white,
@@ -396,9 +396,6 @@ class _ColumnSortFilterBottomSheetState
         return ascending ? '오름차순' : '내림차순';
     }
   }
-
-
-
 }
 
 // 커스텀 정렬 순서 설정 다이얼로그
@@ -445,7 +442,7 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -456,9 +453,9 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
             // 헤더
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF8A65),
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                color: Color(0xFFFF8A65),
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -472,7 +469,7 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                       '${widget.columnName} 정렬 순서',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 18, 
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -480,7 +477,7 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                 ],
               ),
             ),
-            
+
             // 내용
             Expanded(
               child: Padding(
@@ -534,42 +531,45 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                           border: Border.all(color: Colors.grey[300]!),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(12),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.existingValues.map((value) {
-                      final isSelected = _sortOrder.contains(value);
-                      return FilterChip(
-                        label: Text(value),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected && !_sortOrder.contains(value)) {
-                              _sortOrder.add(value);
-                            } else if (!selected) {
-                              _sortOrder.remove(value);
-                            }
-                          });
-                        },
-                        selectedColor: const Color(0xFFFF8A65).withAlpha(76),
-                        checkmarkColor: const Color(0xFFFF8A65),
-                        backgroundColor: Colors.grey[100],
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? const Color(0xFFFF8A65)
-                              : Colors.grey[700],
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(12),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: widget.existingValues.map((value) {
+                              final isSelected = _sortOrder.contains(value);
+                              return FilterChip(
+                                label: Text(value),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected &&
+                                        !_sortOrder.contains(value)) {
+                                      _sortOrder.add(value);
+                                    } else if (!selected) {
+                                      _sortOrder.remove(value);
+                                    }
+                                  });
+                                },
+                                selectedColor:
+                                    const Color(0xFFFF8A65).withAlpha(76),
+                                checkmarkColor: const Color(0xFFFF8A65),
+                                backgroundColor: Colors.grey[100],
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? const Color(0xFFFF8A65)
+                                      : Colors.grey[700],
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Expanded(
                       child: Container(
                         width: double.infinity,
@@ -587,7 +587,8 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                               )
                             : ReorderableListView(
                                 physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
                                 onReorder: (oldIndex, newIndex) {
                                   setState(() {
                                     if (newIndex > oldIndex) {
@@ -597,10 +598,11 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                                     _sortOrder.insert(newIndex, item);
                                   });
                                 },
-                                children: _sortOrder.asMap().entries.map((entry) {
+                                children:
+                                    _sortOrder.asMap().entries.map((entry) {
                                   int index = entry.key;
                                   String item = entry.value;
-                                  
+
                                   return Container(
                                     key: ValueKey(item),
                                     margin: const EdgeInsets.symmetric(
@@ -608,19 +610,23 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                                     decoration: BoxDecoration(
                                       color: Colors.grey[50],
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey[300]!),
+                                      border:
+                                          Border.all(color: Colors.grey[300]!),
                                     ),
                                     child: Dismissible(
                                       key: ValueKey('dismissible_$item'),
                                       direction: DismissDirection.endToStart,
                                       background: Container(
                                         alignment: Alignment.centerRight,
-                                        padding: const EdgeInsets.only(right: 20),
+                                        padding:
+                                            const EdgeInsets.only(right: 20),
                                         decoration: BoxDecoration(
                                           color: Colors.red[100],
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                        child: Icon(Icons.delete, color: Colors.red[400]),
+                                        child: Icon(Icons.delete,
+                                            color: Colors.red[400]),
                                       ),
                                       onDismissed: (direction) {
                                         _removeItem(index);
@@ -631,8 +637,8 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                                           height: 40,
                                           decoration: const BoxDecoration(
                                             color: Color(0xFFFF8A65),
-                                            borderRadius:
-                                                BorderRadius.all(Radius.circular(20)),
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(20)),
                                           ),
                                           child: Center(
                                             child: Text(
@@ -657,10 +663,12 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                                           children: [
                                             Container(
                                               padding: const EdgeInsets.all(8),
-                                              margin: const EdgeInsets.only(right: 12),
+                                              margin: const EdgeInsets.only(
+                                                  right: 12),
                                               decoration: BoxDecoration(
                                                 color: Colors.grey[200],
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                               child: Icon(
                                                 Icons.drag_handle,
@@ -671,13 +679,16 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                                             GestureDetector(
                                               onTap: () => _removeItem(index),
                                               child: Container(
-                                                padding: const EdgeInsets.all(4),
+                                                padding:
+                                                    const EdgeInsets.all(4),
                                                 decoration: BoxDecoration(
                                                   color: Colors.red[50],
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                 ),
                                                 child: Icon(Icons.close,
-                                                    color: Colors.red[400], size: 16),
+                                                    color: Colors.red[400],
+                                                    size: 16),
                                               ),
                                             ),
                                           ],
@@ -693,7 +704,7 @@ class _CustomSortOrderDialogState extends State<CustomSortOrderDialog> {
                 ),
               ),
             ),
-            
+
             // 버튼들
             Container(
               padding: const EdgeInsets.all(20),

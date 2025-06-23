@@ -10,11 +10,16 @@ import 'package:house_note/features/my_page/views/my_page_screen.dart';
 // 현재 선택된 탭 인덱스를 관리하는 간단한 Provider (StateProvider)
 final selectedPageIndexProvider = StateProvider<int>((ref) => 0);
 
-class MainNavigationScreen extends ConsumerWidget {
+class MainNavigationScreen extends ConsumerStatefulWidget {
   final Widget child; // ShellRoute의 자식 라우트 (현재 탭의 화면)
 
   const MainNavigationScreen({required this.child, super.key});
 
+  @override
+  ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   // 각 탭에 해당하는 경로
   static const List<String> _tabPaths = [
     CardListScreen.routePath,
@@ -29,12 +34,13 @@ class MainNavigationScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final selectedIndex = ref.watch(selectedPageIndexProvider);
 
     return Scaffold(
-      body: child, // 현재 선택된 탭의 화면이 여기에 표시됨
+      body: widget.child, // 현재 선택된 탭의 화면이 여기에 표시됨
       bottomNavigationBar: Container(
+        key: CardListScreen.bottomNavKey,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [

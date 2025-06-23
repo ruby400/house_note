@@ -4,6 +4,7 @@ import 'package:house_note/features/auth/viewmodels/auth_viewmodel.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/core/utils/logger.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   static const routeName = 'auth';
@@ -21,6 +22,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _passwordController = TextEditingController();
   bool _isLogin = true; // true면 로그인, false면 회원가입
   bool _isTermsAgreed = false; // 약관동의 체크 상태
+
+  // 튜토리얼 관련 GlobalKey들
+  final GlobalKey _emailFieldKey = GlobalKey();
+  final GlobalKey _passwordFieldKey = GlobalKey();
+  final GlobalKey _loginButtonKey = GlobalKey();
+  final GlobalKey _googleButtonKey = GlobalKey();
+  final GlobalKey _switchModeKey = GlobalKey();
+  final GlobalKey _helpButtonKey = GlobalKey();
 
   @override
   void dispose() {
@@ -167,6 +176,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         backgroundColor: const Color(0xFFFF8A65),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          IconButton(
+            key: _helpButtonKey,
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showInteractiveGuide,
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -210,6 +226,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: 40),
                 Container(
+                  key: _emailFieldKey,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -249,6 +266,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: 16),
                 Container(
+                  key: _passwordFieldKey,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -334,6 +352,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   const LoadingIndicator()
                 else
                   SizedBox(
+                    key: _loginButtonKey,
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
@@ -361,6 +380,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                 const SizedBox(height: 12),
                 TextButton(
+                  key: _switchModeKey,
                   onPressed: () {
                     setState(() {
                       _isLogin = !_isLogin;
@@ -412,6 +432,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 authState.isLoading
                     ? const SizedBox.shrink() // 로딩 중에는 구글 버튼 숨김
                     : SizedBox(
+                        key: _googleButtonKey,
                         width: double.infinity,
                         height: 56,
                         child: OutlinedButton.icon(
@@ -463,6 +484,71 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '하우스노트에 오신걸 환영합니다!',
+        description: '이 화면에서 계정에 로그인하거나 새 계정을 만들 수 있습니다.',
+        targetKey: _helpButtonKey,
+        tooltipPosition: GuideTooltipPosition.left,
+        icon: Icons.waving_hand,
+      ),
+      GuideStep(
+        title: '이메일 입력',
+        description: '가입할 이메일 주소를 입력해주세요. 유효한 이메일 형식이어야 합니다.',
+        targetKey: _emailFieldKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        icon: Icons.email,
+      ),
+      GuideStep(
+        title: '비밀번호 입력',
+        description: '비밀번호는 6자 이상이어야 합니다. 안전한 비밀번호를 사용하세요.',
+        targetKey: _passwordFieldKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        icon: Icons.lock,
+      ),
+      GuideStep(
+        title: '로그인/회원가입',
+        description: '정보를 입력한 후 이 버튼을 눌러 로그인하거나 회원가입하세요.',
+        targetKey: _loginButtonKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        icon: Icons.login,
+      ),
+      GuideStep(
+        title: '모드 전환',
+        description: '로그인과 회원가입 모드를 여기서 전환할 수 있습니다.',
+        targetKey: _switchModeKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        icon: Icons.swap_horiz,
+      ),
+      GuideStep(
+        title: 'Google 로그인',
+        description: 'Google 계정으로도 간편하게 로그인할 수 있습니다.',
+        targetKey: _googleButtonKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        icon: Icons.g_mobiledata,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('로그인 가이드를 완료했습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('튜토리얼을 건너뛰었습니다.')),
+        );
+      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/features/my_page/viewmodels/profile_settings_viewmodel.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:house_note/providers/user_providers.dart';
 import 'package:house_note/services/image_service.dart';
 import 'dart:io';
@@ -25,6 +26,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  // 튜토리얼 관련
+  final GlobalKey _profileImageKey = GlobalKey();
+  final GlobalKey _nameFieldKey = GlobalKey();
+  final GlobalKey _saveButtonKey = GlobalKey();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -72,6 +78,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showTutorial,
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -103,12 +115,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 40),
-                  _buildFormField(
-                    label: '사용자 이름',
-                    controller: _nameController,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? '사용자 이름을 입력해주세요'
-                        : null,
+                  Container(
+                    key: _nameFieldKey,
+                    child: _buildFormField(
+                      label: '사용자 이름',
+                      controller: _nameController,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? '사용자 이름을 입력해주세요'
+                          : null,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   _buildFormField(
@@ -198,6 +213,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     
     return Center(
       child: GestureDetector(
+        key: _profileImageKey,
         onTap: _showImageSelectionDialog,
         child: Stack(
           children: [
@@ -282,6 +298,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
+        key: _saveButtonKey,
         onPressed: isLoading ? null : _saveProfile,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFF8A65),
@@ -467,10 +484,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   ),
                 ),
                 child: Row(
-                  children: [
-                    const Icon(Icons.photo_camera, color: Colors.white, size: 22),
-                    const SizedBox(width: 16),
-                    const Text(
+                  children: const [
+                    Icon(Icons.photo_camera, color: Colors.white, size: 22),
+                    SizedBox(width: 16),
+                    Text(
                       '프로필 사진 변경',
                       style: TextStyle(
                           fontSize: 18,
@@ -513,7 +530,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                  color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -555,7 +572,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey.withOpacity(0.3),
+                                  color: Colors.grey.withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -691,5 +708,49 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         );
       }
     }
+  }
+
+  void _showTutorial() {
+    final steps = [
+      GuideStep(
+        title: '프로필 사진',
+        description: '프로필 사진을 변경할 수 있습니다.\n사진을 터치하여 갤러리에서 선택하세요.',
+        targetKey: _profileImageKey,
+        icon: Icons.camera_alt,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '이름 수정',
+        description: '표시될 이름을 변경할 수 있습니다.',
+        targetKey: _nameFieldKey,
+        icon: Icons.edit,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '변경사항 저장',
+        description: '모든 변경사항을 저장하려면 이 버튼을 눌러주세요.',
+        targetKey: _saveButtonKey,
+        icon: Icons.save,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('프로필 설정 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('가이드를 건너뛰었습니다.')),
+        );
+      },
+    );
   }
 }

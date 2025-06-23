@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/features/chart/views/image_manager_widgets.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -39,6 +40,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   late TextEditingController _nameController;
   late TextEditingController _depositController;
   late TextEditingController _rentController;
+  
+  // 튜토리얼 관련
+  final GlobalKey _editButtonKey = GlobalKey();
+  final GlobalKey _saveButtonKey = GlobalKey();
+  final GlobalKey _nameFieldKey = GlobalKey();
+  final GlobalKey _imageGalleryKey = GlobalKey();
+  final GlobalKey _propertyFormKey = GlobalKey();
 
   // 각 컬럼별 기본 옵션 정의
   static const Map<String, List<String>> defaultOptions = {
@@ -101,7 +109,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     '관련 링크': ['있음', '없음'],
     '부동산 정보': ['확인완료', '미확인'],
     '집주인 정보': ['확인완료', '미확인'],
-    '계약시 중개보조인인지 중개사인지 체크': ['중개사', '중개보조인', '미확인'],
+    '집보여준자': ['중개사', '중개보조인', '미확인'],
     '메모': ['없음', '있음'],
   };
 
@@ -127,6 +135,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         }
       });
     }
+    
+    // 튜토리얼 체크
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
+    });
   }
 
   @override
@@ -305,7 +318,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       '관련 링크': 'related_links',
       '부동산 정보': 'real_estate_info',
       '집주인 정보': 'landlord_info',
-      '계약시 중개보조인인지 중개사인지 체크': 'agent_check',
+      '집보여준자': 'agent_check',
       '메모': 'memo',
     };
 
@@ -380,7 +393,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       'related_links': '관련 링크',
       'real_estate_info': '부동산 정보',
       'landlord_info': '집주인 정보',
-      'agent_check': '계약시 중개보조인인지 중개사인지 체크',
+      'agent_check': '집보여준자',
       'memo': '메모',
     };
 
@@ -548,7 +561,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         {'key': 'related_links', 'label': '관련 링크'},
         {'key': 'real_estate_info', 'label': '부동산 정보'},
         {'key': 'landlord_info', 'label': '집주인 정보'},
-        {'key': 'agent_check', 'label': '계약시 중개보조인인지 중개사인지 체크'},
+        {'key': 'agent_check', 'label': '집보여준자'},
         {'key': 'memo', 'label': '메모'},
       ],
     };
@@ -611,6 +624,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showTutorial,
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -633,6 +652,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           children: [
             // 이미지 갤러리
             Container(
+              key: _imageGalleryKey,
               height: 140,
               padding: const EdgeInsets.all(16),
               child: _buildImageGallery(),
@@ -660,6 +680,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   // 이름 편집
                   isEditMode
                       ? TextField(
+                          key: _nameFieldKey,
                           controller: _nameController,
                           style: const TextStyle(
                             fontSize: 20,
@@ -749,11 +770,24 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             const SizedBox(height: 20),
 
             // 카테고리별 정보 섹션들
-            ..._getCategories().entries.map((entry) => _buildInfoSection(
-                  entry.key,
-                  entry.value,
-                  _getCategoryColor(entry.key),
-                )),
+            ..._getCategories().entries.map((entry) {
+              // 첫 번째 섹션에만 key 추가
+              if (entry.key == _getCategories().entries.first.key) {
+                return Container(
+                  key: _propertyFormKey,
+                  child: _buildInfoSection(
+                    entry.key,
+                    entry.value,
+                    _getCategoryColor(entry.key),
+                  ),
+                );
+              }
+              return _buildInfoSection(
+                entry.key,
+                entry.value,
+                _getCategoryColor(entry.key),
+              );
+            }),
 
             const SizedBox(height: 20),
           ],
@@ -804,6 +838,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           : null,
       floatingActionButton: !widget.isNewProperty
           ? FloatingActionButton(
+              key: isEditMode ? _saveButtonKey : _editButtonKey,
               onPressed: () {
                 if (isEditMode) {
                   _saveChanges();
@@ -1712,8 +1747,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         ),
         decoration: const InputDecoration(
           border: InputBorder.none,
-          hintText: '입력하세요',
-          hintStyle: TextStyle(color: Color(0xFFFF8A65)),
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
@@ -2160,13 +2193,63 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  void _showImageViewer(List<String> images, int initialIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => _ImageViewerDialog(
-        images: images,
-        initialIndex: initialIndex,
+  // 튜토리얼 관련 메서드들
+  void _checkAndShowTutorial() {
+    // 여기에 튜토리얼을 표시할 조건을 설정할 수 있습니다
+    // 예: SharedPreferences를 통해 튜토리얼을 본 적이 있는지 확인
+  }
+
+  void _showTutorial() {
+    final steps = <GuideStep>[
+      GuideStep(
+        title: '사진 갤러리',
+        description: '편집 모드에서 사진 추가 변경 가능',
+        targetKey: _imageGalleryKey,
+        icon: Icons.photo_library,
+        tooltipPosition: GuideTooltipPosition.bottom,
       ),
+      if (!isEditMode)
+        GuideStep(
+          title: '편집 버튼',
+          description: '버튼 눌러서 매물 정보 수정 가능',
+          targetKey: _editButtonKey,
+          icon: Icons.edit,
+          tooltipPosition: GuideTooltipPosition.top,
+        ),
+      if (isEditMode) ...[
+        GuideStep(
+          title: '집 이름 편집',
+          description: '기억하기 쉬운 이름으로 설정 가능',
+          targetKey: _nameFieldKey,
+          icon: Icons.edit,
+          tooltipPosition: GuideTooltipPosition.bottom,
+        ),
+        GuideStep(
+          title: '매물 정보 입력',
+          description: '항목 터치해서 상세 정보 입력 가능',
+          targetKey: _propertyFormKey,
+          icon: Icons.assignment,
+          tooltipPosition: GuideTooltipPosition.top,
+        ),
+        GuideStep(
+          title: '저장하기',
+          description: '버튼 눌러서 변경사항 저장 가능',
+          targetKey: _saveButtonKey,
+          icon: Icons.save,
+          tooltipPosition: GuideTooltipPosition.top,
+        ),
+      ],
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        // 튜토리얼 완료 처리
+      },
+      onSkipped: () {
+        // 튜토리얼 스킵 처리
+      },
     );
   }
 }

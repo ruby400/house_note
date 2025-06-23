@@ -5,6 +5,7 @@ import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/features/chart/views/image_manager_widgets.dart';
 import 'package:house_note/features/chart/views/column_sort_filter_bottom_sheet.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'dart:convert';
 
 // 업데이트 결과를 위한 헬퍼 클래스
@@ -39,6 +40,12 @@ class FilteringChartScreen extends ConsumerStatefulWidget {
 }
 
 class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
+  // 튜토리얼 관련
+  final GlobalKey _tableKey = GlobalKey();
+  final GlobalKey _addColumnKey = GlobalKey();
+  final GlobalKey _addRowKey = GlobalKey();
+  final GlobalKey _filterKey = GlobalKey();
+
   // 각 컬럼별 기본 메뉴 옵션 정의
   final Map<String, List<String>> _columnDefaultOptions = {
     '주거 형태': ['빌라', '오피스텔', '아파트', '근린생활시설'],
@@ -154,7 +161,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '관련 링크',
     '부동산 정보',
     '집주인 정보',
-    '계약시 중개보조인인지 중개사인지 체크',
+    '집보여준자',
     '별점',
     '메모'
   ];
@@ -235,7 +242,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '관련 링크': 'related_links',
       '부동산 정보': 'real_estate_info',
       '집주인 정보': 'landlord_info',
-      '계약시 중개보조인인지 중개사인지 체크': 'agent_check',
+      '집보여준자': 'agent_check',
       '메모': 'memo',
     };
 
@@ -327,7 +334,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     ],
     '교통, 편의시설': ['지하철 거리', '버스 정류장', '편의점 거리'],
     '미관': ['몰딩', '창문'],
-    '기타사항': ['관련 링크', '부동산 정보', '집주인 정보', '계약시 중개보조인인지 중개사인지 체크', '별점', '메모'],
+    '기타사항': ['관련 링크', '부동산 정보', '집주인 정보', '집보여준자', '별점', '메모'],
   };
 
   // 카테고리별 토글 상태 (기본적으로 모두 펼쳐짐)
@@ -384,13 +391,26 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '보증금': ['1000', '2000', '3000', '5000', '10000'],
     '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
     '주거형태': ['원룸', '투룸', '쓰리룸', '오피스텔', '아파트', '빌라', '단독주택'],
+    '평수': ['10평대', '15평대', '20평대', '25평대', '30평대 이상'],
+    '방개수': ['원룸', '1개', '2개', '3개', '4개 이상'],
     '건축물용도': ['주거용', '상업용', '업무용', '혼용'],
     '임차권 등기명령 이력여부': ['있음', '없음', '확인중'],
     '근저당권여부': ['있음', '없음', '확인중'],
     '가압류나 압류이력여부': ['있음', '없음', '확인중'],
     '등기부등본': ['확인완료', '미확인', '문제있음'],
+    '특약': ['있음', '없음'],
+    '특이사항': ['없음', '있음'],
+    '관련 링크': ['있음', '없음'],
+    '부동산 정보': ['확인완료', '미확인'],
+    '집주인 정보': ['확인완료', '미확인'],
+    '집보여준자': ['중개사', '중개보조인', '미확인'],
+    '메모': ['없음', '있음'],
     '전입신고 가능여부': ['가능', '불가능', '확인중'],
-    '관리비': ['5만원', '10만원', '15만원', '20만원', '별도문의'],
+    '계약 조건': ['월세', '전세', '반전세'],
+    '관리비': ['없음', '3만원', '5만원', '7만원', '10만원', '15만원', '20만원'],
+    '입주 가능일': ['즉시', '협의', '1주일후', '2주일후', '1개월후'],
+    '층수': ['지하', '반지하', '1층', '2층', '3층', '4층', '5층이상'],
+    '채광': ['매우좋음', '좋음', '보통', '어두움', '매우어두움'],
     '주택보증보험가능여부': ['가능', '불가능', '확인중'],
     '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
     '별점': ['1', '2', '3', '4', '5'],
@@ -741,6 +761,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         centerTitle: true,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showTutorial,
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -761,7 +787,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           Column(
             children: [
               _buildSortingControls(),
-              Expanded(child: _buildEnhancedTable()),
+              Expanded(child: Container(key: _tableKey, child: _buildEnhancedTable())),
             ],
           ),
           _buildFloatingAddRowButton(),
@@ -1406,6 +1432,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 새 컬럼 추가 버튼 (더 작게 수정)
   Widget _buildAddColumnButton() {
     return GestureDetector(
+      key: _addColumnKey,
       onTap: _showAddColumnBottomSheet,
       child: Container(
         width: 35,
@@ -1430,6 +1457,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       bottom: 20,
       right: 20,
       child: FloatingActionButton(
+        key: _addRowKey,
         onPressed: _addNewRow,
         backgroundColor: const Color(0xFFFF8A65),
         foregroundColor: Colors.white,
@@ -1506,6 +1534,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 전체 항목 우선순위 관리 컨트롤
   Widget _buildSortingControls() {
     return Container(
+      key: _filterKey,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -3248,269 +3277,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     );
   }
 
-  // 예쁜 경고 다이얼로그
-  void _showPrettyWarningDialog(String title, String message, IconData icon) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 16,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFF8F9FA)],
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: const Color(0xFFFF8A65),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF718096),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8A65),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    '확인',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 컬럼 삭제 확인 다이얼로그
-  void _showDeleteColumnConfirmDialog(String columnName, int columnIndex) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 16,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFF8F9FA)],
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: const Icon(
-                  Icons.delete_outline,
-                  size: 32,
-                  color: Color(0xFFFF8A65),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '컬럼 삭제',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '"$columnName" 컬럼을 삭제하시겠습니까?\n\n삭제된 컬럼의 모든 데이터는 복구할 수 없습니다.',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF718096),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF718096),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        '취소',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _performColumnDelete(columnName, columnIndex);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8A65),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        '삭제',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 실제 컬럼 삭제 수행 (새로운 키 시스템 사용)
-  void _performColumnDelete(String columnName, int columnIndex) {
-    final columnKey = _getColumnDataKey(columnName);
-    final dataKeyToDelete = columnKey['key']!;
-
-    AppLogger.d('=== COLUMN DELETE START ===');
-    AppLogger.d('Deleting column: "$columnName" with key: "$dataKeyToDelete"');
-
-    // 모든 행에서 해당 컬럼 데이터 제거
-    final updatedProperties = <PropertyData>[];
-    for (final property in _currentChart!.properties) {
-      final newAdditionalData =
-          Map<String, String>.from(property.additionalData);
-
-      // 삭제할 컬럼의 데이터만 제거 (키 기반이므로 인덱스 이동 불필요)
-      final removedValue = newAdditionalData.remove(dataKeyToDelete);
-      AppLogger.d(
-          'Property ${property.id}: Removed key "$dataKeyToDelete" = "$removedValue"');
-
-      final updatedProperty = PropertyData(
-        id: property.id,
-        order: property.order,
-        name: property.name,
-        deposit: property.deposit,
-        rent: property.rent,
-        direction: property.direction,
-        landlordEnvironment: property.landlordEnvironment,
-        rating: property.rating,
-        cellImages: Map<String, List<String>>.from(property.cellImages),
-        additionalData: newAdditionalData,
-      );
-
-      updatedProperties.add(updatedProperty);
-      AppLogger.d(
-          'Property ${property.id}: Final additionalData = $newAdditionalData');
-    }
-
-    // 컬럼 목록에서 제거
-    _columns.removeAt(columnIndex);
-    _columnTypes.remove(columnName);
-    _columnOptions.remove(columnName);
-
-    AppLogger.d('Remaining columns: $_columns');
-    AppLogger.d('=== COLUMN DELETE END ===');
-
-    setState(() {
-      _currentChart = _currentChart!.copyWith(properties: updatedProperties);
-    });
-
-    _saveCurrentChart();
-
-    // 성공 메시지
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Text('"$columnName" 컬럼이 삭제되었습니다.'),
-          ],
-        ),
-        backgroundColor: const Color(0xFFFF8A65),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(milliseconds: 800),
-      ),
-    );
-  }
 
   // 차트 제목 업데이트
   void _updateTitle(String newTitle) {
@@ -3523,77 +3289,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     _saveCurrentChart();
   }
 
-  // 삭제 확인 다이얼로그
-  void _showDeleteConfirmDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning, color: Color(0xFFFF8A65)),
-            SizedBox(width: 8),
-            Text('차트 삭제'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('"${_currentChart?.title ?? '이 차트'}" 를 삭제하시겠습니까?'),
-            const SizedBox(height: 8),
-            const Text(
-              '삭제된 차트는 복구할 수 없습니다.',
-              style: TextStyle(fontSize: 12, color: Color(0xFFFF8A65)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // 확인 다이얼로그 닫기
-              Navigator.pop(context); // 편집 다이얼로그 닫기
-              _deleteChart();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF8A65),
-            ),
-            child: const Text('삭제', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 차트 삭제
-  void _deleteChart() {
-    if (_currentChart == null || !mounted) return;
-
-    try {
-      ref
-          .read(propertyChartListProvider.notifier)
-          .deleteChart(_currentChart!.id);
-      Navigator.pop(context); // 차트 화면에서 나가기
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('차트가 삭제되었습니다.'),
-          backgroundColor: Color(0xFFFF8A65),
-          duration: Duration(milliseconds: 800),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('차트 삭제 중 오류가 발생했습니다: ${e.toString()}'),
-          backgroundColor: const Color(0xFFFF8A65),
-          duration: const Duration(milliseconds: 800),
-        ),
-      );
-    }
-  }
 
   // 카테고리별 컬럼 추가 다이얼로그
   void _showAddColumnDialog(String categoryName) {
@@ -4381,8 +4076,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 셀에 이미지 데이터 업데이트
   void _updateCellImageData(int rowIndex, int columnIndex, String imagePath) {
-    if (_currentChart == null || rowIndex >= _currentChart!.properties.length)
+    if (_currentChart == null || rowIndex >= _currentChart!.properties.length) {
       return;
+    }
 
     final columnName = _columns[columnIndex];
     final imageKey = '${columnName}_images';
@@ -4415,8 +4111,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 셀에서 이미지 데이터 제거
   void _removeCellImageData(int rowIndex, int columnIndex, String imagePath) {
-    if (_currentChart == null || rowIndex >= _currentChart!.properties.length)
+    if (_currentChart == null || rowIndex >= _currentChart!.properties.length) {
       return;
+    }
 
     final columnName = _columns[columnIndex];
     final imageKey = '${columnName}_images';
@@ -4473,6 +4170,57 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   }
 
   // 중복된 메서드들 제거됨 - 기존 메서드 사용
+
+  void _showTutorial() {
+    final steps = [
+      GuideStep(
+        title: '테이블 비교',
+        description: '셀 터치해서 매물 정보 편집 가능',
+        targetKey: _tableKey,
+        icon: Icons.table_chart,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '정렬 필터',
+        description: '컬럼 헤더 터치해서 정렬 필터링 가능',
+        targetKey: _filterKey,
+        icon: Icons.filter_list,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '컬럼 추가',
+        description: '+ 버튼 눌러서 비교 항목 추가 가능',
+        targetKey: _addColumnKey,
+        icon: Icons.add_circle,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '매물 추가',
+        description: '+ 버튼 눌러서 새 매물 추가 가능',
+        targetKey: _addRowKey,
+        icon: Icons.add,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('차트 화면 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('가이드를 건너뛰었습니다.')),
+        );
+      },
+    );
+  }
 }
 
 // 편집 바텀시트 위젯들

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -32,6 +33,17 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   String _selectedSort = '최신순';
   String _searchQuery = ''; // 검색어
   final ScreenshotController _screenshotController = ScreenshotController();
+  
+  // 가이드용 GlobalKey들
+  final GlobalKey _addChartKey = GlobalKey();
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _sortKey = GlobalKey();
+  final GlobalKey _chartItemKey = GlobalKey();
+  final GlobalKey _checkboxKey = GlobalKey();
+  final GlobalKey _deleteButtonKey = GlobalKey();
+  final GlobalKey _exportPdfKey = GlobalKey();
+  final GlobalKey _exportPngKey = GlobalKey();
+  final GlobalKey _sortAddKey = GlobalKey();
 
   @override
   void dispose() {
@@ -83,6 +95,94 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '차트 생성',
+        description: '드롭다운 메뉴에서 차트목록 추가 가능',
+        targetKey: _addChartKey,
+        icon: Icons.add_chart,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '차트 선택',
+        description: '체크박스로 여러 차트 선택 가능',
+        targetKey: _checkboxKey,
+        icon: Icons.check_box,
+        tooltipPosition: GuideTooltipPosition.right,
+      ),
+      GuideStep(
+        title: '차트 상세보기',
+        description: '차트 탭해서 상세 비교표 확인 가능',
+        targetKey: _chartItemKey,
+        icon: Icons.table_chart,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '차트 검색',
+        description: '차트 제목으로 실시간 검색 가능',
+        targetKey: _searchKey,
+        icon: Icons.search,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '차트 정렬',
+        description: '최신순, 거리순, 월세순 정렬 가능',
+        targetKey: _sortKey,
+        icon: Icons.sort,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '정렬 추가',
+        description: '사용자 정의 정렬 방식 추가 가능',
+        targetKey: _sortAddKey,
+        icon: Icons.add_box,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: 'PDF 내보내기',
+        description: '선택한 차트들을 PDF로 내보내기 가능',
+        targetKey: _exportPdfKey,
+        icon: Icons.picture_as_pdf,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: 'PNG 내보내기',
+        description: '선택한 차트들을 이미지로 갤러리 저장 가능',
+        targetKey: _exportPngKey,
+        icon: Icons.image,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '차트 삭제',
+        description: '선택한 차트들 일괄 삭제 가능',
+        targetKey: _deleteButtonKey,
+        icon: Icons.delete,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('차트 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
+        );
+      },
     );
   }
 
@@ -560,6 +660,16 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         centerTitle: true,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            onPressed: () => _showInteractiveGuide(),
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -611,6 +721,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             children: [
               Expanded(
                 child: Container(
+                  key: _searchKey,
                   height: 48,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -646,6 +757,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               ),
               const SizedBox(width: 12),
               PopupMenuButton<String>(
+                key: _addChartKey,
                 icon: Container(
                   height: 48,
                   width: 48,
@@ -939,10 +1051,17 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                ..._sortOptions.map((option) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                ..._sortOptions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final option = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      key: index == 0 ? _sortKey : null,
                       child: _buildFilterChip(option, _selectedSort == option),
-                    )),
+                    ),
+                  );
+                }),
                 _buildAddFilterButton(),
               ],
             ),

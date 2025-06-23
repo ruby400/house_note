@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
   static const routeName = 'property-detail';
@@ -19,6 +20,12 @@ class PropertyDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
+  // 튜토리얼 관련 GlobalKey들
+  final GlobalKey _headerKey = GlobalKey();
+  final GlobalKey _imageGalleryKey = GlobalKey();
+  final GlobalKey _categoryKey = GlobalKey();
+  final GlobalKey _editableFieldKey = GlobalKey();
+
   // 카테고리별 항목 정의
   final Map<String, List<Map<String, dynamic>>> categories = {
     '필수 정보': [
@@ -340,6 +347,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            key: _headerKey,
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showInteractiveGuide,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -347,6 +361,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           children: [
             // 이미지 갤러리 (3개 사진)
             Container(
+              key: _imageGalleryKey,
               height: 150,
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -466,7 +481,17 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   entry.key,
                   entry.value,
                   _getCategoryColor(entry.key),
-                )),
+                )).toList().asMap().entries.map((entry) {
+              final widget = entry.value;
+              final index = entry.key;
+              if (index == 0) {
+                return Container(
+                  key: _categoryKey,
+                  child: widget,
+                );
+              }
+              return widget;
+            }),
 
             const SizedBox(height: 20),
           ],
@@ -629,6 +654,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             child: GestureDetector(
               onTap: () => _showEditDialog(label, value, itemConfig),
               child: Container(
+                key: label == '월세' ? _editableFieldKey : null,
                 padding:
                     const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                 decoration: BoxDecoration(
@@ -786,6 +812,57 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '부동산 상세 정보',
+        description: '이 화면에서는 선택한 부동산의 상세 정보를 확인하고 편집할 수 있습니다.',
+        targetKey: _headerKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        icon: Icons.info_outline,
+      ),
+      GuideStep(
+        title: '사진 갤러리',
+        description: '부동산 사진을 3개까지 추가할 수 있습니다. 사진을 탭하여 추가해보세요.',
+        targetKey: _imageGalleryKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        icon: Icons.photo_camera,
+      ),
+      GuideStep(
+        title: '정보 카테고리',
+        description: '필수 정보, 기본 정보, 치안 등 카테고리별로 정보가 구분되어 있습니다.',
+        targetKey: _categoryKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        icon: Icons.category,
+      ),
+      GuideStep(
+        title: '정보 편집',
+        description: '각 항목을 탭하여 정보를 입력하거나 수정할 수 있습니다.',
+        targetKey: _editableFieldKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        icon: Icons.edit,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('튜토리얼을 완료했습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('튜토리얼을 건너뛰었습니다.')),
+        );
+      },
     );
   }
 }

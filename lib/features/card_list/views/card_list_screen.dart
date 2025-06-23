@@ -9,10 +9,12 @@ import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/features/card_list/views/card_detail_screen.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 
 class CardListScreen extends ConsumerStatefulWidget {
   static const routeName = 'card-list';
   static const routePath = '/cards';
+  static final GlobalKey bottomNavKey = GlobalKey(); // 하단바용 GlobalKey
 
   const CardListScreen({super.key});
 
@@ -27,11 +29,116 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   String _searchQuery = ''; // 검색어
   // 재할당되지 않으므로 final로 변경
   final List<String> _customSortOptions = ['최신순', '거리순', '월세순']; // 사용자 정의 정렬 옵션
+  
+  // 가이드용 GlobalKey들
+  final GlobalKey _addButtonKey = GlobalKey();
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _filterKey = GlobalKey();
+  final GlobalKey _newCardButtonKey = GlobalKey();
+  final GlobalKey _chartFilterKey = GlobalKey();
+  final GlobalKey _sortAddButtonKey = GlobalKey();
+  final GlobalKey _cardItemKey = GlobalKey();
+  final GlobalKey _clearButtonKey = GlobalKey();
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '매물 추가',
+        description: '+ 버튼 눌러서 매물 추가 가능',
+        targetKey: _addButtonKey,
+        icon: Icons.add_circle,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '새카드 만들기',
+        description: '버튼 눌러서 새 차트에 매물 추가 가능',
+        targetKey: _newCardButtonKey,
+        icon: Icons.add_card,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '매물 편집',
+        description: '카드 눌러서 상세정보 편집 가능',
+        targetKey: _cardItemKey,
+        icon: Icons.edit,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '이미지 추가',
+        description: '상세화면에서 이미지 추가/삭제 가능',
+        targetKey: _cardItemKey,
+        icon: Icons.photo_library,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '실시간 검색',
+        description: '검색창에서 매물명, 가격, 위치 검색 가능',
+        targetKey: _searchKey,
+        icon: Icons.search,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '검색 초기화',
+        description: 'X 버튼 눌러서 검색어 지우기 가능',
+        targetKey: _clearButtonKey,
+        icon: Icons.clear,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '정렬 기능',
+        description: '최신순, 월세순 등 정렬 옵션 선택 가능',
+        targetKey: _filterKey,
+        icon: Icons.sort,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '정렬 추가',
+        description: '사용자 정의 정렬 방식 추가 가능',
+        targetKey: _sortAddButtonKey,
+        icon: Icons.add_box,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '차트 필터',
+        description: '원하는 차트만 선택해서 보기 가능',
+        targetKey: _chartFilterKey,
+        icon: Icons.filter_alt,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '탭 이동',
+        description: '하단 탭 눌러서 다른 화면 이동 가능',
+        targetKey: CardListScreen.bottomNavKey,
+        icon: Icons.navigation,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -44,6 +151,16 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            onPressed: () => _showInteractiveGuide(),
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -69,6 +186,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
               children: [
                 // 검색 바
                 Container(
+                  key: _searchKey,
                   height: 48,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -84,6 +202,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                           horizontal: 16, vertical: 12),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
+                              key: _clearButtonKey,
                               icon: const Icon(Icons.clear, color: Colors.grey),
                               onPressed: () {
                                 _searchController.clear();
@@ -110,6 +229,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     children: [
                       // 정렬 드롭다운
                       PopupMenuButton<String>(
+                        key: _filterKey,
                         offset: const Offset(0, 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -199,6 +319,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             value: 'ADD_NEW',
                             height: 48,
                             child: Container(
+                              key: _sortAddButtonKey,
                               margin: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               padding: const EdgeInsets.symmetric(
@@ -309,6 +430,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                   : '차트 $_selectedChartId';
 
                           return PopupMenuButton<String?>(
+                            key: _chartFilterKey,
                             offset: const Offset(0, 48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
@@ -499,6 +621,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                           _showChartSelectionDialog();
                         },
                         child: Container(
+                          key: _newCardButtonKey,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
@@ -607,6 +730,17 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        key: _addButtonKey,
+        onPressed: () {
+          _showChartSelectionDialog();
+        },
+        backgroundColor: const Color(0xFFFF8A65),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -863,6 +997,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: properties.length,
+      shrinkWrap: false,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         final property = properties[index];
         return _buildCardItem(property);
@@ -883,18 +1019,12 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
               extra: property,
             );
           },
-          child: Container(
+          child: Card(
+            key: ValueKey('card_item_${property.id}'),
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1372,11 +1502,11 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                       topRight: Radius.circular(20),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.analytics, color: Colors.white, size: 22),
-                      const SizedBox(width: 16),
-                      const Text(
+                      Icon(Icons.analytics, color: Colors.white, size: 22),
+                      SizedBox(width: 16),
+                      Text(
                         '차트 선택',
                         style: TextStyle(
                             fontSize: 18,

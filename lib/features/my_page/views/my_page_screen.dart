@@ -4,16 +4,89 @@ import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/features/my_page/viewmodels/my_page_viewmodel.dart';
 import 'package:house_note/providers/user_providers.dart'; // userModelProvider
+import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'dart:io';
 
-class MyPageScreen extends ConsumerWidget {
+class MyPageScreen extends ConsumerStatefulWidget {
   static const routeName = 'my-page';
   static const routePath = '/my-page';
 
   const MyPageScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyPageScreen> createState() => _MyPageScreenState();
+}
+
+class _MyPageScreenState extends ConsumerState<MyPageScreen> {
+  // 가이드용 GlobalKey들
+  final GlobalKey _profileKey = GlobalKey();
+  final GlobalKey _editKey = GlobalKey();
+  final GlobalKey _priorityKey = GlobalKey();
+  final GlobalKey _guideKey = GlobalKey();
+  final GlobalKey _logoutKey = GlobalKey();
+
+  void _showInteractiveGuide() {
+    final steps = [
+      GuideStep(
+        title: '프로필 정보',
+        description: '내 프로필 사진과 기본 정보 확인 가능',
+        targetKey: _profileKey,
+        icon: Icons.person,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '프로필 편집',
+        description: '프로필 사진과 닉네임 수정 가능',
+        targetKey: _editKey,
+        icon: Icons.edit,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '우선순위 설정',
+        description: '중요한 항목의 우선순위 설정 가능',
+        targetKey: _priorityKey,
+        icon: Icons.tune,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '사용법 가이드',
+        description: '자세한 사용법과 튜토리얼 확인 가능',
+        targetKey: _guideKey,
+        icon: Icons.help_outline,
+        tooltipPosition: GuideTooltipPosition.bottom,
+      ),
+      GuideStep(
+        title: '로그아웃',
+        description: '로그아웃 및 다른 계정 로그인 가능',
+        targetKey: _logoutKey,
+        icon: Icons.logout,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('마이페이지 가이드가 완료되었습니다!'),
+            backgroundColor: Color(0xFFFF8A65),
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userModelAsyncValue = ref.watch(userModelProvider);
     final myPageViewModel = ref.watch(myPageViewModelProvider);
     final myPageNotifier = ref.read(myPageViewModelProvider.notifier);
@@ -31,6 +104,16 @@ class MyPageScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.help_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            onPressed: () => _showInteractiveGuide(),
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -57,6 +140,7 @@ class MyPageScreen extends ConsumerWidget {
                 children: [
                   // 프로필 카드
                   Container(
+                    key: _profileKey,
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -115,6 +199,7 @@ class MyPageScreen extends ConsumerWidget {
                         ),
                         // 편집 버튼
                         Container(
+                          key: _editKey,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
@@ -124,7 +209,7 @@ class MyPageScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF8A65).withOpacity(0.3),
+                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),
@@ -165,6 +250,7 @@ class MyPageScreen extends ConsumerWidget {
                       child: Column(
                         children: [
                           _buildMenuItem(
+                            key: _priorityKey,
                             icon: Icons.tune,
                             title: '우선순위 설정',
                             onTap: () {
@@ -173,6 +259,16 @@ class MyPageScreen extends ConsumerWidget {
                           ),
                           const Divider(height: 1),
                           _buildMenuItem(
+                            key: _guideKey,
+                            icon: Icons.help_outline,
+                            title: '사용법 가이드',
+                            onTap: () {
+                              context.push('/user-guide');
+                            },
+                          ),
+                          const Divider(height: 1),
+                          _buildMenuItem(
+                            key: _logoutKey,
                             icon: Icons.logout,
                             title: '로그인 / 로그아웃',
                             onTap: () async {
@@ -202,11 +298,13 @@ class MyPageScreen extends ConsumerWidget {
   }
 
   Widget _buildMenuItem({
+    Key? key,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
   }) {
     return Container(
+      key: key,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
