@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/providers/firebase_chart_providers.dart';
 import 'package:house_note/features/chart/views/image_manager_widgets.dart';
 import 'package:house_note/features/chart/views/column_sort_filter_bottom_sheet.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
@@ -45,6 +46,17 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   final GlobalKey _addColumnKey = GlobalKey();
   final GlobalKey _addRowKey = GlobalKey();
   final GlobalKey _filterKey = GlobalKey();
+  final GlobalKey _titleKey = GlobalKey();
+  
+  // 실제 체험형 튜토리얼 상태 추적
+  bool _hasClickedCell = false;
+  bool _hasAddedColumn = false;
+  bool _hasAddedRow = false;
+  bool _hasUsedSort = false;
+  bool _hasEditedTitle = false;
+  
+  // 바텀시트 상태 추적 (충돌 회피용)
+  bool _isBottomSheetVisible = false;
 
   // 각 컬럼별 기본 메뉴 옵션 정의
   final Map<String, List<String>> _columnDefaultOptions = {
@@ -101,7 +113,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '집 이름',
     '보증금',
     '월세',
-    '상세주소',
+    '주소',
     '주거 형태',
     '건축물용도',
     '임차권등기명령 이력',
@@ -167,7 +179,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   ];
 
   // 기본 컬럼 목록 (삭제할 수 없는 컬럼들)
-  final Set<String> _baseColumns = {'집 이름', '보증금', '월세', '별점'};
+  final Set<String> _baseColumns = {'집 이름', '보증금', '월세', '주소', '별점'};
 
   // 컬럼명을 데이터 키로 매핑 (인덱스 대신 컬럼명 사용)
   Map<String, String> _getColumnDataKey(String columnName) {
@@ -176,6 +188,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '집 이름': 'name',
       '보증금': 'deposit',
       '월세': 'rent',
+      '주소': 'address',
       '재계/방향': 'direction',
       '집주인 환경': 'landlordEnvironment',
       '별점': 'rating',
@@ -276,7 +289,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '집 이름',
       '보증금',
       '월세',
-      '상세주소',
+      '주소',
       '주거 형태',
       '건축물용도',
       '임차권등기명령 이력',
@@ -532,48 +545,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   }
 
   List<PropertyData> _getDefaultProperties() {
-    return [
-      PropertyData(
-          id: '1',
-          order: '1',
-          name: '강남 해피빌',
-          deposit: '5000',
-          rent: '50',
-          direction: '동향',
-          landlordEnvironment: '편리함',
-          rating: 5,
-          additionalData: {}), // 빈 맵으로 명시적 초기화
-      PropertyData(
-          id: '2',
-          order: '2',
-          name: '정우 오피스텔',
-          deposit: '3000',
-          rent: '40',
-          direction: '남향',
-          landlordEnvironment: '보통',
-          rating: 3,
-          additionalData: {}), // 빈 맵으로 명시적 초기화
-      PropertyData(
-          id: '3',
-          order: '3',
-          name: '파인라인빌',
-          deposit: '10000',
-          rent: '0',
-          direction: '서남향',
-          landlordEnvironment: '양호',
-          rating: 4,
-          additionalData: {}), // 빈 맵으로 명시적 초기화
-      PropertyData(
-          id: '4',
-          order: '4',
-          name: '서라벌 오피스텔',
-          deposit: '2000',
-          rent: '60',
-          direction: '북향',
-          landlordEnvironment: '친절함',
-          rating: 3,
-          additionalData: {}), // 빈 맵으로 명시적 초기화
-    ];
+    // 빈 배열 반환 - 새 차트에는 기본 매물 데이터를 추가하지 않음
+    return [];
   }
 
   void _loadChart() {
@@ -589,7 +562,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         return;
       }
 
-      final chartList = ref.read(propertyChartListProvider);
+      final chartList = ref.read(integratedChartsProvider);
       AppLogger.d('프로바이더에서 차트 목록 로드 완료 - 개수: ${chartList.length}');
 
       // 차트 목록 검증
@@ -599,11 +572,18 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         return;
       }
 
-      // 프로바이더를 통한 안전한 차트 검색
-      final foundChart =
-          ref.read(propertyChartListProvider.notifier).getChart(widget.chartId);
+      // 차트 목록에서 직접 검색
+      final foundChart = chartList.firstWhere(
+        (chart) => chart.id == widget.chartId,
+        orElse: () => PropertyChartModel(
+          id: '',
+          title: '',
+          date: DateTime.now(),
+          properties: [],
+        ),
+      );
 
-      if (foundChart == null) {
+      if (foundChart.id.isEmpty) {
         AppLogger.warning('차트를 찾지 못함 (ID: ${widget.chartId})');
         AppLogger.d(
             '사용 가능한 차트 목록: ${chartList.map((c) => '${c.id}:${c.title}').toList()}');
@@ -613,12 +593,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
       AppLogger.d('차트 발견 - ID: ${foundChart.id}, Title: ${foundChart.title}');
 
-      // 프로퍼티 데이터 확인 및 보완
+      // 찾은 차트를 그대로 사용 (빈 프로퍼티라도 기본 데이터 추가하지 않음)
       PropertyChartModel chartToUse = foundChart;
-      if (foundChart.properties.isEmpty) {
-        AppLogger.info('차트에 프로퍼티가 없어 기본 데이터를 추가합니다.');
-        chartToUse = foundChart.copyWith(properties: _getDefaultProperties());
-      }
 
       // 안전한 상태 업데이트
       if (mounted) {
@@ -685,9 +661,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         _currentChart = defaultChart;
       });
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (mounted) {
-          ref.read(propertyChartListProvider.notifier).addChart(defaultChart);
+          final integratedService = ref.read(integratedChartServiceProvider);
+          await integratedService.saveChart(defaultChart);
           ref.read(currentChartProvider.notifier).setChart(defaultChart);
         }
       });
@@ -700,6 +677,29 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   @override
   Widget build(BuildContext context) {
     AppLogger.d('Build: FilteringChartScreen');
+
+    // 실시간으로 차트 데이터 감시하여 동기화
+    final chartList = ref.watch(integratedChartsProvider);
+    final latestChart = chartList.firstWhere(
+      (chart) => chart.id == widget.chartId,
+      orElse: () => PropertyChartModel(
+        id: '',
+        title: '',
+        date: DateTime.now(),
+        properties: [],
+      ),
+    );
+    
+    // 차트가 업데이트되었으면 현재 차트도 업데이트
+    if (latestChart.id.isNotEmpty && _currentChart != null && latestChart != _currentChart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentChart = latestChart;
+          });
+        }
+      });
+    }
 
     if (_currentChart == null) {
       return Scaffold(
@@ -733,6 +733,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: GestureDetector(
+          key: _titleKey,
           onTap: () {
             AppLogger.d('Title tapped - showing edit bottom sheet');
             _showEditTitleBottomSheet();
@@ -762,9 +763,37 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: _showTutorial,
+            onSelected: (value) {
+              if (value == 'interactive') {
+                _showInteractiveChartGuide();
+              } else if (value == 'demo') {
+                _showTutorial();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'interactive',
+                child: Row(
+                  children: [
+                    Icon(Icons.gamepad, size: 20),
+                    SizedBox(width: 8),
+                    Text('🎮 실제 체험 가이드'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'demo',
+                child: Row(
+                  children: [
+                    Icon(Icons.play_circle, size: 20),
+                    SizedBox(width: 8),
+                    Text('🎬 자동 데모'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         flexibleSpace: Container(
@@ -800,16 +829,17 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (_currentChart == null || !mounted) return;
 
     try {
+      print('📊 Chart Save Initiated: title="${_currentChart!.title}", properties=${_currentChart!.properties.length}');
+      
       // 다음 프레임에서 Provider 업데이트를 수행하여 setState 중 수정 방지
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _currentChart != null) {
           try {
             // 현재 차트를 currentChartProvider에 업데이트
             ref.read(currentChartProvider.notifier).updateChart(_currentChart!);
-            // 전체 차트 목록에도 업데이트
-            ref
-                .read(propertyChartListProvider.notifier)
-                .updateChart(_currentChart!);
+            // Firebase 통합 서비스로 저장
+            final integratedService = ref.read(integratedChartServiceProvider);
+            integratedService.saveChart(_currentChart!);
           } catch (e) {
             // Provider 업데이트 실패시 사용자에게 알림
             if (mounted) {
@@ -870,6 +900,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         case 'rent':
           value = property.rent;
           break;
+        case 'address':
+          value = property.address;
+          // Debug: Address retrieval logging
+          print('📊 Chart Address Retrieval: property.id="${property.id}", address="${value}"');
+          break;
         case 'direction':
           value = property.direction;
           break;
@@ -896,6 +931,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       AppLogger.warning(
           'Debug: 기본 검증 실패 - chart: ${_currentChart != null}, row: $rowIndex, col: $columnIndex, mounted: $mounted');
       return;
+    }
+    
+    // Debug: Address update logging
+    if (columnIndex < _columns.length && _columns[columnIndex] == '주소') {
+      print('📊 Chart Address Update: row=$rowIndex, col=$columnIndex, value="$value"');
     }
 
     // 입력값 안전성 검사
@@ -1060,7 +1100,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     while (requiredRowIndex >= properties.length) {
       // 추가 컬럼들에 대한 빈 데이터 준비
       final additionalData = <String, String>{};
-      for (int i = 7; i < _columns.length; i++) {
+      for (int i = 8; i < _columns.length; i++) {
         additionalData['col_$i'] = ''; // 모든 추가 컬럼에 빈 문자열 설정
       }
 
@@ -1091,7 +1131,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       case 3:
         return 80; // 월세
       case 4:
-        return 120; // 재계/방향
+        return 120; // 주소
       case 5:
         return 140; // 집주인 환경
       case 6:
@@ -1102,6 +1142,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   }
 
   void _editCell(int rowIndex, int columnIndex) {
+    // 튜토리얼 상태 추적
+    if (!_hasClickedCell) {
+      setState(() {
+        _hasClickedCell = true;
+      });
+    }
     if (columnIndex < 0 || columnIndex >= _columns.length) {
       AppLogger.warning(
           'Invalid column index: $columnIndex, columns length: ${_columns.length}');
@@ -1128,6 +1174,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (!_columnOptions.containsKey(columnName)) {
       _columnOptions[columnName] = [];
       AppLogger.d('Created empty options for column: $columnName');
+    }
+
+    // 주소 컬럼 특별 처리
+    if (columnName == '주소') {
+      _showAddressBottomSheet(rowIndex, columnIndex, columnName);
+      return;
     }
 
     switch (columnType) {
@@ -1256,6 +1308,153 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('취소'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddressBottomSheet(int rowIndex, int columnIndex, String columnName) {
+    final currentValue = _getCurrentCellValue(rowIndex, columnIndex);
+    final controller = TextEditingController(text: currentValue);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.location_on, 
+                      color: Color(0xFFFF8A65), size: 24),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '주소',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (currentValue.isNotEmpty) ...[
+                const Text(
+                  '현재 주소:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8F5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFFCCBC)),
+                  ),
+                  child: Text(
+                    currentValue,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: currentValue.isEmpty ? '주소 등록' : '주소 수정',
+                  labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                  hintText: '상세 주소를 입력하세요',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 12),
+                ),
+                maxLines: 3,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (value) {
+                  _updateCellValue(rowIndex, columnIndex, value.trim());
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final newAddress = controller.text.trim();
+                        print('📊 Address Bottom Sheet Save: row=$rowIndex, col=$columnIndex, value="$newAddress"');
+                        _updateCellValue(rowIndex, columnIndex, newAddress);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8A65),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        currentValue.isEmpty ? '등록' : '수정',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1468,6 +1667,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 새 행 추가 메서드
   void _addNewRow() {
+    // 튜토리얼 상태 추적
+    if (!_hasAddedRow) {
+      setState(() {
+        _hasAddedRow = true;
+      });
+    }
     if (!mounted || _currentChart == null) return;
 
     // 추가 컬럼들에 대한 빈 데이터 준비
@@ -1597,6 +1802,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 새 컬럼 추가 바텀시트
   void _showAddColumnBottomSheet() {
+    // 튜토리얼 상태 추적
+    if (!_hasAddedColumn) {
+      setState(() {
+        _hasAddedColumn = true;
+      });
+    }
     final controller = TextEditingController();
 
     showModalBottomSheet(
@@ -1956,6 +2167,17 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 제목 편집 바텀시트
   void _showEditTitleBottomSheet() {
+    // 튜토리얼 상태 추적
+    if (!_hasEditedTitle) {
+      setState(() {
+        _hasEditedTitle = true;
+        _isBottomSheetVisible = true; // 바텀시트 표시 상태 추적
+      });
+    } else {
+      setState(() {
+        _isBottomSheetVisible = true; // 바텀시트 표시 상태 추적
+      });
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1977,7 +2199,14 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         },
         onAddOption: (newOption) {},
       ),
-    );
+    ).whenComplete(() {
+      // 바텀시트가 닫힐 때 상태 초기화
+      if (mounted) {
+        setState(() {
+          _isBottomSheetVisible = false;
+        });
+      }
+    });
   }
 
   // 빠른 정렬 옵션 표시
@@ -2044,6 +2273,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   }
 
   void _sortBy(String columnName, bool ascending) {
+    // 튜토리얼 상태 추적
+    if (!_hasUsedSort) {
+      setState(() {
+        _hasUsedSort = true;
+      });
+    }
     if (_currentChart == null) return;
 
     final properties = List<PropertyData>.from(_currentChart!.properties);
@@ -4174,32 +4409,168 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   void _showTutorial() {
     final steps = [
       GuideStep(
-        title: '테이블 비교',
-        description: '셀 터치해서 매물 정보 편집 가능',
-        targetKey: _tableKey,
-        icon: Icons.table_chart,
-        tooltipPosition: GuideTooltipPosition.top,
+        title: '차트 제목 변경하기 📝',
+        description: '상단 제목을 터치하여 차트 제목을 변경할 수 있습니다. 매물 비교 목적에 맞는 이름으로 설정해보세요.',
+        targetKey: _titleKey,
+        icon: Icons.title,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 차트 제목 변경
+          final chart = ref.read(currentChartProvider);
+          if (chart != null) {
+            final updatedChart = chart.copyWith(title: '예시 차트');
+            ref.read(currentChartProvider.notifier).updateChart(updatedChart);
+            final integratedService = ref.read(integratedChartServiceProvider);
+            integratedService.saveChart(updatedChart);
+          }
+        },
+        onStepExit: () {
+          // 원래 제목으로 복원
+          final chartList = ref.read(integratedChartsProvider);
+          final originalChart = chartList.firstWhere(
+            (chart) => chart.id == widget.chartId,
+            orElse: () => PropertyChartModel(
+          id: '',
+          title: '',
+          date: DateTime.now(),
+          properties: [],
+        ),
+          );
+          if (originalChart.id.isNotEmpty) {
+            ref.read(currentChartProvider.notifier).updateChart(originalChart);
+            // Firebase에도 원래 제목으로 저장
+            final integratedService = ref.read(integratedChartServiceProvider);
+            integratedService.saveChart(originalChart);
+          }
+        },
       ),
       GuideStep(
-        title: '정렬 필터',
-        description: '컬럼 헤더 터치해서 정렬 필터링 가능',
+        title: '정렬 기능 사용하기 🔄',
+        description: '정렬 기능을 사용하여 매물들을 별점순, 가격순 등으로 정렬할 수 있습니다. 우선순위에 따라 매물을 비교해보세요.',
         targetKey: _filterKey,
-        icon: Icons.filter_list,
+        icon: Icons.sort,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 별점순 정렬 실행
+          setState(() {
+            _sortColumn = '별점';
+            _sortAscending = false;
+          });
+          _applySortingAndFiltering();
+        },
+        onStepExit: () {
+          // 원래 순서로 복원
+          setState(() {
+            _sortColumn = null;
+            _sortAscending = true;
+          });
+          _applySortingAndFiltering();
+        },
+      ),
+      GuideStep(
+        title: '스마트 정렬 기능 ✨',
+        description: '스마트 정렬 기능으로 여러 조건을 종합하여 최적의 매물 순서로 정렬할 수 있습니다. 복잡한 비교도 쉽게!',
+        targetKey: _filterKey,
+        icon: Icons.auto_awesome,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 스마트 정렬 실행
+          _performSmartSort(ascending: false);
+        },
+        onStepExit: () {
+          // 원래 순서로 복원
+          setState(() {
+            _sortColumn = null;
+            _sortAscending = true;
+          });
+          _applySortingAndFiltering();
+        },
+      ),
+      GuideStep(
+        title: '컬럼 표시 설정하기 👁️',
+        description: '컬럼 가시성 설정으로 필요한 항목만 보이게 할 수 있습니다. 화면을 깔끔하게 정리해보세요.',
+        targetKey: _addColumnKey,
+        icon: Icons.view_column,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 일부 컬럼 숨기기
+          final chart = ref.read(currentChartProvider);
+          if (chart != null) {
+            final newVisibility = Map<String, bool>.from(chart.columnVisibility ?? {});
+            newVisibility['주거 형태'] = false;
+            newVisibility['건축물용도'] = false;
+            final updatedChart = chart.copyWith(columnVisibility: newVisibility);
+            ref.read(currentChartProvider.notifier).updateChart(updatedChart);
+          }
+        },
+        onStepExit: () {
+          // 컬럼 가시성 복원
+          final chart = ref.read(currentChartProvider);
+          if (chart != null) {
+            final newVisibility = Map<String, bool>.from(chart.columnVisibility ?? {});
+            newVisibility['주거 형태'] = true;
+            newVisibility['건축물용도'] = true;
+            final updatedChart = chart.copyWith(columnVisibility: newVisibility);
+            ref.read(currentChartProvider.notifier).updateChart(updatedChart);
+          }
+        },
+      ),
+      GuideStep(
+        title: '셀 편집하기 📝',
+        description: '표의 각 셀을 터치하여 매물 정보를 직접 편집할 수 있습니다. 실시간으로 정보를 업데이트해보세요.',
+        targetKey: _tableKey,
+        icon: Icons.edit,
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
       GuideStep(
-        title: '컬럼 추가',
-        description: '+ 버튼 눌러서 비교 항목 추가 가능',
+        title: '비교 항목 추가하기 ➕',
+        description: '+ 버튼을 사용하여 나만의 비교 항목을 추가할 수 있습니다. 원하는 조건으로 매물을 평가해보세요.',
         targetKey: _addColumnKey,
         icon: Icons.add_circle,
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
       GuideStep(
-        title: '매물 추가',
-        description: '+ 버튼 눌러서 새 매물 추가 가능',
+        title: '새 매물 추가하기 🏠',
+        description: '우하단 + 버튼으로 새로운 매물을 차트에 추가할 수 있습니다. 비교할 매물이 많을수록 좋은 선택을!',
         targetKey: _addRowKey,
         icon: Icons.add,
         tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '가이드 완료! 🎉',
+        description: '차트 비교 기능을 모두 살펴보았습니다. 이제 실제로 매물을 추가하고 비교해보세요! 🎉',
+        targetKey: _titleKey,
+        icon: Icons.check,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        onStepEnter: () {
+          // 모든 변경사항 복원
+          final chartList = ref.read(integratedChartsProvider);
+          final originalChart = chartList.firstWhere(
+            (chart) => chart.id == widget.chartId,
+            orElse: () => PropertyChartModel(
+          id: '',
+          title: '',
+          date: DateTime.now(),
+          properties: [],
+        ),
+          );
+          if (originalChart.id.isNotEmpty) {
+            ref.read(currentChartProvider.notifier).updateChart(originalChart);
+            setState(() {
+              _sortColumn = null;
+              _sortAscending = true;
+            });
+            _applySortingAndFiltering();
+          }
+        },
       ),
     ];
 
@@ -4217,6 +4588,120 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       onSkipped: () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('가이드를 건너뛰었습니다.')),
+        );
+      },
+    );
+  }
+
+  // 실제 체험형 인터렉티브 가이드
+  void _showInteractiveChartGuide() {
+    // 상태 초기화
+    setState(() {
+      _hasClickedCell = false;
+      _hasAddedColumn = false;
+      _hasAddedRow = false;
+      _hasUsedSort = false;
+      _hasEditedTitle = false;
+    });
+
+    final steps = [
+      // 1단계: 환영 및 소개
+      GuideStep(
+        title: '차트 관리 체험 가이드 📊',
+        description: '실제 차트 기능을 직접 사용해보면서 배워보겠습니다. 각 단계마다 실제로 클릭하고 입력해보세요!',
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+      ),
+
+      // 2단계: 제목 기능 체험
+      GuideStep(
+        title: '차트 제목 기능 체험하기 ✏️',
+        description: '상단의 차트 제목을 눌러서 편집할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _titleKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+        getDynamicArea: () {
+          if (_isBottomSheetVisible) {
+            final screenSize = MediaQuery.of(context).size;
+            return Rect.fromLTWH(0, screenSize.height * 0.3, screenSize.width, screenSize.height * 0.7);
+          }
+          return Rect.zero;
+        },
+      ),
+
+      // 3단계: 테이블 셀 기능 체험
+      GuideStep(
+        title: '테이블 셀 기능 체험하기 📝',
+        description: '테이블의 셀을 눌러서 매물 정보를 편집할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _tableKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        waitForUserAction: false,
+        autoNext: true,
+        getDynamicArea: () {
+          if (_isBottomSheetVisible) {
+            final screenSize = MediaQuery.of(context).size;
+            return Rect.fromLTWH(0, screenSize.height * 0.3, screenSize.width, screenSize.height * 0.7);
+          }
+          return Rect.zero;
+        },
+      ),
+
+      // 4단계: 정렬 기능 체험
+      GuideStep(
+        title: '정렬 기능 체험하기 🔄',
+        description: '상단의 정렬 버튼을 눌러서 다양한 정렬 옵션을 확인할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _filterKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+      ),
+
+      // 5단계: 새 컬럼 추가 체험
+      GuideStep(
+        title: '비교 항목 추가 체험하기 ➕',
+        description: '새로운 비교 항목(컬럼) 추가 버튼을 눌러서 나만의 비교 기준을 생성할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _addColumnKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+      ),
+
+      // 6단계: 새 매물 추가 체험
+      GuideStep(
+        title: '새 매물 추가 체험하기 🏠',
+        description: '우하단의 + 버튼을 눌러서 새로운 매물을 추가할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _addRowKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        waitForUserAction: false,
+        autoNext: true,
+      ),
+
+      // 7단계: 완료
+      GuideStep(
+        title: '체험 완료! 🎉',
+        description: '훌륭합니다! 차트의 모든 주요 기능을 직접 체험해보셨습니다. 이제 자유롭게 매물들을 비교 분석해보세요.',
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 인터렉티브 차트 가이드가 완료되었습니다!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
         );
       },
     );

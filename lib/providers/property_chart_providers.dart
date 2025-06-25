@@ -7,66 +7,13 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
   PropertyChartListNotifier() : super([
     PropertyChartModel(
       id: '1',
-      title: '마포구 부동산 차트',
+      title: '예시 차트',
       date: DateTime.now(),
-      properties: [
-        PropertyData(
-          id: '1',
-          order: '1',
-          name: '강남 해피빌',
-          deposit: '5000',
-          rent: '50',
-          direction: '동향',
-          landlordEnvironment: '편리함',
-          rating: 5,
-          memo: '교통이 편리하고 시설이 좋음',
-          createdAt: DateTime.now().subtract(const Duration(days: 10)),
-          cellImages: {},
-        ),
-        PropertyData(
-          id: '2',
-          order: '2',
-          name: '정우 오피스텔',
-          deposit: '3000',
-          rent: '40',
-          direction: '남향',
-          landlordEnvironment: '보통',
-          rating: 3,
-          memo: '가격 대비 적당함',
-          createdAt: DateTime.now().subtract(const Duration(days: 8)),
-          cellImages: {},
-        ),
-        PropertyData(
-          id: '3',
-          order: '3',
-          name: '파인라인빌',
-          deposit: '10000',
-          rent: '0',
-          direction: '서남향',
-          landlordEnvironment: '양호',
-          rating: 4,
-          memo: '전세로 좋은 조건',
-          createdAt: DateTime.now().subtract(const Duration(days: 5)),
-          cellImages: {},
-        ),
-        PropertyData(
-          id: '4',
-          order: '4',
-          name: '서라벌 오피스텔',
-          deposit: '2000',
-          rent: '60',
-          direction: '북향',
-          landlordEnvironment: '친절함',
-          rating: 3,
-          memo: '집주인이 친절하나 북향이 아쉬움',
-          createdAt: DateTime.now().subtract(const Duration(days: 3)),
-          cellImages: {},
-        ),
-      ],
+      properties: [], // 빈 배열로 변경 - 새 차트 생성 시 기본 데이터 없음
       columnOptions: {
         '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
         '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
-        '집 이름': ['강남 해피빌', '정우 오피스텔', '파인라인빌', '서라벌 오피스텔'],
+        '집 이름': [], // 기본 데이터 제거
         '보증금': ['1000', '2000', '3000', '5000', '10000'],
         '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
       },
@@ -74,30 +21,16 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
   ]);
 
   void addChart(PropertyChartModel chart) {
-    // 새 차트에 기본 샘플 데이터와 컬럼 옵션 추가
+    // 새 차트에 기본 컬럼 옵션만 추가 (샘플 데이터 없이)
     final chartWithDefaults = PropertyChartModel(
       id: chart.id,
       title: chart.title,
       date: chart.date,
-      properties: [
-        PropertyData(
-          id: '1',
-          order: '1',
-          name: '샘플 부동산',
-          deposit: '1000',
-          rent: '30',
-          direction: '남향',
-          landlordEnvironment: '보통',
-          rating: 3,
-          memo: '새로 추가된 샘플 데이터',
-          createdAt: DateTime.now(),
-          cellImages: {},
-        ),
-      ],
+      properties: [], // 빈 배열로 변경
       columnOptions: {
         '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
         '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
-        '집 이름': ['샘플 부동산'],
+        '집 이름': [],
         '보증금': ['1000', '2000', '3000', '5000', '10000'],
         '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
       },
@@ -125,6 +58,30 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
 
   void deleteChart(String chartId) {
     state = state.where((chart) => chart.id != chartId).toList();
+  }
+
+  void clearAllCharts() {
+    AppLogger.info('모든 로컬 차트 데이터 초기화');
+    state = [];
+  }
+
+  void resetToDefaultChart() {
+    AppLogger.info('기본 차트로 초기화');
+    state = [
+      PropertyChartModel(
+        id: '1',
+        title: '예시 차트',
+        date: DateTime.now(),
+        properties: [], // 빈 배열로 변경
+        columnOptions: {
+          '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
+          '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
+          '집 이름': [], // 빈 배열로 변경
+          '보증금': ['1000', '2000', '3000', '5000', '10000'],
+          '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
+        },
+      ),
+    ];
   }
 
   PropertyChartModel? getChart(String chartId) {
@@ -217,6 +174,17 @@ class CurrentChartNotifier extends StateNotifier<PropertyChartModel?> {
   void updateDate(DateTime date) {
     if (state == null) return;
     state = state!.copyWith(date: date);
+  }
+
+  void clearCurrentChart() {
+    AppLogger.info('현재 차트 초기화');
+    state = null;
+  }
+
+  void clearCurrentChartData() {
+    if (state == null) return;
+    AppLogger.info('현재 차트의 데이터만 초기화');
+    state = state!.copyWith(properties: []);
   }
 }
 
