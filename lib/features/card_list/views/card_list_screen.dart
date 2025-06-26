@@ -9,6 +9,7 @@ import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/features/card_list/views/card_detail_screen.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/providers/firebase_chart_providers.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 
 class CardListScreen extends ConsumerStatefulWidget {
@@ -26,27 +27,241 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedSort = '최신순'; // 기본 정렬 방식
   String? _selectedChartId; // 선택된 차트 ID
+
+  // 차트별 색상 매핑
+  final Map<String, Color> _chartColors = {};
+
+  // 차트 색상 팔레트 - 원색 계열
+  final List<Color> _colorPalette = [
+    const Color(0xFFFF0000),  // 빨강
+    const Color(0xFF0000FF),  // 파랑
+    const Color(0xFF00FF00),  // 초록
+    const Color(0xFFFF6600),  // 주황
+    const Color(0xFF9900FF),  // 보라
+    const Color(0xFF00FFFF),  // 시안
+    const Color(0xFFFF0099),  // 마젠타
+    const Color(0xFF6600FF),  // 인디고
+    const Color(0xFFFFFF00),  // 노랑
+    const Color(0xFF00FF99),  // 연두
+  ];
+
+  // 차트에 색상 할당
+  Color _getChartColor(String chartId) {
+    if (!_chartColors.containsKey(chartId)) {
+      final colorIndex = _chartColors.length % _colorPalette.length;
+      _chartColors[chartId] = _colorPalette[colorIndex];
+    }
+    return _chartColors[chartId]!;
+  }
+
   String _searchQuery = ''; // 검색어
   // 재할당되지 않으므로 final로 변경
   final List<String> _customSortOptions = ['최신순', '거리순', '월세순']; // 사용자 정의 정렬 옵션
-  
+
   // 가이드용 GlobalKey들
   final GlobalKey _addButtonKey = GlobalKey();
   final GlobalKey _searchKey = GlobalKey();
-  final GlobalKey _filterKey = GlobalKey();
+  final GlobalKey _filterKey =
+      GlobalKey(); // PopupMenuButton child Container용 - 디버깅 로그 추가됨
   final GlobalKey _newCardButtonKey = GlobalKey();
   final GlobalKey _chartFilterKey = GlobalKey();
   final GlobalKey _sortAddButtonKey = GlobalKey();
   final GlobalKey _cardItemKey = GlobalKey();
   final GlobalKey _clearButtonKey = GlobalKey();
 
+  // 동적 UI 요소용 GlobalKey들 (필요시 활성화)
+  // final GlobalKey _popupMenuKey = GlobalKey(); // 팝업 메뉴 전체용
+  // final List<GlobalKey> _sortOptionKeys = []; // 정렬 옵션들용
+
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
+  // 실제 인터렉티브 튜토리얼 상태 변수들
+  // bool _isSearching = false; // 현재 사용하지 않음
+  bool _isFilterOpen = false;
+  bool _hasAddedCard = false;
+  String _currentSearchText = '';
+
+  // 포커스 관리를 위한 FocusNode
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // 튜토리얼에서 왔을 때 자동으로 인터랙티브 가이드 시작
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // URL 상태를 확인하여 튜토리얼에서 왔는지 확인
+      final routeInformation =
+          GoRouter.of(context).routeInformationProvider.value;
+      final uri = routeInformation.uri.toString();
+      if (uri.contains('/cards') &&
+          (uri.contains('from_tutorial') || uri.contains('guide=true'))) {
+        _showInteractiveGuide();
+      }
+    });
+  }
+
   void _showInteractiveGuide() {
+    // 상태 초기화
+    setState(() {
+      // _isSearching = false; // 현재 사용하지 않음
+      _isFilterOpen = false;
+      _hasAddedCard = false;
+      _currentSearchText = '';
+      _searchController.clear();
+    });
+
+    final steps = [
+      // 1단계: 환영 및 소개
+      GuideStep(
+        title: '매물 카드 관리 가이드 🏠',
+        description: '실제 기능을 직접 체험하면서 매물 카드 관리 방법을 배워보겠습니다. "다음" 버튼을 눌러 계속하세요.',
+        waitForUserAction: false,
+      ),
+
+      // 2단계: 검색 기능 체험
+      GuideStep(
+        title: '검색 기능 체험하기 🔍',
+        description: '검색창에 텍스트를 입력하면 실시간으로 매물이 필터링됩니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _searchKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+        forceUIAction: () {
+          // 검색창에 포커스 주기
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _searchFocusNode.requestFocus();
+          });
+        },
+      ),
+
+      // 3단계: 검색 결과 확인
+      GuideStep(
+        title: '검색 결과 확인 ✅',
+        description: '훌륭해요! 검색어가 입력되면 실시간으로 매물이 필터링됩니다. "다음" 버튼을 눌러 계속하세요.',
+        waitForUserAction: false,
+        onStepExit: () {
+          // 검색어 초기화
+          setState(() {
+            _searchController.clear();
+            _currentSearchText = '';
+          });
+        },
+      ),
+
+      // 4단계: 정렬 필터 열기
+      GuideStep(
+        title: '정렬 필터 사용하기 📊',
+        description: '정렬 버튼을 눌러서 매물을 다양한 방식으로 정렬할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _filterKey,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+        shouldHighlightPopup: () => _isFilterOpen, // 팝업이 열렸을 때만 하이라이트
+        shouldAvoidDynamicArea: () => _isFilterOpen, // 팝업이 열렸을 때 말풍선 위치 조정
+        getDynamicArea: () {
+          // 정렬 팝업이 나타났을 때의 영역
+          if (_isFilterOpen) {
+            // 정렬 버튼 아래쪽 팝업 영역
+            return Rect.fromLTWH(0, 200, 300, 250); // 대략적인 팝업 영역
+          }
+          return Rect.zero;
+        },
+        forceUIAction: () {
+          // 잠시 후 자동으로 정렬 메뉴를 열어줌 (사용자가 클릭하지 않을 경우를 대비)
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!_isFilterOpen) {
+              setState(() {
+                _isFilterOpen = true;
+              });
+              // 3초 후 자동으로 닫기
+              Future.delayed(const Duration(seconds: 2), () {
+                if (_isFilterOpen) {
+                  setState(() {
+                    _isFilterOpen = false;
+                  });
+                }
+              });
+            }
+          });
+        },
+      ),
+
+      // 5단계: 정렬 옵션 선택
+      GuideStep(
+        title: '정렬 옵션 선택 ⚡',
+        description: '정렬 메뉴가 열렸습니다! 원하는 정렬 방식을 선택할 수 있습니다. "다음" 버튼을 눌러 계속하세요.',
+        waitForUserAction: false,
+        onStepExit: () {
+          // 정렬 메뉴 닫기
+          setState(() {
+            _isFilterOpen = false;
+          });
+        },
+      ),
+
+      // 6단계: 매물 추가 기능
+      GuideStep(
+        title: '새 매물 추가하기 ➕',
+        description: '"새카드 만들기" 버튼을 눌러서 새로운 매물을 추가할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
+        targetKey: _newCardButtonKey,
+        tooltipPosition: GuideTooltipPosition.top,
+        waitForUserAction: false,
+        autoNext: true,
+        shouldAvoidDynamicArea: () => _hasAddedCard, // 바텀시트가 나타났을 때 말풍선 위치 조정
+        getDynamicArea: () {
+          // 바텀시트가 나타났을 때의 영역 (더 정확한 계산)
+          if (_hasAddedCard) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            final screenWidth = MediaQuery.of(context).size.width;
+            // 바텀시트는 보통 화면 하단 70% 정도를 차지함
+            return Rect.fromLTWH(
+              0,
+              screenHeight * 0.25, // 화면 상단 25%부터 시작
+              screenWidth,
+              screenHeight * 0.75, // 화면 하단 75% 영역
+            );
+          }
+          return Rect.zero;
+        },
+      ),
+
+      // 7단계: 완료
+      GuideStep(
+        title: '튜토리얼 완료! 🎉',
+        description:
+            '훌륭합니다! 이제 매물 카드 관리의 주요 기능들을 모두 체험해보셨습니다. 다른 화면들도 각각 ❓ 버튼으로 가이드를 볼 수 있습니다. "완료" 버튼을 눌러 마무리하세요.',
+        waitForUserAction: false,
+      ),
+    ];
+
+    InteractiveGuideManager.showGuide(
+      context,
+      steps: steps,
+      onCompleted: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 인터렉티브 가이드가 완료되었습니다!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      },
+      onSkipped: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('가이드를 건너뛰었습니다.'),
+          ),
+        );
+      },
+    );
+  }
+
+  // 기존의 간단한 가이드 (도움말 버튼용)
+  void _showSimpleGuide() {
     final steps = [
       GuideStep(
         title: '매물 추가',
@@ -112,11 +327,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
       GuideStep(
-        title: '탭 이동',
-        description: '하단 탭 눌러서 다른 화면 이동 가능',
-        targetKey: CardListScreen.bottomNavKey,
-        icon: Icons.navigation,
-        tooltipPosition: GuideTooltipPosition.top,
+        title: '가이드 완료 🎉',
+        description: '매물 카드 관리 기능을 모두 확인했습니다! 하단 탭으로 다른 화면도 둘러보세요.',
+        targetKey: _searchKey,
+        icon: Icons.check_circle,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
     ];
 
@@ -144,7 +361,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('카드 목록',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -152,13 +369,41 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         centerTitle: true,
         elevation: 0,
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(
               Icons.help_outline,
               color: Colors.white,
               size: 24,
             ),
-            onPressed: () => _showInteractiveGuide(),
+            onSelected: (value) {
+              if (value == 'interactive') {
+                _showInteractiveGuide();
+              } else if (value == 'simple') {
+                _showSimpleGuide();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'interactive',
+                child: Row(
+                  children: [
+                    Icon(Icons.gamepad, size: 20),
+                    SizedBox(width: 8),
+                    Text('🎮 인터렉티브 가이드'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'simple',
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline, size: 20),
+                    SizedBox(width: 8),
+                    Text('📖 빠른 도움말'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         flexibleSpace: Container(
@@ -194,6 +439,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
                     decoration: InputDecoration(
                       hintText: '카드 이름, 위치, 가격으로 검색...',
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -216,6 +462,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value.toLowerCase();
+                        _currentSearchText = value; // 튜토리얼 상태 추적
                       });
                     },
                   ),
@@ -229,7 +476,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     children: [
                       // 정렬 드롭다운
                       PopupMenuButton<String>(
-                        key: _filterKey,
                         offset: const Offset(0, 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -355,11 +601,23 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             if (mounted) {
                               setState(() {
                                 _selectedSort = value;
+                                _isFilterOpen = false; // 튜토리얼 상태 추적
                               });
                             }
                           }
                         },
+                        onOpened: () {
+                          setState(() {
+                            _isFilterOpen = true; // 튜토리얼 상태 추적 - 필터 메뉴 열림
+                          });
+                        },
+                        onCanceled: () {
+                          setState(() {
+                            _isFilterOpen = false; // 튜토리얼 상태 추적 - 필터 메뉴 닫힘
+                          });
+                        },
                         child: Container(
+                          key: _filterKey, // GlobalKey를 child Container에 설정
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
@@ -371,7 +629,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                                color: const Color(0xFFFF8A65)
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -618,7 +877,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                       // 새카드 만들기 버튼
                       GestureDetector(
                         onTap: () {
-                          _showChartSelectionDialog();
+                          setState(() {
+                            _hasAddedCard = true; // 튜토리얼 상태 업데이트
+                          });
+                          // 바텀시트를 열기 전에 잠시 대기 (말풍선 위치 조정을 위해)
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            _showChartSelectionDialog();
+                          });
                         },
                         child: Container(
                           key: _newCardButtonKey,
@@ -633,7 +898,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                                color: const Color(0xFFFF8A65)
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -673,6 +939,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
               builder: (context, ref, child) {
                 final chartList = ref.watch(propertyChartListProvider);
                 final propertyList = <PropertyData>[];
+                final propertyChartMap =
+                    <String, String>{}; // property.id -> chart.id 매핑
 
                 // 선택된 차트에 따라 필터링
                 if (_selectedChartId != null) {
@@ -685,11 +953,21 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                       properties: [],
                     ),
                   );
+                  // 특정 차트에서는 빈 카드도 표시 (사용자가 어떤 차트인지 알 수 있게)
                   propertyList.addAll(selectedChart.properties);
+
+                  // 차트 매핑 추가
+                  for (final property in selectedChart.properties) {
+                    propertyChartMap[property.id] = selectedChart.id;
+                  }
                 } else {
-                  // 모든 차트의 부동산 데이터를 하나의 리스트로 합치기
+                  // 차트별로 그룹화해서 순서대로 표시
                   for (final chart in chartList) {
-                    propertyList.addAll(chart.properties);
+                    // 각 차트의 모든 카드를 순서대로 추가
+                    for (final property in chart.properties) {
+                      propertyList.add(property);
+                      propertyChartMap[property.id] = chart.id;
+                    }
                   }
                 }
 
@@ -717,15 +995,17 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                   });
                 }
 
-                // 선택된 정렬 방식에 따라 정렬
-                _sortPropertyList(propertyList);
+                // 선택된 정렬 방식에 따라 정렬 (특정 차트 선택 시에만)
+                if (_selectedChartId != null) {
+                  _sortPropertyList(propertyList);
+                }
 
                 if (propertyList.isEmpty) {
                   return _searchQuery.isNotEmpty
                       ? _buildNoSearchResults()
                       : _buildEmptyState();
                 }
-                return _buildCardList(propertyList);
+                return _buildCardList(propertyList, propertyChartMap);
               },
             ),
           ),
@@ -734,6 +1014,9 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       floatingActionButton: FloatingActionButton(
         key: _addButtonKey,
         onPressed: () {
+          setState(() {
+            _hasAddedCard = true; // 튜토리얼 상태 추적
+          });
           _showChartSelectionDialog();
         },
         backgroundColor: const Color(0xFFFF8A65),
@@ -993,7 +1276,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
-  Widget _buildCardList(List<PropertyData> properties) {
+  Widget _buildCardList(
+      List<PropertyData> properties, Map<String, String> propertyChartMap) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: properties.length,
@@ -1001,125 +1285,157 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         final property = properties[index];
-        return _buildCardItem(property);
+        return _buildCardItem(property, propertyChartMap[property.id]);
       },
     );
   }
 
-  Widget _buildCardItem(PropertyData property) {
+  Widget _buildCardItem(PropertyData property, String? chartId) {
     return Consumer(
       builder: (context, ref, child) {
         final userPriorities = ref.watch(userPrioritiesProvider);
 
         return GestureDetector(
-          onTap: () {
-            context.goNamed(
-              CardDetailScreen.routeName,
-              pathParameters: {'cardId': property.id},
-              extra: property,
-            );
-          },
-          child: Card(
-            key: ValueKey('card_item_${property.id}'),
-            margin: const EdgeInsets.only(bottom: 16),
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+            onTap: () {
+              context.goNamed(
+                CardDetailScreen.routeName,
+                pathParameters: {'cardId': property.id},
+                extra: property,
+              );
+            },
+            child: Card(
+              key: ValueKey('card_item_${property.id}'),
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 0, // 기본 elevation 제거
+              color: Colors.transparent, // 기본 카드 색상 투명
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  border: Border.all(
+                    color: (_selectedChartId == null && chartId != null && chartId.isNotEmpty)
+                        ? _getChartColor(chartId).withValues(alpha: 0.18)
+                        : Colors.black.withValues(alpha: 0.04),
+                    width: (_selectedChartId == null && chartId != null && chartId.isNotEmpty) ? 1.0 : 0.5,
+                  ),
+                  boxShadow: [
+                    // 메인 그림자 - 더 강화
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                    // 서브 그림자 - 더 부드럽게
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                    // 디테일 그림자
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  property.name.isNotEmpty
-                                      ? property.name
-                                      : '부동산 ${property.order}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                if (property.rating > 0) ...[
-                                  Row(
-                                    children: List.generate(5, (starIndex) {
-                                      return Icon(
-                                        starIndex < property.rating
-                                            ? Icons.star
-                                            : Icons.star_border,
-                                        color: Colors.amber,
-                                        size: 20,
-                                      );
-                                    }),
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                                if (property.rent.isNotEmpty ||
-                                    property.deposit.isNotEmpty) ...[
-                                  Text(
-                                    '월세: ${property.rent.isNotEmpty ? property.rent : '-'} | 보증금: ${property.deposit.isNotEmpty ? property.deposit : '-'}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      property.name.isNotEmpty
+                                          ? property.name
+                                          : '부동산 ${property.order}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                              ],
-                            ),
+                                    const SizedBox(height: 8),
+                                    if (property.rating > 0) ...[
+                                      Row(
+                                        children: List.generate(5, (starIndex) {
+                                          return Icon(
+                                            starIndex < property.rating
+                                                ? Icons.star
+                                                : Icons.star_border,
+                                            color: Colors.amber,
+                                            size: 20,
+                                          );
+                                        }),
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    if (property.rent.isNotEmpty ||
+                                        property.deposit.isNotEmpty) ...[
+                                      Text(
+                                        '월세: ${property.rent.isNotEmpty ? property.rent : '-'} | 보증금: ${property.deposit.isNotEmpty ? property.deposit : '-'}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              _buildPropertyThumbnail(property),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          _buildPropertyThumbnail(property),
+                          if (userPriorities.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            _buildPriorityTags(property),
+                          ],
                         ],
                       ),
-                      if (userPriorities.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        _buildPriorityTags(property),
-                      ],
-                    ],
-                  ),
-                ),
-                if (property.order.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '순번: ${property.order}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
-              ],
-            ),
-          ),
-        );
+                    if (property.order.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '순번: ${property.order}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ));
       },
     );
   }
@@ -1203,7 +1519,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       },
     );
   }
-
 
   String? _getColumnValueForProperty(String columnName, PropertyData property) {
     switch (columnName) {
@@ -1409,16 +1724,16 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (titleController.text.trim().isNotEmpty) {
-                    _createNewChart(titleController.text.trim());
+                    await _createNewChart(titleController.text.trim());
                     Navigator.of(ctx).pop(); // 새 차트 만들기 다이얼로그 닫기
-                    
+
                     // 잠시 후 차트 선택 다이얼로그 다시 열기
                     Future.delayed(const Duration(milliseconds: 300), () {
                       _showChartSelectionDialog();
                     });
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -1454,7 +1769,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
-  void _createNewChart(String title) {
+  Future<void> _createNewChart(String title) async {
     final newChart = PropertyChartModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
@@ -1462,7 +1777,8 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       properties: [],
     );
 
-    ref.read(propertyChartListProvider.notifier).addChart(newChart);
+    final integratedService = ref.read(integratedChartServiceProvider);
+    await integratedService.saveChart(newChart);
 
     // 새로 만든 차트를 선택된 상태로 설정
     setState(() {
@@ -1530,99 +1846,107 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                           ),
                           child: const Text(
                             '카드를 추가할 차트를 선택하거나 새 차트를 만드세요.',
-                            style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                            style: TextStyle(
+                                fontSize: 14, color: Color(0xFF6D4C41)),
                           ),
                         ),
-                const SizedBox(height: 16),
-                // 새 차트 만들기 버튼
-                Container(
-                  width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        _showCreateChartDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('새 차트 만들기',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                const Divider(),
-                const SizedBox(height: 8),
-                // 기존 차트 목록
-                Expanded(
-                  child: chartList.isEmpty
-                      ? const Center(
-                          child: Text(
-                            '차트가 없습니다.\n새 차트를 만들어보세요!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                        const SizedBox(height: 16),
+                        // 새 차트 만들기 버튼
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF8A65)
+                                    .withValues(alpha: 0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: chartList.length,
-                          itemBuilder: (context, index) {
-                            final chart = chartList[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              elevation: 2,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              _showCreateChartDialog();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
-                              child: ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFECE0),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(Icons.analytics,
-                                      color: Color(0xFFFF8A65)),
-                                ),
-                                title: Text(
-                                  chart.title,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  '${chart.properties.length}개 카드 • ${chart.date.year}.${chart.date.month}.${chart.date.day}',
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                trailing: const Icon(Icons.arrow_forward_ios,
-                                    size: 16, color: Colors.grey),
-                                onTap: () {
-                                  Navigator.of(ctx).pop();
-                                  _navigateToCardDetail(chart.id);
-                                },
-                              ),
-                            );
-                          },
+                            ),
+                            icon: const Icon(Icons.add, color: Colors.white),
+                            label: const Text('새 차트 만들기',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
+                          ),
                         ),
-                ),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        // 기존 차트 목록
+                        Expanded(
+                          child: chartList.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    '차트가 없습니다.\n새 차트를 만들어보세요!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: chartList.length,
+                                  itemBuilder: (context, index) {
+                                    final chart = chartList[index];
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      child: ListTile(
+                                        leading: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFECE0),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(Icons.analytics,
+                                              color: Color(0xFFFF8A65)),
+                                        ),
+                                        title: Text(
+                                          chart.title,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        subtitle: Text(
+                                          '${chart.properties.length}개 카드 • ${chart.date.year}.${chart.date.month}.${chart.date.day}',
+                                          style: const TextStyle(
+                                              color: Colors.grey),
+                                        ),
+                                        trailing: const Icon(
+                                            Icons.arrow_forward_ios,
+                                            size: 16,
+                                            color: Colors.grey),
+                                        onTap: () {
+                                          Navigator.of(ctx).pop();
+                                          _navigateToCardDetail(chart.id);
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
                       ],
                     ),
                   ),
@@ -1643,13 +1967,15 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(),
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('취소',
                             style: TextStyle(
-                                color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                                color: Color(0xFF9E9E9E),
+                                fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ),
@@ -1688,11 +2014,10 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     );
   }
 
-
   Widget _buildPropertyThumbnail(PropertyData property) {
     // 갤러리 이미지 가져오기
     List<String> allImages = property.cellImages['gallery'] ?? [];
-    
+
     // cellImages Map에서 차트 셀 이미지들 추가
     final Map<String, List<String>> cellImages = property.cellImages;
     cellImages.forEach((key, images) {
@@ -1700,7 +2025,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         allImages.addAll(images);
       }
     });
-    
+
     // additionalData에서 차트 셀 이미지들도 추가 (JSON 디코딩)
     final Map<String, String> additionalData = property.additionalData;
     additionalData.forEach((key, value) {
@@ -1714,14 +2039,14 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         }
       }
     });
-    
+
     // 중복 제거
     allImages = allImages.toSet().toList();
-    
+
     // 디버깅을 위한 로그
     AppLogger.d('Property ${property.id} - All images: $allImages');
     AppLogger.d('Property cellImages keys: ${property.cellImages.keys}');
-    
+
     return Container(
       width: 100,
       height: 100,
