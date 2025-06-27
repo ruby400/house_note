@@ -16,6 +16,7 @@ dependencies:
   firebase_auth: ^5.1.0
   cloud_firestore: ^5.0.1
   google_sign_in: ^6.2.1 # 구글 로그인
+  flutter_naver_login: ^2.1.1 # 네이버 로그인 최신 버전 시도
 
   # State Management (Riverpod)
   flutter_riverpod: ^2.5.1
@@ -35,6 +36,7 @@ dependencies:
   permission_handler: ^12.0.0+1 # 권한 관리
   photo_view: ^0.15.0 # 풀스크린 이미지 뷰어
   cached_network_image: ^3.3.1 # 이미지 캐싱
+  shared_preferences: ^2.2.2 # 로컬 저장소
   
   # Export
   pdf: ^3.10.4 # PDF 생성
@@ -42,6 +44,7 @@ dependencies:
   printing: ^5.11.0 # PDF 인쇄 및 공유
   gal: ^2.3.0 # 갤러리 저장 (더 안정적인 패키지)
   device_info_plus: ^11.4.0
+  package_info_plus: ^8.0.0 # 앱 버전 정보
 
 dev_dependencies:
   flutter_test:

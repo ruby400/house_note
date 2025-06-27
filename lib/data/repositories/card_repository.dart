@@ -6,7 +6,7 @@ import 'package:house_note/data/models/card_model.dart'; // import 추가
 import 'package:house_note/services/firestore_service.dart';
 
 final cardRepositoryProvider = Provider<CardRepository>((ref) {
-  return CardRepository(ref.watch(firestoreServiceProvider));
+  return CardRepository(ref.watch(firestoreProvider));
 });
 
 class CardRepository {

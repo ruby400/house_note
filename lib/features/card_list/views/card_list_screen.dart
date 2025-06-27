@@ -84,7 +84,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   // bool _isSearching = false; // 현재 사용하지 않음
   bool _isFilterOpen = false;
   bool _hasAddedCard = false;
-  String _currentSearchText = '';
 
   // 포커스 관리를 위한 FocusNode
   final FocusNode _searchFocusNode = FocusNode();
@@ -111,7 +110,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       // _isSearching = false; // 현재 사용하지 않음
       _isFilterOpen = false;
       _hasAddedCard = false;
-      _currentSearchText = '';
       _searchController.clear();
     });
 
@@ -148,8 +146,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           // 검색어 초기화
           setState(() {
             _searchController.clear();
-            _currentSearchText = '';
-          });
+                });
         },
       ),
 
@@ -462,7 +459,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value.toLowerCase();
-                        _currentSearchText = value; // 튜토리얼 상태 추적
                       });
                     },
                   ),

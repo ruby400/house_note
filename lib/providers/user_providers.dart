@@ -6,7 +6,7 @@ import 'package:house_note/services/firestore_service.dart';
 
 // UserRepository Provider
 final userRepositoryProvider = Provider<UserRepository>((ref) {
-  return UserRepository(ref.watch(firestoreServiceProvider));
+  return UserRepository(ref.watch(firestoreProvider));
 });
 
 // 현재 로그인된 사용자의 UserModel 스트림 Provider

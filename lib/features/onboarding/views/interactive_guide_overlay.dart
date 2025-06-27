@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:async';
 
 class InteractiveGuideOverlay extends StatefulWidget {
   final List<GuideStep> steps;
@@ -26,6 +27,10 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _pulseAnimation;
+  
+  // 사용자 액션 대기를 위한 상태들
+  bool _isWaitingForUserAction = false;
+  Timer? _validationTimer;
 
   @override
   void initState() {
@@ -66,22 +71,52 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
 
     _animationController.forward();
     _pulseController.repeat(reverse: true);
+    
+    // 첫 단계 시작 액션 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.steps.isNotEmpty) {
+        widget.steps[0].onStepEnter?.call();
+        
+        // 첫 단계 처리 - 사용자 액션 대기만 처리
+        final firstStep = widget.steps[0];
+        if (firstStep.waitForUserAction && firstStep.actionValidator != null) {
+          _startWaitingForUserAction();
+        }
+        // autoNext 로직 완전 제거 - 사용자가 직접 "다음" 버튼을 눌러야 함
+      }
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _pulseController.dispose();
+    _validationTimer?.cancel();
     super.dispose();
   }
 
   void _nextStep() {
+    // 현재 단계 종료 액션 실행
+    if (_currentStep < widget.steps.length) {
+      widget.steps[_currentStep].onStepExit?.call();
+    }
+
     if (_currentStep < widget.steps.length - 1) {
       _animationController.reverse().then((_) {
         setState(() {
           _currentStep++;
         });
         _animationController.forward();
+        
+        // 새 단계 시작 액션 실행
+        widget.steps[_currentStep].onStepEnter?.call();
+        
+        // 실제 UI 조작이 필요한 단계인지 확인
+        final currentStep = widget.steps[_currentStep];
+        if (currentStep.waitForUserAction && currentStep.actionValidator != null) {
+          _startWaitingForUserAction();
+        }
+        // autoNext 로직 완전 제거 - 모든 단계에서 사용자가 직접 "다음" 버튼을 눌러야 함
       });
     } else {
       _animationController.reverse().then((_) {
@@ -91,8 +126,43 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
   }
 
   void _skipGuide() {
+    _validationTimer?.cancel();
     _animationController.reverse().then((_) {
       widget.onSkipped?.call();
+    });
+  }
+
+  void _startWaitingForUserAction() {
+    setState(() {
+      _isWaitingForUserAction = true;
+    });
+    
+    final currentStep = widget.steps[_currentStep];
+    
+    // 강제 UI 액션이 있으면 실행 (예: 바텀시트 열기)
+    currentStep.forceUIAction?.call();
+    
+    // 주기적으로 검증 함수 확인
+    _validationTimer = Timer.periodic(currentStep.pollInterval, (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      // 사용자 액션 검증
+      if (currentStep.actionValidator?.call() == true) {
+        timer.cancel();
+        setState(() {
+          _isWaitingForUserAction = false;
+        });
+        
+        // 검증 성공 후 다음 단계로
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _nextStep();
+          }
+        });
+      }
     });
   }
 
@@ -105,23 +175,17 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
     return AnimatedBuilder(
       animation: Listenable.merge([_animationController, _pulseController]),
       builder: (context, child) {
-        return Material(
-          color: Colors.transparent,
+        return IgnorePointer(
+          ignoring: false, // 전체적으로는 터치를 허용
           child: Stack(
             children: [
-              // 전체 배경 터치 감지
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: _nextStep,
-                  child: Container(color: Colors.transparent),
-                ),
-              ),
-
-              // 하이라이트 영역 (화살표) - 말풍선 아래에 그려짐
+              // 하이라이트 영역과 배경 - 터치 이벤트 완전히 무시
               if (currentGuideStep.targetKey != null)
-                _buildHighlightArea(currentGuideStep),
+                IgnorePointer(
+                  child: _buildHighlightArea(currentGuideStep),
+                ),
 
-              // 가이드 말풍선 - 화살표 위에 그려져서 버튼이 눌리도록
+              // 가이드 말풍선만 터치 가능
               _buildGuideTooltip(currentGuideStep),
 
               // 상단 컨트롤
@@ -188,8 +252,19 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
           }
           break;
       }
+
+      // 타겟 영역 정의 (PopupMenuButton을 위해 더 큰 터치 영역)
+      final targetRect = Rect.fromLTWH(
+        targetPosition.dx - 10,
+        targetPosition.dy - 10,
+        targetSize.width + 20,
+        targetSize.height + 20,
+      );
+
+      return _buildInteractiveHighlight(targetRect, actualPosition, step);
     }
 
+    // 단순한 하이라이트만 표시 (터치 차단 없음)
     return Positioned.fill(
       child: CustomPaint(
         painter: HighlightPainter(
@@ -198,8 +273,90 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
           pulseValue: _pulseAnimation.value,
           tooltipPosition: actualPosition,
           screenSize: MediaQuery.of(context).size,
+          dynamicTargets: step.dynamicTargets, // 동적 타겟들 전달
+          shouldHighlightPopup: step.shouldHighlightPopup, // 팝업 하이라이트 여부 전달
         ),
       ),
+    );
+  }
+
+  // 단순한 하이라이트만 표시 (터치 차단 완전 제거)
+  Widget _buildInteractiveHighlight(Rect targetRect, GuideTooltipPosition actualPosition, GuideStep step) {
+    return CustomPaint(
+      painter: HighlightPainter(
+        targetKey: step.targetKey!,
+        fadeValue: _fadeAnimation.value,
+        pulseValue: _pulseAnimation.value,
+        tooltipPosition: actualPosition,
+        screenSize: MediaQuery.of(context).size,
+        dynamicTargets: step.dynamicTargets, // 동적 타겟들 전달
+        shouldHighlightPopup: step.shouldHighlightPopup, // 팝업 하이라이트 여부 전달
+      ),
+    );
+  }
+
+  // 터치 차단 레이어 - 타겟 영역만 터치 통과
+  Widget _buildTouchBlockingLayer(Rect targetRect) {
+    return Stack(
+      children: [
+        // 상단 영역 차단
+        if (targetRect.top > 0)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: targetRect.top,
+            child: GestureDetector(
+              onTap: () {
+                if (!_isWaitingForUserAction) _nextStep();
+              },
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+        
+        // 좌측 영역 차단
+        if (targetRect.left > 0)
+          Positioned(
+            top: targetRect.top,
+            left: 0,
+            width: targetRect.left,
+            height: targetRect.height,
+            child: GestureDetector(
+              onTap: () {
+                if (!_isWaitingForUserAction) _nextStep();
+              },
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+        
+        // 우측 영역 차단
+        Positioned(
+          top: targetRect.top,
+          left: targetRect.right,
+          right: 0,
+          height: targetRect.height,
+          child: GestureDetector(
+            onTap: () {
+              if (!_isWaitingForUserAction) _nextStep();
+            },
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        
+        // 하단 영역 차단
+        Positioned(
+          top: targetRect.bottom,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: GestureDetector(
+            onTap: () {
+              if (!_isWaitingForUserAction) _nextStep();
+            },
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+      ],
     );
   }
 
@@ -326,6 +483,43 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
     } else if (top + tooltipHeight > screenSize.height - 80) {
       top = screenSize.height - tooltipHeight - 80;
     }
+    
+    // 동적 영역(바텀시트, 팝업 등)과의 충돌 감지 및 회피
+    if (step.shouldAvoidDynamicArea != null && 
+        step.shouldAvoidDynamicArea!() && 
+        step.getDynamicArea != null) {
+      try {
+        final dynamicArea = step.getDynamicArea!();
+        final tooltipRect = Rect.fromLTWH(left, top, tooltipWidth, tooltipHeight);
+        
+        // 디버깅: 동적 영역과 말풍선 위치 출력
+        print('🔍 동적 영역: $dynamicArea');
+        print('🔍 말풍선 영역: $tooltipRect');
+        print('🔍 충돌 여부: ${tooltipRect.overlaps(dynamicArea)}');
+        
+        // 말풍선과 동적 영역이 겹치는지 확인
+        if (tooltipRect.overlaps(dynamicArea)) {
+          print('💥 충돌 감지! 말풍선 위치 재조정 시작');
+          
+          // 1. 위쪽으로 이동 시도
+          final newTopPosition = dynamicArea.top - tooltipHeight - 20;
+          if (newTopPosition > MediaQuery.of(context).padding.top + margin) {
+            top = newTopPosition;
+            actualPosition = GuideTooltipPosition.top;
+            print('✅ 위쪽으로 이동: top=$top');
+          }
+          // 2. 위쪽도 안되면 상단 고정 (가장 확실한 방법)
+          else {
+            left = 20;
+            top = MediaQuery.of(context).padding.top + margin;
+            actualPosition = GuideTooltipPosition.top;
+            print('✅ 상단 고정: left=$left, top=$top');
+          }
+        }
+      } catch (e) {
+        print('❌ 동적 영역 처리 중 오류: $e');
+      }
+    }
 
     return Positioned(
       left: left,
@@ -378,9 +572,7 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
   }
 
   Widget _buildTooltipContentInner(GuideStep step) {
-    return Material(
-      color: Colors.transparent,
-      child: Column(
+    return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -389,7 +581,7 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC107),
+                color: const Color(0xFFFF9866),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -427,6 +619,39 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
             ),
           ),
 
+          // 액션 힌트 (사용자 액션 대기 중일 때만 표시)
+          if (_isWaitingForUserAction && step.actionHint != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFF9866).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.touch_app,
+                    color: Color(0xFFFF9866),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      step.actionHint!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF2D3748),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
 
           // 액션 버튼들 (타원형 안에 맞게 조정)
@@ -446,11 +671,17 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
                       ),
                     ),
                     onPressed: () {
+                      // 현재 단계 종료 액션 실행
+                      widget.steps[_currentStep].onStepExit?.call();
+                      
                       _animationController.reverse().then((_) {
                         setState(() {
                           _currentStep--;
                         });
                         _animationController.forward();
+                        
+                        // 이전 단계 시작 액션 실행
+                        widget.steps[_currentStep].onStepEnter?.call();
                       });
                     },
                     child: const Text(
@@ -464,32 +695,60 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
                   ),
                   const SizedBox(width: 12), // 버튼 사이 간격을 좁힘
                 ],
+                // 사용자 액션 대기 중이면 버튼 비활성화
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC107),
-                    foregroundColor: Colors.white,
+                    backgroundColor: _isWaitingForUserAction 
+                        ? Colors.grey.shade300 
+                        : const Color(0xFFFF9866),
+                    foregroundColor: _isWaitingForUserAction 
+                        ? Colors.grey.shade600 
+                        : Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18), // 더 둥글게
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     elevation: 0,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     minimumSize: const Size(80, 36),
                   ),
-                  onPressed: _nextStep,
-                  child: Text(
-                    _currentStep == widget.steps.length - 1 ? '완료' : '다음',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  onPressed: _isWaitingForUserAction ? null : _nextStep,
+                  child: _isWaitingForUserAction
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              '대기중',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          _currentStep == widget.steps.length - 1 ? '완료' : '다음',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                 ),
               ],
             ),
           ),
         ],
-      ),
     );
   }
 
@@ -531,6 +790,24 @@ class GuideStep {
   final GlobalKey? targetKey;
   final IconData? icon;
   final GuideTooltipPosition tooltipPosition;
+  final VoidCallback? onStepEnter; // 단계 시작할 때 실행할 액션
+  final VoidCallback? onStepExit; // 단계 종료할 때 실행할 액션
+  final bool autoNext; // 자동으로 다음 단계로 넘어갈지 여부
+  final Duration? autoNextDelay; // 자동 넘어가기 딜레이
+  
+  // 실제 UI 조작을 위한 새로운 필드들
+  final bool waitForUserAction; // 사용자 액션을 기다릴지 여부
+  final bool Function()? actionValidator; // 사용자 액션 검증 함수
+  final VoidCallback? forceUIAction; // UI를 강제로 조작하는 함수 (예: 바텀시트 열기)
+  final String? actionHint; // 사용자가 해야 할 액션에 대한 힌트
+  final Duration pollInterval; // 검증 함수 호출 간격
+  
+  // 동적 UI 요소 추적을 위한 새로운 필드들
+  final List<GlobalKey> Function()? dynamicTargets; // 동적으로 나타나는 UI 요소들의 GlobalKey 목록
+  final List<String> Function()? dynamicSelectors; // CSS 선택자 형태로 동적 요소 추적
+  final bool Function()? shouldHighlightPopup; // 팝업 영역을 하이라이트해야 하는지 여부
+  final Rect Function()? getDynamicArea; // 동적으로 나타나는 UI 영역 (바텀시트, 팝업 등)
+  final bool Function()? shouldAvoidDynamicArea; // 동적 영역을 피해서 말풍선 위치를 조정할지 여부
 
   GuideStep({
     required this.title,
@@ -538,6 +815,20 @@ class GuideStep {
     this.targetKey,
     this.icon,
     this.tooltipPosition = GuideTooltipPosition.bottom,
+    this.onStepEnter,
+    this.onStepExit,
+    this.autoNext = false,
+    this.autoNextDelay = const Duration(seconds: 2),
+    this.waitForUserAction = false,
+    this.actionValidator,
+    this.forceUIAction,
+    this.actionHint,
+    this.pollInterval = const Duration(milliseconds: 500),
+    this.dynamicTargets,
+    this.dynamicSelectors,
+    this.shouldHighlightPopup,
+    this.getDynamicArea,
+    this.shouldAvoidDynamicArea,
   });
 }
 
@@ -554,6 +845,8 @@ class HighlightPainter extends CustomPainter {
   final double pulseValue;
   final GuideTooltipPosition tooltipPosition;
   final Size screenSize;
+  final List<GlobalKey> Function()? dynamicTargets; // 동적 타겟들
+  final bool Function()? shouldHighlightPopup; // 팝업 하이라이트 여부
 
   HighlightPainter({
     required this.targetKey,
@@ -561,53 +854,101 @@ class HighlightPainter extends CustomPainter {
     required this.pulseValue,
     required this.screenSize,
     this.tooltipPosition = GuideTooltipPosition.bottom,
+    this.dynamicTargets,
+    this.shouldHighlightPopup,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 타겟 위젯의 위치와 크기 가져오기
+    // 모든 강조할 영역들 수집
+    final List<Rect> highlightRects = [];
+    
+    // 메인 타겟 영역 추가
     final RenderBox? renderBox =
         targetKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox != null) {
       final targetSize = renderBox.size;
       final targetPosition = renderBox.localToGlobal(Offset.zero);
-
-      // 타겟 영역 정의 (약간의 패딩 포함)
       final targetRect = Rect.fromLTWH(
-        targetPosition.dx - 8,
-        targetPosition.dy - 8,
-        targetSize.width + 16,
-        targetSize.height + 16,
+        targetPosition.dx - 10,
+        targetPosition.dy - 10,
+        targetSize.width + 20,
+        targetSize.height + 20,
       );
-
-      // Path로 화면 전체에서 타겟 영역을 제외한 부분만 어둡게
-      final path = Path()
-        ..addRect(Rect.fromLTWH(0, 0, screenSize.width, screenSize.height))
-        ..addRRect(RRect.fromRectAndRadius(targetRect, const Radius.circular(8)))
-        ..fillType = PathFillType.evenOdd; // 홀수 규칙으로 구멍 뚫기
-
-      // 구멍이 뚫린 어두운 배경 그리기
-      final backgroundPaint = Paint()
-        ..color = Colors.black.withValues(alpha: 0.6 * fadeValue);
-      canvas.drawPath(path, backgroundPaint);
-
-      // 타겟 영역 외곽선 그리기
-      final borderPaint = Paint()
-        ..color = const Color(0xFFFFC107).withValues(alpha: 0.8 * fadeValue)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(targetRect, const Radius.circular(8)),
-        borderPaint,
+      highlightRects.add(targetRect);
+    }
+    
+    // 동적 타겟들 추가 (팝업, 바텀시트, 드롭다운 등)
+    if (dynamicTargets != null) {
+      try {
+        final dynamicKeys = dynamicTargets!();
+        for (final key in dynamicKeys) {
+          final dynamicRenderBox = key.currentContext?.findRenderObject() as RenderBox?;
+          if (dynamicRenderBox != null) {
+            final dynamicSize = dynamicRenderBox.size;
+            final dynamicPosition = dynamicRenderBox.localToGlobal(Offset.zero);
+            final dynamicRect = Rect.fromLTWH(
+              dynamicPosition.dx - 5,
+              dynamicPosition.dy - 5,
+              dynamicSize.width + 10,
+              dynamicSize.height + 10,
+            );
+            highlightRects.add(dynamicRect);
+          }
+        }
+      } catch (e) {
+        // 동적 타겟 추가 중 오류 발생시 무시
+      }
+    }
+    
+    // 특별한 경우: PopupMenuButton이 열렸을 때 대략적인 팝업 영역 추가
+    // (실제 PopupMenu 위젯을 추적하기 어려우므로 추정)
+    if (renderBox != null && shouldHighlightPopup != null && shouldHighlightPopup!()) {
+      // 메인 타겟 버튼 아래쪽에 팝업이 나타날 것으로 예상되는 영역
+      final targetPosition = renderBox.localToGlobal(Offset.zero);
+      final targetSize = renderBox.size;
+      
+      // 팝업 메뉴 영역 추정 (타겟 버튼 아래, 약간 오른쪽)
+      final estimatedPopupRect = Rect.fromLTWH(
+        targetPosition.dx,
+        targetPosition.dy + targetSize.height + 48, // offset 고려
+        280, // PopupMenuButton의 maxWidth와 비슷
+        250, // 대략적인 높이 (더 크게)
       );
+      
+      // 화면 경계 내에 있는지 확인
+      if (estimatedPopupRect.right <= screenSize.width && 
+          estimatedPopupRect.bottom <= screenSize.height) {
+        highlightRects.add(estimatedPopupRect);
+      }
+    }
 
-      // 타겟의 중심점
+    // 화면 전체에서 모든 강조 영역을 제외한 부분만 어둡게
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, screenSize.width, screenSize.height));
+    
+    // 모든 강조 영역에 대해 구멍 뚫기
+    for (final rect in highlightRects) {
+      path.addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(20)));
+    }
+    
+    path.fillType = PathFillType.evenOdd; // 홀수 규칙으로 구멍 뚫기
+
+    // 구멍이 뚫린 어두운 배경 그리기
+    final backgroundPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6 * fadeValue);
+    canvas.drawPath(path, backgroundPaint);
+
+    // 메인 타겟에만 펄스 효과 적용
+    if (renderBox != null) {
+      final targetSize = renderBox.size;
+      final targetPosition = renderBox.localToGlobal(Offset.zero);
       final targetCenter = Offset(
         targetPosition.dx + targetSize.width / 2,
         targetPosition.dy + targetSize.height / 2,
       );
 
-      // 펄스 효과 (타겟 주변에 작은 원)
+      // 펄스 효과 (메인 타겟 주변에만)
       final pulseRadius = 10 + (5 * pulseValue);
       final pulseOpacity = (1.0 - pulseValue) * 0.5 * fadeValue;
 
@@ -615,7 +956,7 @@ class HighlightPainter extends CustomPainter {
         targetCenter,
         pulseRadius,
         Paint()
-          ..color = const Color(0xFFFFC107).withValues(alpha: pulseOpacity)
+          ..color = const Color(0xFFFF9866).withValues(alpha: pulseOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
@@ -689,7 +1030,7 @@ class TooltipPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final glowPaint = Paint()
-      ..color = const Color(0xFFFFC107).withValues(alpha: 0.25)
+      ..color = const Color(0xFFFF9866).withValues(alpha: 0.25)
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
 
@@ -768,7 +1109,7 @@ class TooltipPainter extends CustomPainter {
 
   void _drawCurlyArrowToTarget(Canvas canvas, Rect balloonRect, Offset targetCenter) {
     final arrowPaint = Paint()
-      ..color = const Color(0xFFFFC107)
+      ..color = const Color(0xFFFF9866)
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;

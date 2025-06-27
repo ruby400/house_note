@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/repositories/user_repository.dart';
 import 'package:house_note/services/firebase_auth_service.dart';
+import 'package:house_note/providers/firebase_chart_providers.dart';
+import 'package:house_note/core/utils/logger.dart';
 
 // 상태 정의
 class AuthState {
@@ -25,13 +27,35 @@ class AuthState {
 class AuthViewModel extends StateNotifier<AuthState> {
   final FirebaseAuthService _authService;
   final UserRepository _userRepository;
+  final Ref _ref;
 
-  AuthViewModel(this._authService, this._userRepository)
+  AuthViewModel(this._authService, this._userRepository, this._ref)
       : super(AuthState(user: _authService.currentUser)) {
     // 초기 사용자 상태 설정
     _authService.authStateChanges.listen((user) {
       state = state.copyWith(user: user, isLoading: false);
+      // 로그인 시 데이터 동기화
+      if (user != null) {
+        _syncDataAfterLogin();
+      }
     });
+  }
+
+  /// 로그인 후 자동 데이터 동기화
+  Future<void> _syncDataAfterLogin() async {
+    try {
+      AppLogger.info('로그인 감지 - 데이터 동기화 시작');
+      final chartService = _ref.read(integratedChartServiceProvider);
+      final result = await chartService.syncDataAfterLogin();
+      
+      if (result != null) {
+        AppLogger.info('데이터 동기화 완료: ${result.summary}');
+      } else {
+        AppLogger.info('동기화할 데이터 없음');
+      }
+    } catch (e) {
+      AppLogger.error('로그인 후 데이터 동기화 실패', error: e);
+    }
   }
 
   // Firebase Auth 오류를 한국어로 변환하는 함수
@@ -111,6 +135,32 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final userCredential = await _authService.signInWithGoogle();
       if (userCredential == null) {
         // 사용자가 구글 로그인 취소
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+      
+      // 신규 유저인지 확인
+      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      if (isNewUser && userCredential.user != null) {
+        // 신규 유저면 Firestore에 프로필 생성
+        await _userRepository.createUserProfile(userCredential.user!);
+      }
+      
+      state = state.copyWith(isLoading: false, user: userCredential.user);
+      return true;
+    } catch (e) {
+      final errorMessage = _getKoreanErrorMessage(e.toString());
+      state = state.copyWith(isLoading: false, error: errorMessage);
+      return false;
+    }
+  }
+
+  Future<bool> signInWithNaver() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final userCredential = await _authService.signInWithNaver();
+      if (userCredential == null) {
+        // 사용자가 네이버 로그인 취소
         state = state.copyWith(isLoading: false);
         return false;
       }

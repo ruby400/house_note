@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:house_note/core/utils/logger.dart';
+import 'package:house_note/services/naver_auth_service.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _firebaseAuth;
@@ -68,12 +69,38 @@ class FirebaseAuthService {
     }
   }
 
+  /// 네이버 로그인
+  Future<UserCredential?> signInWithNaver() async {
+    try {
+      AppLogger.info('🟢 네이버 로그인 시도');
+      final result = await NaverAuthService.signInWithNaverToFirebase();
+      
+      if (result != null) {
+        AppLogger.info('✅ 네이버 로그인 성공: ${result.user?.email}');
+        return result;
+      } else {
+        AppLogger.warning('⚠️ 네이버 로그인 취소 또는 실패');
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('❌ 네이버 로그인 오류', error: e);
+      throw Exception('네이버 로그인 중 오류: $e');
+    }
+  }
+
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut(); // 구글 로그아웃
-      await _firebaseAuth.signOut(); // 파이어베이스 로그아웃
+      AppLogger.info('🚪 로그아웃 시도');
+      
+      // 모든 로그인 방식에서 로그아웃
+      await _googleSignIn.signOut();
+      await NaverAuthService.signOut();
+      await _firebaseAuth.signOut();
+      
+      AppLogger.info('✅ 로그아웃 성공');
     } catch (e) {
-      throw Exception('Sign out failed: $e');
+      AppLogger.error('❌ 로그아웃 오류', error: e);
+      throw Exception('로그아웃 중 오류: $e');
     }
   }
 

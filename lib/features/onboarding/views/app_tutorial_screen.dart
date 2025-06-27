@@ -99,7 +99,7 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
         '🖼️ 풀스크린: 이미지 탭하여 크게 보기',
       ],
       icon: Icons.lightbulb,
-      color: Color(0xFFFFC107),
+      color: Color(0xFFFF9866),
     ),
   ];
 

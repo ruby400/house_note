@@ -14,7 +14,7 @@ import 'package:house_note/features/my_page/views/my_page_screen.dart';
 import 'package:house_note/features/my_page/views/priority_settings_page.dart';
 import 'package:house_note/features/my_page/views/profile_settings_screen.dart';
 import 'package:house_note/features/my_page/views/user_guide_screen.dart';
-import 'package:house_note/features/onboarding/views/app_tutorial_screen.dart';
+import 'package:house_note/features/onboarding/views/interactive_tutorial_screen.dart';
 import 'package:house_note/features/onboarding/views/priority_setting_screen.dart';
 import 'package:house_note/features/onboarding/views/profile_setting_screen.dart';
 import 'package:house_note/features/splash/views/splash_screen.dart';
@@ -50,11 +50,11 @@ class AppRouter {
         name: ProfileSettingScreen.routeName,
         builder: (context, state) => const ProfileSettingScreen(),
       ),
-      // 온보딩 - 앱 튜토리얼
+      // 온보딩 - 인터렉티브 튜토리얼
       GoRoute(
-        path: AppTutorialScreen.routePath,
-        name: AppTutorialScreen.routeName,
-        builder: (context, state) => const AppTutorialScreen(),
+        path: InteractiveTutorialScreen.routePath,
+        name: InteractiveTutorialScreen.routeName,
+        builder: (context, state) => const InteractiveTutorialScreen(),
       ),
       // 온보딩 - 우선순위 설정
       GoRoute(
@@ -208,7 +208,7 @@ class AppRouter {
       } else {
         // 온보딩 미완료 시: 온보딩 플로우에 있는게 아니라면 튜토리얼로
         if (!isOnboardingFlow) {
-          return AppTutorialScreen.routePath;
+          return InteractiveTutorialScreen.routePath;
         }
       }
 

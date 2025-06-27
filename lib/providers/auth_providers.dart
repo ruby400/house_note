@@ -31,5 +31,6 @@ final authViewModelProvider =
   return AuthViewModel(
     ref.watch(firebaseAuthServiceProvider),
     ref.watch(userRepositoryProvider),
+    ref, // Ref 전달
   );
 });

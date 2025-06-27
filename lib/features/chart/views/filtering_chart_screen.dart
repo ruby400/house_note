@@ -562,7 +562,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         return;
       }
 
-      final chartList = ref.read(integratedChartsProvider);
+      final chartList = ref.read(propertyChartListProvider);
       AppLogger.d('프로바이더에서 차트 목록 로드 완료 - 개수: ${chartList.length}');
 
       // 차트 목록 검증
@@ -587,7 +587,41 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         AppLogger.warning('차트를 찾지 못함 (ID: ${widget.chartId})');
         AppLogger.d(
             '사용 가능한 차트 목록: ${chartList.map((c) => '${c.id}:${c.title}').toList()}');
-        _createDefaultChart();
+        
+        // 새로 생성된 차트라면 기본 차트를 생성 (첫 번째 빈 행 포함)
+        final newChart = PropertyChartModel(
+          id: widget.chartId,
+          title: '새 차트',
+          date: DateTime.now(),
+          properties: [
+            PropertyData(
+              id: '1',
+              order: '1',
+              name: '',
+              deposit: '',
+              rent: '',
+              direction: '',
+              landlordEnvironment: '',
+              rating: 0,
+              createdAt: DateTime.now(),
+              cellImages: {},
+            ),
+          ], // 첫 번째 빈 행 추가
+          columnOptions: _columnOptions,
+        );
+        
+        setState(() {
+          _currentChart = newChart;
+        });
+        
+        // Provider에 차트 저장 (중복 추가 방지)
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (mounted) {
+            final integratedService = ref.read(integratedChartServiceProvider);
+            await integratedService.saveChart(newChart);
+            ref.read(currentChartProvider.notifier).setChart(newChart);
+          }
+        });
         return;
       }
 
@@ -652,7 +686,20 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         id: chartId,
         title: '새 부동산 차트',
         date: DateTime.now(),
-        properties: _getDefaultProperties(),
+        properties: [
+          PropertyData(
+            id: '1',
+            order: '1',
+            name: '',
+            deposit: '',
+            rent: '',
+            direction: '',
+            landlordEnvironment: '',
+            rating: 0,
+            createdAt: DateTime.now(),
+            cellImages: {},
+          ),
+        ], // 첫 번째 빈 행 추가
         columnOptions: _columnOptions,
         columnVisibility: defaultColumnVisibility,
       );
@@ -679,7 +726,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     AppLogger.d('Build: FilteringChartScreen');
 
     // 실시간으로 차트 데이터 감시하여 동기화
-    final chartList = ref.watch(integratedChartsProvider);
+    final chartList = ref.watch(propertyChartListProvider);
     final latestChart = chartList.firstWhere(
       (chart) => chart.id == widget.chartId,
       orElse: () => PropertyChartModel(
@@ -871,11 +918,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   String _getCurrentCellValue(int rowIndex, int columnIndex) {
     if (_currentChart == null ||
         rowIndex < 0 ||
-        rowIndex >= _currentChart!.properties.length ||
         columnIndex < 0 ||
         columnIndex >= _columns.length) {
       AppLogger.warning(
           '_getCurrentCellValue: Invalid parameters - row: $rowIndex, col: $columnIndex');
+      return '';
+    }
+
+    // 빈 차트이거나 인덱스가 범위를 벗어나는 경우 빈 값 반환
+    if (_currentChart!.properties.isEmpty || rowIndex >= _currentChart!.properties.length) {
+      // 순번 컬럼인 경우만 인덱스 기반 값 반환
+      if (columnIndex == 0) {
+        return '${rowIndex + 1}';
+      }
       return '';
     }
 
@@ -3932,9 +3987,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                           child: ListView.builder(
                             controller: _verticalController,
                             physics: const ClampingScrollPhysics(),
-                            itemCount: _currentChart!.properties.length,
+                            itemCount: _currentChart!.properties.isEmpty ? 1 : _currentChart!.properties.length,
                             itemBuilder: (context, index) {
-                              final property = _currentChart!.properties[index];
+                              // 빈 차트인 경우 기본 빈 행 표시
+                              final property = _currentChart!.properties.isEmpty || index >= _currentChart!.properties.length
+                                  ? PropertyData(id: 'temp_$index', order: '${index + 1}')
+                                  : _currentChart!.properties[index];
                               final rowData =
                                   property.getRowData(_columns.length);
 
@@ -4092,7 +4150,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                                 child: ListView.builder(
                                   controller: _dataVerticalController,
                                   physics: const ClampingScrollPhysics(),
-                                  itemCount: _currentChart!.properties.length,
+                                  itemCount: _currentChart!.properties.isEmpty ? 1 : _currentChart!.properties.length,
                                   itemBuilder: (context, index) {
                                     return _buildScrollableDataRow(index);
                                   },
@@ -4138,7 +4196,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 스크롤되는 데이터 행 빌더 (순번 제외)
   Widget _buildScrollableDataRow(int index) {
-    // final property = _currentChart!.properties[index];
+    // 빈 차트인 경우나 인덱스가 범위를 벗어나는 경우 기본 빈 행 표시
+    final hasProperty = _currentChart!.properties.isNotEmpty && index < _currentChart!.properties.length;
 
     return Container(
       height: 60,
@@ -4428,7 +4487,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         },
         onStepExit: () {
           // 원래 제목으로 복원
-          final chartList = ref.read(integratedChartsProvider);
+          final chartList = ref.read(propertyChartListProvider);
           final originalChart = chartList.firstWhere(
             (chart) => chart.id == widget.chartId,
             orElse: () => PropertyChartModel(
@@ -4552,7 +4611,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         tooltipPosition: GuideTooltipPosition.bottom,
         onStepEnter: () {
           // 모든 변경사항 복원
-          final chartList = ref.read(integratedChartsProvider);
+          final chartList = ref.read(propertyChartListProvider);
           final originalChart = chartList.firstWhere(
             (chart) => chart.id == widget.chartId,
             orElse: () => PropertyChartModel(

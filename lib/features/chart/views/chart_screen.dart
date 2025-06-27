@@ -40,9 +40,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   final GlobalKey _sortKey = GlobalKey();
   final GlobalKey _chartItemKey = GlobalKey();
   final GlobalKey _checkboxKey = GlobalKey();
-  final GlobalKey _deleteButtonKey = GlobalKey();
-  final GlobalKey _exportPdfKey = GlobalKey();
-  final GlobalKey _exportPngKey = GlobalKey();
   final GlobalKey _sortAddKey = GlobalKey();
 
   @override
@@ -98,70 +95,124 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     );
   }
 
+
+
+
   void _showInteractiveGuide() {
     final steps = [
       GuideStep(
         title: '차트 생성',
-        description: '드롭다운 메뉴에서 차트목록 추가 가능',
+        description: '드롭다운 메뉴에서 새로운 차트를 추가할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _addChartKey,
         icon: Icons.add_chart,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
         title: '차트 선택',
-        description: '체크박스로 여러 차트 선택 가능',
+        description: '체크박스로 여러 차트를 선택할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _checkboxKey,
         icon: Icons.check_box,
         tooltipPosition: GuideTooltipPosition.right,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
         title: '차트 상세보기',
-        description: '차트 탭해서 상세 비교표 확인 가능',
+        description: '차트를 탭해서 상세 비교표를 확인할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _chartItemKey,
         icon: Icons.table_chart,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
         title: '차트 검색',
-        description: '차트 제목으로 실시간 검색 가능',
+        description: '차트 제목으로 실시간 검색할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _searchKey,
         icon: Icons.search,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
         title: '차트 정렬',
-        description: '최신순, 거리순, 월세순 정렬 가능',
+        description: '최신순, 거리순, 월세순으로 정렬할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _sortKey,
         icon: Icons.sort,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
         title: '정렬 추가',
-        description: '사용자 정의 정렬 방식 추가 가능',
+        description: '사용자 정의 정렬 방식을 추가할 수 있습니다. 다음 버튼을 눌러 계속하세요.',
         targetKey: _sortAddKey,
         icon: Icons.add_box,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
-        title: 'PDF 내보내기',
-        description: '선택한 차트들을 PDF로 내보내기 가능',
-        targetKey: _exportPdfKey,
+        title: '차트 선택하기 ✅',
+        description: '내보낼 차트를 체크박스로 선택하세요.',
+        targetKey: _checkboxKey,
+        icon: Icons.check_box,
+        tooltipPosition: GuideTooltipPosition.right,
+        waitForUserAction: false,
+        autoNext: true,
+        onStepEnter: () {
+          // 첫 번째 차트 자동 선택
+          final chartList = ref.read(propertyChartListProvider);
+          if (chartList.isNotEmpty) {
+            setState(() {
+              _checkedItems[chartList.first.id] = true;
+            });
+          }
+        },
+      ),
+      GuideStep(
+        title: '메뉴 열기 📱',
+        description: '화살표 버튼을 눌러 내보내기 메뉴를 열어보세요.',
+        targetKey: _addChartKey,
+        icon: Icons.more_vert,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+      ),
+      GuideStep(
+        title: 'PDF 내보내기 📄',
+        description: 'PDF로 내보내면 문서로 저장됩니다.',
+        targetKey: _addChartKey,
         icon: Icons.picture_as_pdf,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
       GuideStep(
-        title: 'PNG 내보내기',
-        description: '선택한 차트들을 이미지로 갤러리 저장 가능',
-        targetKey: _exportPngKey,
+        title: 'PNG 내보내기 📸',
+        description: '이미지로 내보내면 갤러리에 저장됩니다.',
+        targetKey: _addChartKey,
         icon: Icons.image,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
+        onStepExit: () {
+          // 선택 해제
+          setState(() {
+            _checkedItems.clear();
+          });
+        },
       ),
       GuideStep(
-        title: '차트 삭제',
-        description: '선택한 차트들 일괄 삭제 가능',
-        targetKey: _deleteButtonKey,
+        title: '차트 삭제 🗑️',
+        description: '불필요한 차트는 선택 후 삭제할 수 있습니다.',
+        targetKey: _addChartKey,
         icon: Icons.delete,
         tooltipPosition: GuideTooltipPosition.bottom,
+        waitForUserAction: false,
+        autoNext: true,
       ),
     ];
 
@@ -1096,6 +1147,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
   Widget _buildAddFilterButton() {
     return GestureDetector(
+      key: _sortAddKey,
       onTap: _showAddSortDialog,
       child: Container(
         width: 36,
@@ -1300,13 +1352,16 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
+          return Dialog(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             backgroundColor: Colors.white,
             elevation: 8,
-            contentPadding: EdgeInsets.zero,
-            title: Container(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -1339,170 +1394,180 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                 ],
               ),
             ),
-            content: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFECE0),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      '새로운 부동산 차트를 생성합니다.',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: '차트 제목',
-                      labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
-                      hintText: '예: 강남구 부동산 차트',
-                      hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
-                      prefixIcon:
-                          const Icon(Icons.title, color: Color(0xFFFF8A65)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                // 내용 부분
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFECE0),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          '새로운 부동산 차트를 생성합니다.',
+                          style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFFF8A65), width: 2),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFFFF8F5),
-                    ),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: Color(0xFFFF8A65),
-                                onPrimary: Colors.white,
-                                surface: Colors.white,
-                                onSurface: Color(0xFF2D3748),
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (date != null) setState(() => selectedDate = date);
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFFCCBC)),
-                        color: const Color(0xFFFFF8F5),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_today,
-                              color: Color(0xFFFF8A65), size: 18),
-                          const SizedBox(width: 12),
-                          Text(
-                            '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF424242),
-                              fontWeight: FontWeight.w500,
-                            ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: titleController,
+                        decoration: InputDecoration(
+                          labelText: '차트 제목',
+                          labelStyle: const TextStyle(color: Color(0xFFFF8A65)),
+                          hintText: '예: 강남구 부동산 차트',
+                          hintStyle: const TextStyle(color: Color(0xFFBCAAA4)),
+                          prefixIcon:
+                              const Icon(Icons.title, color: Color(0xFFFF8A65)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
                           ),
-                          const Spacer(),
-                          const Icon(Icons.arrow_drop_down,
-                              color: Color(0xFFFF8A65), size: 20),
-                        ],
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFFFF8A65), width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFFCCBC)),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFFFF8F5),
+                        ),
+                        autofocus: true,
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2030),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFFFF8A65),
+                                    onPrimary: Colors.white,
+                                    surface: Colors.white,
+                                    onSurface: Color(0xFF2D3748),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) setState(() => selectedDate = date);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFCCBC)),
+                            color: const Color(0xFFFFF8F5),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today,
+                                  color: Color(0xFFFF8A65), size: 18),
+                              const SizedBox(width: 12),
+                              Text(
+                                '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF424242),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.arrow_drop_down,
+                                  color: Color(0xFFFF8A65), size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('취소',
-                    style: TextStyle(
-                        color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (titleController.text.trim().isNotEmpty) {
-                      _addNewChart(titleController.text.trim(), selectedDate);
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              '"${titleController.text.trim()}" 차트가 생성되었습니다.',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                          backgroundColor: const Color(0xFFFF8A65),
-                          duration: const Duration(milliseconds: 1000),
+                // 버튼 부분
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
-                          margin: const EdgeInsets.all(16),
-                          behavior: SnackBarBehavior.floating,
                         ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                        child: const Text('취소',
+                            style: TextStyle(
+                                color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (titleController.text.trim().isNotEmpty) {
+                              _addNewChart(titleController.text.trim(), selectedDate);
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      '"${titleController.text.trim()}" 차트가 생성되었습니다.',
+                                      style:
+                                          const TextStyle(fontWeight: FontWeight.w600)),
+                                  backgroundColor: const Color(0xFFFF8A65),
+                                  duration: const Duration(milliseconds: 1000),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                  margin: const EdgeInsets.all(16),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('생성',
+                              style: TextStyle(
+                                  color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text('생성',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -1589,9 +1654,11 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                   bottom: BorderSide(color: Color(0xFFEEEEEE), width: 0.5)),
             ),
             child: ListTile(
+              key: index == 0 ? _chartItemKey : null, // 첫 번째 차트 항목에만 키 적용
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               leading: Checkbox(
+                key: index == 0 ? _checkboxKey : null, // 첫 번째 체크박스에만 키 적용
                 value: isChecked,
                 side: const BorderSide(
                     width: 2, color: Color.fromARGB(255, 195, 195, 195)),

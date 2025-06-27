@@ -4,6 +4,7 @@ import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/features/chart/views/image_manager_widgets.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/providers/firebase_chart_providers.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -40,6 +41,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   late TextEditingController _nameController;
   late TextEditingController _depositController;
   late TextEditingController _rentController;
+  late TextEditingController _addressController;
+  
+  // 변경사항 추적 및 자동 저장
+  bool _hasUnsavedChanges = false;
   
   // 튜토리얼 관련
   final GlobalKey _editButtonKey = GlobalKey();
@@ -47,6 +52,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   final GlobalKey _nameFieldKey = GlobalKey();
   final GlobalKey _imageGalleryKey = GlobalKey();
   final GlobalKey _propertyFormKey = GlobalKey();
+  final GlobalKey _ratingKey = GlobalKey();
 
   // 각 컬럼별 기본 옵션 정의
   static const Map<String, List<String>> defaultOptions = {
@@ -122,6 +128,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     _nameController = TextEditingController();
     _depositController = TextEditingController();
     _rentController = TextEditingController();
+    _addressController = TextEditingController();
+    
+    // 변경사항 추적을 위한 리스너 추가
+    _nameController.addListener(_onFieldChanged);
+    _depositController.addListener(_onFieldChanged);
+    _rentController.addListener(_onFieldChanged);
+    _addressController.addListener(_onFieldChanged);
 
     // 새 부동산인 경우 자동으로 편집 모드 활성화
     if (widget.isNewProperty) {
@@ -130,6 +143,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (propertyData != null) {
           _nameController.text = propertyData!.name;
+          _addressController.text = propertyData!.address;
           _depositController.text = propertyData!.deposit;
           _rentController.text = propertyData!.rent;
         }
@@ -142,12 +156,121 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     });
   }
 
+  // 변경사항 추적 및 자동 저장 관련 메서드들
+  void _onFieldChanged() {
+    if (!mounted) return;
+    
+    // 변경사항이 있는지 확인
+    bool hasChanges = _checkForChanges();
+    
+    if (hasChanges != _hasUnsavedChanges) {
+      setState(() {
+        _hasUnsavedChanges = hasChanges;
+      });
+    }
+  }
+  
+  bool _checkForChanges() {
+    if (propertyData == null) return false;
+    
+    // 텍스트 컨트롤러 값 확인
+    if (_nameController.text != propertyData!.name ||
+        _depositController.text != propertyData!.deposit ||
+        _rentController.text != propertyData!.rent) {
+      return true;
+    }
+    
+    // editedValues 확인
+    for (String key in editedValues.keys) {
+      String originalValue = _getOriginalValue(key);
+      if (editedValues[key] != originalValue) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  String _getOriginalValue(String key) {
+    if (propertyData == null) return '';
+    
+    switch (key) {
+      case 'name':
+        return propertyData!.name;
+      case 'deposit':
+        return propertyData!.deposit;
+      case 'rent':
+        return propertyData!.rent;
+      case 'address':
+        return propertyData!.address;
+      case 'direction':
+        return propertyData!.direction;
+      case 'landlordEnvironment':
+        return propertyData!.landlordEnvironment;
+      case 'memo':
+        return propertyData!.memo ?? '';
+      default:
+        return propertyData!.additionalData[key] ?? '';
+    }
+  }
+  
+  // 자동 저장 실행
+  Future<void> _autoSave() async {
+    if (!_hasUnsavedChanges || propertyData == null) return;
+    
+    try {
+      // 편집된 값들을 적용
+      editedValues['name'] = _nameController.text;
+      editedValues['address'] = _addressController.text;
+      editedValues['deposit'] = _depositController.text;
+      editedValues['rent'] = _rentController.text;
+      
+      await _saveChanges();
+      
+      // 자동 저장 알림 (조용히)
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ 자동 저장되었습니다'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('자동 저장 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  // 페이지 나가기 전 확인 및 자동 저장
+  Future<bool> _onWillPop() async {
+    if (_hasUnsavedChanges) {
+      // 변경사항이 있으면 자동 저장
+      await _autoSave();
+      return true;
+    }
+    return true;
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
+    _nameController.removeListener(_onFieldChanged);
+    _depositController.removeListener(_onFieldChanged);
+    _rentController.removeListener(_onFieldChanged);
+    _addressController.removeListener(_onFieldChanged);
     _nameController.dispose();
     _depositController.dispose();
     _rentController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -228,6 +351,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         id: widget.cardId,
         order: '',
         name: '',
+        address: '',
         deposit: '',
         rent: '',
         direction: '',
@@ -256,6 +380,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       '재계/방향': 'direction',
       '집주인 환경': 'landlord_environment',
       '집 이름': 'name',
+      '주소': 'address',
       '보증금': 'deposit',
       '월세': 'rent',
       // 표준 항목들 - 차트와 카드가 동일한 키 사용
@@ -332,6 +457,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       'direction': '재계/방향',
       'landlord_environment': '집주인 환경',
       'name': '집 이름',
+      'address': '주소',
       'deposit': '보증금',
       'rent': '월세',
       // 표준 항목들
@@ -569,18 +695,115 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 실시간으로 차트 데이터 감시하여 동기화
+    final chartList = ref.watch(integratedChartsProvider);
+    PropertyData? latestPropertyData;
+    
+    // 모든 차트에서 현재 프로퍼티 ID와 일치하는 최신 데이터 찾기
+    for (final chart in chartList) {
+      final foundProperty = chart.properties.firstWhere(
+        (p) => p.id == widget.cardId,
+        orElse: () => PropertyData(
+          id: '',
+          name: '',
+          address: '',
+          deposit: '',
+          rent: '',
+          rating: 0,
+          memo: '',
+          order: '',
+          direction: '',
+          landlordEnvironment: '',
+          additionalData: {},
+          cellImages: {},
+        ),
+      );
+      if (foundProperty.id.isNotEmpty) {
+        latestPropertyData = foundProperty;
+        break;
+      }
+    }
+    
+    // 최신 데이터가 있고 현재 데이터와 다르면 업데이트
+    if (latestPropertyData != null && propertyData != null && latestPropertyData != propertyData) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !isEditMode) { // 편집 중이 아닐 때만 업데이트
+          print('🏠 Card Real-time Sync (View Mode): address="${latestPropertyData!.address}"');
+          setState(() {
+            propertyData = latestPropertyData;
+            // 컨트롤러도 업데이트
+            _nameController.text = latestPropertyData!.name;
+            _addressController.text = latestPropertyData!.address;
+            _depositController.text = latestPropertyData!.deposit;
+            _rentController.text = latestPropertyData!.rent;
+          });
+        } else if (mounted && isEditMode) {
+          // 편집 중일 때도 백그라운드 데이터는 업데이트 (컨트롤러는 유지)
+          print('🏠 Card Real-time Sync (Edit Mode): address="${latestPropertyData!.address}"');
+          setState(() {
+            propertyData = latestPropertyData;
+          });
+          
+          // 편집 중이더라도 외부에서 변경된 데이터는 컨트롤러에 반영 
+          // (사용자가 현재 입력하고 있지 않은 필드만)
+          if (_addressController.text.isEmpty && latestPropertyData!.address.isNotEmpty) {
+            _addressController.text = latestPropertyData!.address;
+          }
+          if (_nameController.text.isEmpty && latestPropertyData!.name.isNotEmpty) {
+            _nameController.text = latestPropertyData!.name;
+          }
+          if (_depositController.text.isEmpty && latestPropertyData!.deposit.isNotEmpty) {
+            _depositController.text = latestPropertyData!.deposit;
+          }
+          if (_rentController.text.isEmpty && latestPropertyData!.rent.isNotEmpty) {
+            _rentController.text = latestPropertyData!.rent;
+          }
+        }
+      });
+    }
+    
     if (propertyData == null) {
-      return Scaffold(
+      return PopScope(
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) await _onWillPop();
+        },
+        child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           centerTitle: true,
-          title: const Text(
-            '집 상세정보',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '집 상세정보',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              if (_hasUnsavedChanges && isEditMode) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    '수정됨',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () async {
+              await _onWillPop();
+              if (mounted) Navigator.of(context).pop();
+            },
           ),
           flexibleSpace: Container(
             decoration: const BoxDecoration(
@@ -598,10 +821,15 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           ),
         ),
         body: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
-    return Scaffold(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) await _onWillPop();
+      },
+      child: Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -622,7 +850,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () async {
+            await _onWillPop();
+            if (mounted) Navigator.of(context).pop();
+          },
         ),
         actions: [
           IconButton(
@@ -693,6 +924,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                           ),
                           onChanged: (value) {
                             editedValues['name'] = value;
+                            _onFieldChanged();
                           },
                         )
                       : Text(
@@ -708,6 +940,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   const SizedBox(height: 12),
                   // 별점 편집
                   Row(
+                    key: _ratingKey,
                     children: [
                       isEditMode
                           ? Row(
@@ -751,6 +984,70 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                           color: Color(0xFFFF8A65),
                           fontWeight: FontWeight.w500,
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // 주소 입력 필드
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, 
+                          color: Color(0xFFFF8A65), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: isEditMode
+                            ? TextField(
+                                controller: _addressController,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFFF8A65), width: 1),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFFF8A65), width: 1),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFFF8A65), width: 2),
+                                  ),
+                                  hintText: '주소를 입력하세요',
+                                  hintStyle: const TextStyle(color: Colors.grey),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                ),
+                                style: const TextStyle(fontSize: 14),
+                                onChanged: (value) {
+                                  editedValues['address'] = value;
+                                  _onFieldChanged();
+                                },
+                              )
+                            : Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12, horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF8F5),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: const Color(0xFFFFCCBC), width: 1),
+                                ),
+                                child: Text(
+                                  propertyData!.address.isEmpty
+                                      ? '주소 정보 없음'
+                                      : propertyData!.address,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: propertyData!.address.isEmpty
+                                        ? Colors.grey
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -845,6 +1142,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 } else {
                   // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
                   _nameController.text = editedValues['name'] ?? propertyData!.name;
+                  _addressController.text = editedValues['address'] ?? propertyData!.address;
                   _depositController.text = editedValues['deposit'] ?? propertyData!.deposit;
                   _rentController.text = editedValues['rent'] ?? propertyData!.rent;
                 }
@@ -854,13 +1152,14 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   });
                 }
               },
-              backgroundColor: const Color(0xFFFF8A65),
+              backgroundColor: _hasUnsavedChanges && isEditMode ? Colors.orange : const Color(0xFFFF8A65),
               child: Icon(
-                isEditMode ? Icons.check : Icons.edit,
+                isEditMode ? (_hasUnsavedChanges ? Icons.save : Icons.check) : Icons.edit,
                 color: Colors.white,
               ),
             )
           : null,
+      ),
     );
   }
 
@@ -1152,6 +1451,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     ),
                     onChanged: (newValue) {
                       editedValues[key] = newValue;
+                      _onFieldChanged();
                     },
                   )
                 : Text(
@@ -1351,8 +1651,33 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final buttonSize = renderBox.size;
 
     // 드롭다운 높이를 내용에 맞게 정확히 계산
-    final List<String> options = dropdownOptions[key] ?? [];
+    List<String> options = dropdownOptions[key] ?? [];
     final List<String> defaultOptionsForLabel = defaultOptions[label] ?? [];
+    
+    // 차트에서 추가된 옵션들도 포함
+    if (widget.chartId != null) {
+      final chartList = ref.read(integratedChartsProvider);
+      final chart = chartList.firstWhere(
+        (chart) => chart.id == widget.chartId,
+        orElse: () => PropertyChartModel(
+          id: widget.chartId!,
+          title: '새 차트',
+          date: DateTime.now(),
+          properties: [],
+        ),
+      );
+      
+      String columnName = _getChartColumnNameFromCardKey(key) ?? '새 컬럼';
+      if (chart.columnOptions.containsKey(columnName)) {
+        final chartOptions = chart.columnOptions[columnName]!;
+        // 중복 제거하면서 차트 옵션들 추가
+        for (String option in chartOptions) {
+          if (!options.contains(option)) {
+            options.add(option);
+          }
+        }
+      }
+    }
 
     // 각 요소의 실제 높이 계산
     double contentHeight = 0;
@@ -1424,14 +1749,14 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       constraints: const BoxConstraints(),
       items: _buildDropdownItems(key, label, defaultOptionsForLabel, options,
           dropdownWidth, estimatedHeight),
-    ).then((String? value) {
+    ).then((String? value) async {
       // 드롭다운 닫힐 때 활성 상태 초기화
       setState(() {
         activeDropdownKey = null;
       });
 
       if (value != null) {
-        _handleDropdownSelection(value, key, label);
+        await _handleDropdownSelection(value, key, label);
       }
     });
   }
@@ -1639,7 +1964,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   // 드롭다운 선택 처리 메서드
-  void _handleDropdownSelection(String value, String key, String label) {
+  Future<void> _handleDropdownSelection(String value, String key, String label) async {
     if (value == 'direct_input') {
       if (mounted) {
         setState(() {
@@ -1662,9 +1987,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             dropdownOptions[key]!.add(value);
           }
         });
+        
+        // 변경사항 추적
+        _onFieldChanged();
 
         // 차트의 컬럼 옵션에도 추가
-        _addToChartOptions(key, value);
+        await _addToChartOptions(key, value);
 
         // 기본 옵션에서 선택했을 때 스낵바 표시
         final List<String> defaultOptionsForLabel = defaultOptions[label] ?? [];
@@ -1696,6 +2024,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         return propertyData!.deposit;
       case 'rent':
         return propertyData!.rent;
+      case 'address':
+        return propertyData!.address;
       case 'direction':
         return propertyData!.direction;
       case 'landlord_environment':
@@ -1755,6 +2085,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         autofocus: true,
         onChanged: (newValue) {
           editedValues[key] = newValue;
+          _onFieldChanged();
         },
       );
     } else {
@@ -1893,7 +2224,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (controller.text.isNotEmpty) {
                     if (mounted) {
                       setState(() {
@@ -1906,7 +2237,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       });
 
                       // 차트의 컬럼 옵션에도 추가
-                      _addToChartOptions(key, controller.text);
+                      await _addToChartOptions(key, controller.text);
                     }
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1943,10 +2274,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     );
   }
 
-  void _addToChartOptions(String key, String option) {
+  Future<void> _addToChartOptions(String key, String option) async {
     if (widget.chartId == null) return;
 
-    final chartList = ref.read(propertyChartListProvider);
+    final chartList = ref.read(integratedChartsProvider);
     final chart = chartList.firstWhere(
       (chart) => chart.id == widget.chartId,
       orElse: () => PropertyChartModel(
@@ -1971,147 +2302,250 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
 
     final updatedChart = chart.copyWith(columnOptions: updatedColumnOptions);
-    ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+    
+    // Firebase 통합 서비스를 사용해서 저장
+    final integratedService = ref.read(integratedChartServiceProvider);
+    await integratedService.saveChart(updatedChart);
+    
+    // 로컬 dropdownOptions도 업데이트 (더 빠른 반영을 위해)
+    if (mounted) {
+      setState(() {
+        if (!dropdownOptions.containsKey(key)) {
+          dropdownOptions[key] = [];
+        }
+        if (!dropdownOptions[key]!.contains(option)) {
+          dropdownOptions[key]!.add(option);
+        }
+      });
+    }
   }
 
-  void _saveChanges() {
-    // PropertyData는 immutable이므로 copyWith를 사용해서 업데이트
-    Map<String, String> additionalDataUpdate =
-        Map.from(propertyData!.additionalData);
+  Future<void> _saveChanges() async {
+    try {
+      // PropertyData는 immutable이므로 copyWith를 사용해서 업데이트
+      Map<String, String> additionalDataUpdate =
+          Map.from(propertyData!.additionalData);
 
-    for (String key in editedValues.keys) {
-      switch (key) {
-        case 'order':
-          propertyData = propertyData!.copyWith(order: editedValues[key]!);
+      for (String key in editedValues.keys) {
+        switch (key) {
+          case 'order':
+            propertyData = propertyData!.copyWith(order: editedValues[key]!);
+            break;
+          case 'name':
+            propertyData = propertyData!.copyWith(name: editedValues[key]!);
+            break;
+          case 'deposit':
+            propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
+            break;
+          case 'rent':
+            propertyData = propertyData!.copyWith(rent: editedValues[key]!);
+            break;
+          case 'address':
+            propertyData = propertyData!.copyWith(address: editedValues[key]!);
+            break;
+          case 'direction':
+            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            break;
+          case 'landlord_environment':
+            propertyData =
+                propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
+            break;
+          case 'rating':
+            propertyData = propertyData!
+                .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
+            break;
+          case 'memo':
+            propertyData = propertyData!.copyWith(memo: editedValues[key]!);
+            break;
+          default:
+            additionalDataUpdate[key] = editedValues[key]!;
+        }
+      }
+
+      // additionalData 업데이트가 있는 경우
+      if (additionalDataUpdate != propertyData!.additionalData) {
+        propertyData =
+            propertyData!.copyWith(additionalData: additionalDataUpdate);
+      }
+
+      // 컨트롤러 값들도 직접 업데이트 (name, address, deposit, rent)
+      propertyData = propertyData!.copyWith(
+        name: _nameController.text,
+        address: _addressController.text,
+        deposit: _depositController.text,
+        rent: _rentController.text,
+      );
+      
+      // Debug: Address save logging
+      print('🏠 Card Detail Address Save: "${_addressController.text}"');
+
+      // Firebase 통합 차트 서비스를 사용하여 저장
+      final integratedService = ref.read(integratedChartServiceProvider);
+      
+      // 실제 차트 데이터에 변경사항 반영
+      final chartList = ref.read(integratedChartsProvider);
+      for (var chart in chartList) {
+        final propertyIndex =
+            chart.properties.indexWhere((p) => p.id == propertyData!.id);
+        if (propertyIndex != -1) {
+          // 해당 차트에서 부동산 데이터 업데이트
+          final updatedProperties = List<PropertyData>.from(chart.properties);
+          updatedProperties[propertyIndex] = propertyData!;
+
+          final updatedChart = chart.copyWith(properties: updatedProperties);
+          
+          // Debug: 저장될 데이터 확인
+          print('🏠 Card Save Debug: property.id="${propertyData!.id}", address="${propertyData!.address}"');
+          print('🏠 Card Save Debug: chart.id="${updatedChart.id}", title="${updatedChart.title}"');
+          
+          // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
+          await integratedService.saveChart(updatedChart);
+          
+          // 로컬 provider들도 업데이트 (UI 즉시 반영)
+          ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+          
+          // 통합 차트 provider도 업데이트 (차트 화면 동기화용)
+          final integratedCharts = ref.read(integratedChartsProvider);
+          final chartIndex = integratedCharts.indexWhere((c) => c.id == chart.id);
+          if (chartIndex != -1) {
+            // integratedChartsProvider는 직접 수정할 수 없으므로 서비스를 통해 다시 로드
+            ref.invalidate(integratedChartsProvider);
+            print('🏠 Card Save: Invalidated integratedChartsProvider for chart sync');
+          }
           break;
-        case 'name':
-          propertyData = propertyData!.copyWith(name: editedValues[key]!);
-          break;
-        case 'deposit':
-          propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
-          break;
-        case 'rent':
-          propertyData = propertyData!.copyWith(rent: editedValues[key]!);
-          break;
-        case 'direction':
-          propertyData = propertyData!.copyWith(direction: editedValues[key]!);
-          break;
-        case 'landlord_environment':
-          propertyData =
-              propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
-          break;
-        case 'rating':
-          propertyData = propertyData!
-              .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
-          break;
-        case 'memo':
-          propertyData = propertyData!.copyWith(memo: editedValues[key]!);
-          break;
-        default:
-          additionalDataUpdate[key] = editedValues[key]!;
+        }
+      }
+
+      // 변경사항 플래그 초기화
+      setState(() {
+        _hasUnsavedChanges = false;
+        editedValues.clear();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ 변경사항이 저장되었습니다'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('저장 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
-
-    // additionalData 업데이트가 있는 경우
-    if (additionalDataUpdate != propertyData!.additionalData) {
-      propertyData =
-          propertyData!.copyWith(additionalData: additionalDataUpdate);
-    }
-
-    // 실제 차트 데이터에 변경사항 반영
-    final chartList = ref.read(propertyChartListProvider);
-    for (var chart in chartList) {
-      final propertyIndex =
-          chart.properties.indexWhere((p) => p.id == propertyData!.id);
-      if (propertyIndex != -1) {
-        // 해당 차트에서 부동산 데이터 업데이트
-        final updatedProperties = List<PropertyData>.from(chart.properties);
-        updatedProperties[propertyIndex] = propertyData!;
-
-        final updatedChart = chart.copyWith(properties: updatedProperties);
-        ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
-        break;
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('변경사항이 저장되었습니다')),
-    );
   }
 
-  void _saveNewProperty() {
+  Future<void> _saveNewProperty() async {
     if (propertyData == null || widget.chartId == null) return;
 
-    // Apply edited values to propertyData
-    Map<String, String> additionalDataUpdate =
-        Map.from(propertyData!.additionalData);
+    try {
+      // Apply edited values to propertyData
+      Map<String, String> additionalDataUpdate =
+          Map.from(propertyData!.additionalData);
 
-    for (String key in editedValues.keys) {
-      switch (key) {
-        case 'order':
-          propertyData = propertyData!.copyWith(order: editedValues[key]!);
-          break;
-        case 'name':
-          propertyData = propertyData!.copyWith(name: editedValues[key]!);
-          break;
-        case 'deposit':
-          propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
-          break;
-        case 'rent':
-          propertyData = propertyData!.copyWith(rent: editedValues[key]!);
-          break;
-        case 'direction':
-          propertyData = propertyData!.copyWith(direction: editedValues[key]!);
-          break;
-        case 'landlord_environment':
-          propertyData =
-              propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
-          break;
-        case 'rating':
-          propertyData = propertyData!
-              .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
-          break;
-        case 'memo':
-          propertyData = propertyData!.copyWith(memo: editedValues[key]!);
-          break;
-        default:
-          additionalDataUpdate[key] = editedValues[key]!;
+      for (String key in editedValues.keys) {
+        switch (key) {
+          case 'order':
+            propertyData = propertyData!.copyWith(order: editedValues[key]!);
+            break;
+          case 'name':
+            propertyData = propertyData!.copyWith(name: editedValues[key]!);
+            break;
+          case 'deposit':
+            propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
+            break;
+          case 'rent':
+            propertyData = propertyData!.copyWith(rent: editedValues[key]!);
+            break;
+          case 'address':
+            propertyData = propertyData!.copyWith(address: editedValues[key]!);
+            break;
+          case 'direction':
+            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            break;
+          case 'landlord_environment':
+            propertyData =
+                propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
+            break;
+          case 'rating':
+            propertyData = propertyData!
+                .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
+            break;
+          case 'memo':
+            propertyData = propertyData!.copyWith(memo: editedValues[key]!);
+            break;
+          default:
+            additionalDataUpdate[key] = editedValues[key]!;
+        }
+      }
+
+      // Update additionalData if needed
+      if (additionalDataUpdate != propertyData!.additionalData) {
+        propertyData =
+            propertyData!.copyWith(additionalData: additionalDataUpdate);
+      }
+
+      // Firebase 통합 차트 서비스를 사용하여 저장
+      final integratedService = ref.read(integratedChartServiceProvider);
+      
+      // Get target chart from integrated charts
+      final integratedCharts = ref.read(integratedChartsProvider);
+      final targetChart = integratedCharts.firstWhere(
+        (chart) => chart.id == widget.chartId,
+        orElse: () => PropertyChartModel(
+          id: widget.chartId!,
+          title: '새 차트',
+          date: DateTime.now(),
+          properties: [],
+        ),
+      );
+
+      // Add the property to the chart
+      final updatedProperties = List<PropertyData>.from(targetChart.properties);
+      updatedProperties.add(propertyData!);
+      
+      final updatedChart = targetChart.copyWith(properties: updatedProperties);
+      
+      // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
+      await integratedService.saveChart(updatedChart);
+      
+      // 로컬 provider들도 업데이트 (UI 즉시 반영)
+      ref.read(currentChartProvider.notifier).setChart(updatedChart);
+      ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+      
+      // 통합 차트 provider도 무효화하여 새로고침
+      ref.invalidate(integratedChartsProvider);
+      print('🏠 New Property Save: Invalidated integratedChartsProvider for chart sync');
+
+      // Show success message and navigate back
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ 새 부동산이 저장되었습니다'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate back to card list
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('저장 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
-
-    // Update additionalData if needed
-    if (additionalDataUpdate != propertyData!.additionalData) {
-      propertyData =
-          propertyData!.copyWith(additionalData: additionalDataUpdate);
-    }
-
-    // Set current chart to the target chart
-    final chartList = ref.read(propertyChartListProvider);
-    final targetChart = chartList.firstWhere(
-      (chart) => chart.id == widget.chartId,
-      orElse: () => PropertyChartModel(
-        id: widget.chartId!,
-        title: '새 차트',
-        date: DateTime.now(),
-        properties: [],
-      ),
-    );
-
-    // Add the property to the chart
-    ref.read(currentChartProvider.notifier).setChart(targetChart);
-    ref.read(currentChartProvider.notifier).addProperty(propertyData!);
-
-    // Update the chart in the main list
-    final updatedChart = ref.read(currentChartProvider)!;
-    ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
-
-    // Show success message and navigate back
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('새 부동산이 저장되었습니다')),
-    );
-
-    // Navigate back to card list
-    Navigator.of(context).pop();
   }
 
   void _showImageManager(String cellKey) {
@@ -2201,44 +2635,126 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   void _showTutorial() {
     final steps = <GuideStep>[
+      if (!isEditMode)
+        GuideStep(
+          title: '편집 모드 전환',
+          description: '지금 편집 모드로 자동 전환됩니다',
+          targetKey: _editButtonKey,
+          icon: Icons.edit,
+          tooltipPosition: GuideTooltipPosition.top,
+          autoNext: true,
+          autoNextDelay: const Duration(seconds: 2),
+          onStepEnter: () {
+            // 편집 모드로 자동 전환
+            if (!isEditMode) {
+              setState(() {
+                isEditMode = true;
+              });
+            }
+          },
+        ),
       GuideStep(
-        title: '사진 갤러리',
-        description: '편집 모드에서 사진 추가 변경 가능',
+        title: '집 이름 편집하기 ✏️',
+        description: '집 이름을 입력하여 매물을 쉽게 구분할 수 있습니다. 기억하기 쉬운 이름으로 설정해보세요.',
+        targetKey: _nameFieldKey,
+        icon: Icons.home,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 이름 필드에 예시 텍스트 입력
+          _nameController.text = '튜토리얼 예시 집';
+          if (propertyData != null) {
+            setState(() {
+              editedValues['집 이름'] = '튜토리얼 예시 집';
+            });
+          }
+        },
+        onStepExit: () {
+          // 원래 이름으로 복원
+          if (propertyData != null) {
+            _nameController.text = propertyData!.name;
+            editedValues.remove('집 이름');
+          }
+        },
+      ),
+      GuideStep(
+        title: '별점 평가하기 ⭐',
+        description: '별점을 터치하여 매물의 만족도를 평가할 수 있습니다. 1~5점까지 설정 가능합니다.',
+        targetKey: _ratingKey,
+        icon: Icons.star,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 편집 모드 활성화 및 별점을 5점으로 설정
+          if (propertyData != null) {
+            setState(() {
+              isEditMode = true;
+              editedValues['rating'] = '5';
+            });
+          }
+        },
+        onStepExit: () {
+          // 원래 별점으로 복원
+          if (propertyData != null) {
+            editedValues.remove('rating');
+          }
+        },
+      ),
+      GuideStep(
+        title: '드롭다운 옵션 선택하기 📋',
+        description: '드롭다운을 탭하여 방향, 특징 등 다양한 옵션을 선택할 수 있습니다. 필요시 새로운 옵션도 추가 가능합니다.',
+        targetKey: _propertyFormKey,
+        icon: Icons.arrow_drop_down,
+        tooltipPosition: GuideTooltipPosition.bottom,
+        autoNext: true,
+        autoNextDelay: const Duration(seconds: 3),
+        onStepEnter: () {
+          // 방향을 남향으로 설정
+          setState(() {
+            editedValues['방향(나침반)'] = '정남';
+          });
+        },
+        onStepExit: () {
+          // 원래 값으로 복원
+          editedValues.remove('방향(나침반)');
+        },
+      ),
+      GuideStep(
+        title: '사진 추가하기 📷',
+        description: '매물 사진을 추가하여 나중에 쉽게 기억할 수 있습니다. 편집 모드에서 갤러리나 카메라로 촬영 가능합니다.',
         targetKey: _imageGalleryKey,
         icon: Icons.photo_library,
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
-      if (!isEditMode)
-        GuideStep(
-          title: '편집 버튼',
-          description: '버튼 눌러서 매물 정보 수정 가능',
-          targetKey: _editButtonKey,
-          icon: Icons.edit,
-          tooltipPosition: GuideTooltipPosition.top,
-        ),
-      if (isEditMode) ...[
-        GuideStep(
-          title: '집 이름 편집',
-          description: '기억하기 쉬운 이름으로 설정 가능',
-          targetKey: _nameFieldKey,
-          icon: Icons.edit,
-          tooltipPosition: GuideTooltipPosition.bottom,
-        ),
-        GuideStep(
-          title: '매물 정보 입력',
-          description: '항목 터치해서 상세 정보 입력 가능',
-          targetKey: _propertyFormKey,
-          icon: Icons.assignment,
-          tooltipPosition: GuideTooltipPosition.top,
-        ),
-        GuideStep(
-          title: '저장하기',
-          description: '버튼 눌러서 변경사항 저장 가능',
-          targetKey: _saveButtonKey,
-          icon: Icons.save,
-          tooltipPosition: GuideTooltipPosition.top,
-        ),
-      ],
+      GuideStep(
+        title: '카테고리별 정보 관리 📋',
+        description: '매물 정보를 카테고리별로 체계적으로 관리할 수 있습니다. 필수정보부터 치안, 환경까지 꼼꼼하게 기록해보세요.',
+        targetKey: _propertyFormKey,
+        icon: Icons.category,
+        tooltipPosition: GuideTooltipPosition.top,
+      ),
+      GuideStep(
+        title: '가이드 완료! 🎉',
+        description: '매물 카드 관리 기능을 모두 살펴보았습니다! 이제 나만의 매물 정보를 입력하고 관리해보세요. 🏡',
+        targetKey: _editButtonKey,
+        icon: Icons.check,
+        tooltipPosition: GuideTooltipPosition.top,
+        onStepEnter: () {
+          // 편집 모드 해제 및 변경사항 초기화
+          setState(() {
+            isEditMode = false;
+            editedValues.clear();
+            if (propertyData != null) {
+              _nameController.text = propertyData!.name;
+              _addressController.text = propertyData!.address;
+              _depositController.text = propertyData!.deposit;
+              _rentController.text = propertyData!.rent;
+            }
+          });
+        },
+      ),
     ];
 
     InteractiveGuideManager.showGuide(

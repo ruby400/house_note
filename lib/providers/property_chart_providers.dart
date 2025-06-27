@@ -1,32 +1,194 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 // 전체 차트 목록 상태
 class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> {
-  PropertyChartListNotifier() : super([
-    PropertyChartModel(
+  PropertyChartListNotifier() : super([]) {
+    _loadChartsFromStorage();
+  }
+
+  // 로컬 저장소에서 차트 불러오기
+  Future<void> _loadChartsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final chartsJson = prefs.getString('local_charts');
+      
+      if (chartsJson != null) {
+        final chartsList = jsonDecode(chartsJson) as List;
+        final charts = chartsList
+            .map((json) => PropertyChartModel.fromJson(json))
+            .toList();
+        
+        AppLogger.info('로컬 저장소에서 ${charts.length}개 차트 불러옴');
+        state = charts;
+      } else {
+        // 저장된 차트가 없으면 기본 예시 차트 생성
+        _createDefaultChart();
+      }
+    } catch (e) {
+      AppLogger.error('로컬 차트 로드 실패', error: e);
+      _createDefaultChart();
+    }
+  }
+
+  // 기본 예시 차트 생성
+  void _createDefaultChart() {
+    final defaultChart = PropertyChartModel(
       id: '1',
       title: '예시 차트',
       date: DateTime.now(),
-      properties: [], // 빈 배열로 변경 - 새 차트 생성 시 기본 데이터 없음
+      properties: [
+        PropertyData(
+          id: '1',
+          order: '1',
+          name: '서라벌 오피스텔',
+          deposit: '1000',
+          rent: '55',
+          direction: '남향',
+          landlordEnvironment: '친절함',
+          rating: 4,
+          address: '서울시 강남구 역삼로 234',
+          createdAt: DateTime.now(),
+          cellImages: {},
+          additionalData: {
+            'housing_type': '오피스텔',
+            'room_structure': '원룸',
+            'window_view': '뻥뷰',
+            'elevator': '있음',
+            'parking': '지하주차장',
+            'heating': '중앙난방',
+            'landlord_residence': '없음',
+            'double_lock': '있음',
+          },
+        ),
+        PropertyData(
+          id: '2',
+          order: '2',
+          name: '라인빌',
+          deposit: '2000',
+          rent: '75',
+          direction: '동향',
+          landlordEnvironment: '보통',
+          rating: 3,
+          address: '서울시 마포구 동교로 15길',
+          createdAt: DateTime.now(),
+          cellImages: {},
+          additionalData: {
+            'housing_type': '빌라',
+            'room_structure': '1.5룸',
+            'window_view': '옆건물 가까움',
+            'elevator': '없음',
+            'parking': '지상주차장',
+            'heating': '보일러',
+            'landlord_residence': '있음',
+            'double_lock': '설치해준다함',
+          },
+        ),
+        PropertyData(
+          id: '3',
+          order: '3',
+          name: '신촌센트럴빌',
+          deposit: '1500',
+          rent: '65',
+          direction: '서향',
+          landlordEnvironment: '편리함',
+          rating: 5,
+          address: '서울시 서대문구 신촌로 89',
+          createdAt: DateTime.now(),
+          cellImages: {},
+          additionalData: {
+            'housing_type': '빌라',
+            'room_structure': '원룸',
+            'window_view': '마주보는 건물',
+            'elevator': '있음',
+            'parking': '기계식',
+            'heating': '심야전기',
+            'landlord_residence': '없음',
+            'double_lock': '있음',
+          },
+        ),
+      ], 
       columnOptions: {
         '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
         '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
-        '집 이름': [], // 기본 데이터 제거
-        '보증금': ['1000', '2000', '3000', '5000', '10000'],
-        '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
+        '집 이름': ['서라벌 오피스텔', '라인빌', '신촌센트럴빌'],
+        '보증금': ['1000', '1500', '2000', '3000', '5000'],
+        '월세': ['50', '60', '70', '80', '90', '100'],
+        '주거 형태': ['빌라', '오피스텔', '아파트', '근린생활시설'],
+        '방구조': ['원룸', '1.5룸', '다각형방', '복도형'],
+        '창문 뷰': ['뻥뷰', '막힘', '옆건물 가까움', '마주보는 건물', '벽뷰'],
+        '엘리베이터': ['있음', '없음'],
+        '주차장': ['기계식', '지하주차장', '지상주차장'],
+        '난방방식': ['보일러', '심야전기', '중앙난방'],
+        '집주인 거주': ['있음', '없음'],
+        '2종 잠금장치': ['있음', '없음', '설치해준다함'],
       },
-    ),
-  ]);
+    );
+    state = [defaultChart];
+    _saveChartsToStorage();
+  }
+
+  // 로컬 저장소에 차트 저장
+  Future<void> _saveChartsToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final chartsJson = jsonEncode(state.map((chart) => chart.toJson()).toList());
+      await prefs.setString('local_charts', chartsJson);
+      AppLogger.info('로컬 저장소에 ${state.length}개 차트 저장');
+    } catch (e) {
+      AppLogger.error('로컬 차트 저장 실패', error: e);
+    }
+  }
+
+  // 외부에서 로컬 저장소 저장을 트리거하는 공개 메서드
+  Future<void> saveToStorage() async {
+    await _saveChartsToStorage();
+  }
+
+  // 로컬 저장소 완전 초기화 (개발/테스트용)
+  Future<void> clearStorageAndReset() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('local_charts');
+      AppLogger.info('로컬 저장소 완전 초기화 완료');
+      
+      // 기본 예시 차트 다시 생성
+      _createDefaultChart();
+    } catch (e) {
+      AppLogger.error('로컬 저장소 초기화 실패', error: e);
+    }
+  }
+
+  // 임시: 새로운 예시 데이터로 강제 업데이트
+  void forceUpdateToNewExampleData() {
+    AppLogger.info('새로운 예시 데이터로 강제 업데이트');
+    _createDefaultChart();
+  }
 
   void addChart(PropertyChartModel chart) {
-    // 새 차트에 기본 컬럼 옵션만 추가 (샘플 데이터 없이)
+    // 새 차트에 기본 컬럼 옵션과 첫 번째 빈 행 추가
+    final uniquePropertyId = '${chart.id}_1'; // 차트 ID와 결합하여 고유 ID 생성
     final chartWithDefaults = PropertyChartModel(
       id: chart.id,
       title: chart.title,
       date: chart.date,
-      properties: [], // 빈 배열로 변경
+      properties: [
+        PropertyData(
+          id: uniquePropertyId,
+          order: '1',
+          name: '',
+          deposit: '',
+          rent: '',
+          direction: '',
+          landlordEnvironment: '',
+          rating: 0,
+          createdAt: DateTime.now(),
+          cellImages: {},
+        ),
+      ], // 첫 번째 빈 행 추가
       columnOptions: {
         '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
         '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
@@ -37,6 +199,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       columnWidths: chart.columnWidths,
     );
     state = [...state, chartWithDefaults];
+    _saveChartsToStorage(); // 로컬 저장소에 저장
   }
 
   void updateChart(PropertyChartModel updatedChart) {
@@ -50,6 +213,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         }
         return chart;
       }).toList();
+      _saveChartsToStorage(); // 로컬 저장소에 저장
     } catch (e) {
       // 업데이트 실패시 원본 상태 유지
       AppLogger.error('Error updating chart: $e');
@@ -58,6 +222,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
 
   void deleteChart(String chartId) {
     state = state.where((chart) => chart.id != chartId).toList();
+    _saveChartsToStorage(); // 로컬 저장소에 저장
   }
 
   void clearAllCharts() {
@@ -72,16 +237,95 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         id: '1',
         title: '예시 차트',
         date: DateTime.now(),
-        properties: [], // 빈 배열로 변경
+        properties: [
+          PropertyData(
+            id: '1',
+            order: '1',
+            name: '서라벌 오피스텔',
+            deposit: '1000',
+            rent: '55',
+            direction: '남향',
+            landlordEnvironment: '친절함',
+            rating: 4,
+            address: '서울시 강남구 역삼로 234',
+            createdAt: DateTime.now(),
+            cellImages: {},
+            additionalData: {
+              'housing_type': '오피스텔',
+              'room_structure': '원룸',
+              'window_view': '뻥뷰',
+              'elevator': '있음',
+              'parking': '지하주차장',
+              'heating': '중앙난방',
+              'landlord_residence': '없음',
+              'double_lock': '있음',
+            },
+          ),
+          PropertyData(
+            id: '2',
+            order: '2',
+            name: '라인빌',
+            deposit: '2000',
+            rent: '75',
+            direction: '동향',
+            landlordEnvironment: '보통',
+            rating: 3,
+            address: '서울시 마포구 동교로 15길',
+            createdAt: DateTime.now(),
+            cellImages: {},
+            additionalData: {
+              'housing_type': '빌라',
+              'room_structure': '1.5룸',
+              'window_view': '옆건물 가까움',
+              'elevator': '없음',
+              'parking': '지상주차장',
+              'heating': '보일러',
+              'landlord_residence': '있음',
+              'double_lock': '설치해준다함',
+            },
+          ),
+          PropertyData(
+            id: '3',
+            order: '3',
+            name: '신촌센트럴빌',
+            deposit: '1500',
+            rent: '65',
+            direction: '서향',
+            landlordEnvironment: '편리함',
+            rating: 5,
+            address: '서울시 서대문구 신촌로 89',
+            createdAt: DateTime.now(),
+            cellImages: {},
+            additionalData: {
+              'housing_type': '빌라',
+              'room_structure': '원룸',
+              'window_view': '마주보는 건물',
+              'elevator': '있음',
+              'parking': '기계식',
+              'heating': '심야전기',
+              'landlord_residence': '없음',
+              'double_lock': '있음',
+            },
+          ),
+        ],
         columnOptions: {
           '재계/방향': ['동향', '서향', '남향', '북향', '동남향', '서남향', '동북향', '서북향'],
           '집주인 환경': ['편리함', '보통', '불편함', '매우 좋음', '나쁨', '친절함', '무관심', '까다로움'],
-          '집 이름': [], // 빈 배열로 변경
-          '보증금': ['1000', '2000', '3000', '5000', '10000'],
-          '월세': ['30', '40', '50', '60', '70', '80', '90', '100'],
+          '집 이름': ['서라벌 오피스텔', '라인빌', '신촌센트럴빌'],
+          '보증금': ['1000', '1500', '2000', '3000', '5000'],
+          '월세': ['50', '60', '70', '80', '90', '100'],
+          '주거 형태': ['빌라', '오피스텔', '아파트', '근린생활시설'],
+          '방구조': ['원룸', '1.5룸', '다각형방', '복도형'],
+          '창문 뷰': ['뻥뷰', '막힘', '옆건물 가까움', '마주보는 건물', '벽뷰'],
+          '엘리베이터': ['있음', '없음'],
+          '주차장': ['기계식', '지하주차장', '지상주차장'],
+          '난방방식': ['보일러', '심야전기', '중앙난방'],
+          '집주인 거주': ['있음', '없음'],
+          '2종 잠금장치': ['있음', '없음', '설치해준다함'],
         },
       ),
     ];
+    _saveChartsToStorage(); // 로컬 저장소에도 저장
   }
 
   PropertyChartModel? getChart(String chartId) {

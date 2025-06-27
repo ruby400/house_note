@@ -41,6 +41,29 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        
+        <!-- 네이버 로그인용 Activity -->
+        <activity
+            android:name="com.nhn.android.naverlogin.ui.OAuthLoginActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            
+        <!-- 네이버 로그인 URL Scheme -->
+        <activity
+            android:name="com.nhn.android.naverlogin.ui.OAuthLoginInAppBrowserActivity"
+            android:exported="false"
+            android:label="OAuth2.0 In-app" />
+            
+        <!-- 네이버 앱 설정 -->
+        <meta-data
+            android:name="com.naver.nid.CLIENT_ID"
+            android:value="YOUR_NAVER_CLIENT_ID" />
+        <meta-data
+            android:name="com.naver.nid.CLIENT_SECRET"
+            android:value="YOUR_NAVER_CLIENT_SECRET" />
+        <meta-data
+            android:name="com.naver.nid.CLIENT_NAME"
+            android:value="HouseNote" />
+            
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
