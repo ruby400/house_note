@@ -726,37 +726,36 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     
     // 최신 데이터가 있고 현재 데이터와 다르면 업데이트
     if (latestPropertyData != null && propertyData != null && latestPropertyData != propertyData) {
+      final safeLatestData = latestPropertyData; // null-safe 지역 변수
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !isEditMode) { // 편집 중이 아닐 때만 업데이트
-          print('🏠 Card Real-time Sync (View Mode): address="${latestPropertyData!.address}"');
           setState(() {
-            propertyData = latestPropertyData;
+            propertyData = safeLatestData;
             // 컨트롤러도 업데이트
-            _nameController.text = latestPropertyData.name;
-            _addressController.text = latestPropertyData.address;
-            _depositController.text = latestPropertyData.deposit;
-            _rentController.text = latestPropertyData.rent;
+            _nameController.text = safeLatestData.name;
+            _addressController.text = safeLatestData.address;
+            _depositController.text = safeLatestData.deposit;
+            _rentController.text = safeLatestData.rent;
           });
         } else if (mounted && isEditMode) {
           // 편집 중일 때도 백그라운드 데이터는 업데이트 (컨트롤러는 유지)
-          print('🏠 Card Real-time Sync (Edit Mode): address="${latestPropertyData.address}"');
           setState(() {
-            propertyData = latestPropertyData;
+            propertyData = safeLatestData;
           });
           
           // 편집 중이더라도 외부에서 변경된 데이터는 컨트롤러에 반영 
           // (사용자가 현재 입력하고 있지 않은 필드만)
-          if (_addressController.text.isEmpty && latestPropertyData.address.isNotEmpty) {
-            _addressController.text = latestPropertyData.address;
+          if (_addressController.text.isEmpty && safeLatestData.address.isNotEmpty) {
+            _addressController.text = safeLatestData.address;
           }
-          if (_nameController.text.isEmpty && latestPropertyData.name.isNotEmpty) {
-            _nameController.text = latestPropertyData.name;
+          if (_nameController.text.isEmpty && safeLatestData.name.isNotEmpty) {
+            _nameController.text = safeLatestData.name;
           }
-          if (_depositController.text.isEmpty && latestPropertyData.deposit.isNotEmpty) {
-            _depositController.text = latestPropertyData.deposit;
+          if (_depositController.text.isEmpty && safeLatestData.deposit.isNotEmpty) {
+            _depositController.text = safeLatestData.deposit;
           }
-          if (_rentController.text.isEmpty && latestPropertyData.rent.isNotEmpty) {
-            _rentController.text = latestPropertyData.rent;
+          if (_rentController.text.isEmpty && safeLatestData.rent.isNotEmpty) {
+            _rentController.text = safeLatestData.rent;
           }
         }
       });
@@ -2377,7 +2376,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       );
       
       // Debug: Address save logging
-      print('🏠 Card Detail Address Save: "${_addressController.text}"');
 
       // Firebase 통합 차트 서비스를 사용하여 저장
       final integratedService = ref.read(integratedChartServiceProvider);
@@ -2395,8 +2393,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           final updatedChart = chart.copyWith(properties: updatedProperties);
           
           // Debug: 저장될 데이터 확인
-          print('🏠 Card Save Debug: property.id="${propertyData!.id}", address="${propertyData!.address}"');
-          print('🏠 Card Save Debug: chart.id="${updatedChart.id}", title="${updatedChart.title}"');
           
           // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
           await integratedService.saveChart(updatedChart);
@@ -2410,7 +2406,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           if (chartIndex != -1) {
             // integratedChartsProvider는 직접 수정할 수 없으므로 서비스를 통해 다시 로드
             ref.invalidate(integratedChartsProvider);
-            print('🏠 Card Save: Invalidated integratedChartsProvider for chart sync');
           }
           break;
         }
@@ -2522,7 +2517,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       
       // 통합 차트 provider도 무효화하여 새로고침
       ref.invalidate(integratedChartsProvider);
-      print('🏠 New Property Save: Invalidated integratedChartsProvider for chart sync');
 
       // Show success message and navigate back
       if (mounted) {

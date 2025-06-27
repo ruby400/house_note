@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/data_reset_dialog.dart';
 import '../../services/data_reset_service.dart';
+import 'logger.dart';
 
 /// 데이터 초기화 기능 사용 예시들
 /// 
@@ -99,7 +100,7 @@ class DataResetExamples {
     
     // 개발 중에만 사용하는 데이터 초기화
     dataResetService.resetAllData().then((result) {
-      print('Development reset result: ${result.message}');
+      AppLogger.info('Development reset result: ${result.message}');
     });
   }
 

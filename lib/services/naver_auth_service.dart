@@ -8,9 +8,9 @@ import '../core/utils/logger.dart';
 class NaverAuthService {
   // 네이버 개발자센터에서 발급받은 정보로 교체 필요
   // 실제 운영시에는 네이버 개발자 센터에서 발급받은 실제 값으로 교체하세요
-  static const String _clientId = 'TEST_CLIENT_ID'; 
-  static const String _clientSecret = 'TEST_CLIENT_SECRET';
-  static const String _clientName = 'HouseNote';
+  // static const String _clientId = 'TEST_CLIENT_ID'; 
+  // static const String _clientSecret = 'TEST_CLIENT_SECRET';
+  // static const String _clientName = 'HouseNote';
 
   /// 네이버 로그인 초기화
   static Future<void> initialize() async {
@@ -85,7 +85,7 @@ class NaverAuthService {
           AppLogger.info('네이버 Firebase 계정 생성 성공: $email');
           return credential;
         } else {
-          throw e;
+          rethrow;
         }
       }
     } catch (e) {

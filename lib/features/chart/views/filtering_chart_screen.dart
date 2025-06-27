@@ -544,10 +544,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     });
   }
 
-  List<PropertyData> _getDefaultProperties() {
-    // 빈 배열 반환 - 새 차트에는 기본 매물 데이터를 추가하지 않음
-    return [];
-  }
 
   void _loadChart() {
     if (!mounted) return;
@@ -876,7 +872,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (_currentChart == null || !mounted) return;
 
     try {
-      print('📊 Chart Save Initiated: title="${_currentChart!.title}", properties=${_currentChart!.properties.length}');
       
       // 다음 프레임에서 Provider 업데이트를 수행하여 setState 중 수정 방지
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -958,7 +953,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         case 'address':
           value = property.address;
           // Debug: Address retrieval logging
-          print('📊 Chart Address Retrieval: property.id="${property.id}", address="${value}"');
           break;
         case 'direction':
           value = property.direction;
@@ -990,7 +984,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     
     // Debug: Address update logging
     if (columnIndex < _columns.length && _columns[columnIndex] == '주소') {
-      print('📊 Chart Address Update: row=$rowIndex, col=$columnIndex, value="$value"');
     }
 
     // 입력값 안전성 검사
@@ -1488,7 +1481,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         final newAddress = controller.text.trim();
-                        print('📊 Address Bottom Sheet Save: row=$rowIndex, col=$columnIndex, value="$newAddress"');
                         _updateCellValue(rowIndex, columnIndex, newAddress);
                         Navigator.pop(context);
                       },

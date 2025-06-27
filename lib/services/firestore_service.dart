@@ -13,7 +13,6 @@ class FirestoreService {
 
   // 사용자별 컬렉션 경로
   String get _userChartsPath => 'users/$currentUserId/charts';
-  String get _userProfilePath => 'users/$currentUserId';
 
   // === 사용자 프로필 관리 ===
 

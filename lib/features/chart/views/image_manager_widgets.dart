@@ -16,7 +16,7 @@ class ImageManagerBottomSheet extends StatefulWidget {
   final List<String> initialImages;
 
   const ImageManagerBottomSheet({
-    Key? key,
+    super.key,
     required this.rowIndex,
     required this.columnIndex,
     required this.columnName,
@@ -24,7 +24,7 @@ class ImageManagerBottomSheet extends StatefulWidget {
     required this.onImageAdded,
     required this.onImageDeleted,
     this.initialImages = const [],
-  }) : super(key: key);
+  });
 
   @override
   State<ImageManagerBottomSheet> createState() =>
@@ -710,10 +710,10 @@ class FullScreenImageViewer extends StatefulWidget {
   final int initialIndex;
 
   const FullScreenImageViewer({
-    Key? key,
+    super.key,
     required this.images,
     required this.initialIndex,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenImageViewer> createState() => _FullScreenImageViewerState();

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import 'dart:async';
 
 class InteractiveGuideOverlay extends StatefulWidget {
@@ -295,70 +294,6 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
     );
   }
 
-  // 터치 차단 레이어 - 타겟 영역만 터치 통과
-  Widget _buildTouchBlockingLayer(Rect targetRect) {
-    return Stack(
-      children: [
-        // 상단 영역 차단
-        if (targetRect.top > 0)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: targetRect.top,
-            child: GestureDetector(
-              onTap: () {
-                if (!_isWaitingForUserAction) _nextStep();
-              },
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        
-        // 좌측 영역 차단
-        if (targetRect.left > 0)
-          Positioned(
-            top: targetRect.top,
-            left: 0,
-            width: targetRect.left,
-            height: targetRect.height,
-            child: GestureDetector(
-              onTap: () {
-                if (!_isWaitingForUserAction) _nextStep();
-              },
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        
-        // 우측 영역 차단
-        Positioned(
-          top: targetRect.top,
-          left: targetRect.right,
-          right: 0,
-          height: targetRect.height,
-          child: GestureDetector(
-            onTap: () {
-              if (!_isWaitingForUserAction) _nextStep();
-            },
-            child: Container(color: Colors.transparent),
-          ),
-        ),
-        
-        // 하단 영역 차단
-        Positioned(
-          top: targetRect.bottom,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onTap: () {
-              if (!_isWaitingForUserAction) _nextStep();
-            },
-            child: Container(color: Colors.transparent),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildGuideTooltip(GuideStep step) {
     return _buildPositionedTooltip(step);
@@ -493,31 +428,25 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
         final tooltipRect = Rect.fromLTWH(left, top, tooltipWidth, tooltipHeight);
         
         // 디버깅: 동적 영역과 말풍선 위치 출력
-        print('🔍 동적 영역: $dynamicArea');
-        print('🔍 말풍선 영역: $tooltipRect');
-        print('🔍 충돌 여부: ${tooltipRect.overlaps(dynamicArea)}');
         
         // 말풍선과 동적 영역이 겹치는지 확인
         if (tooltipRect.overlaps(dynamicArea)) {
-          print('💥 충돌 감지! 말풍선 위치 재조정 시작');
           
           // 1. 위쪽으로 이동 시도
           final newTopPosition = dynamicArea.top - tooltipHeight - 20;
           if (newTopPosition > MediaQuery.of(context).padding.top + margin) {
             top = newTopPosition;
             actualPosition = GuideTooltipPosition.top;
-            print('✅ 위쪽으로 이동: top=$top');
           }
           // 2. 위쪽도 안되면 상단 고정 (가장 확실한 방법)
           else {
             left = 20;
             top = MediaQuery.of(context).padding.top + margin;
             actualPosition = GuideTooltipPosition.top;
-            print('✅ 상단 고정: left=$left, top=$top');
           }
         }
       } catch (e) {
-        print('❌ 동적 영역 처리 중 오류: $e');
+        // 위치 계산 실패 시 기본값 유지
       }
     }
 
@@ -1077,123 +1006,16 @@ class TooltipPainter extends CustomPainter {
     // 복잡한 좌표 변환 대신 간단하고 확실한 방법 사용
     // position 정보만 사용해서 올바른 방향으로 화살표 그리기
     
-    Offset targetDirection;
-    
-    // 말풍선 position에 따라 타겟이 있는 방향 결정
-    switch (position) {
-      case GuideTooltipPosition.top:
-        // 말풍선이 타겟 위에 있으므로 화살표는 아래로
-        targetDirection = const Offset(0, 1);
-        break;
-      case GuideTooltipPosition.bottom:
-        // 말풍선이 타겟 아래에 있으므로 화살표는 위로
-        targetDirection = const Offset(0, -1);
-        break;
-      case GuideTooltipPosition.left:
-        // 말풍선이 타겟 왼쪽에 있으므로 화살표는 오른쪽으로
-        targetDirection = const Offset(1, 0);
-        break;
-      case GuideTooltipPosition.right:
-        // 말풍선이 타겟 오른쪽에 있으므로 화살표는 왼쪽으로
-        targetDirection = const Offset(-1, 0);
-        break;
-    }
-    
-    // 말풍선 중심에서 타겟 방향으로 화살표 그리기
-    final balloonCenter = balloonRect.center;
+    // 화살표 제거됨 - 말풍선만 표시
 
     // 화살표 제거 - 말풍선만 표시
   }
 
 
-  void _drawCurlyArrowToTarget(Canvas canvas, Rect balloonRect, Offset targetCenter) {
-    final arrowPaint = Paint()
-      ..color = const Color(0xFFFF9866)
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    // 말풍선 중심에서 타겟으로의 방향
-    final balloonCenter = balloonRect.center;
-    final direction = targetCenter - balloonCenter;
-    final distance = math.sqrt(direction.dx * direction.dx + direction.dy * direction.dy);
-
-    if (distance < 20) return; // 너무 가까우면 그리지 않음
-
-    // 정규화된 방향
-    final normalizedDirection = Offset(direction.dx / distance, direction.dy / distance);
-
-    // 말풍선 가장자리에서 시작 (안전한 여백 포함)
-    final balloonRadius = balloonRect.height / 2;
-    const margin = 15.0;
-
-    final arrowStart = Offset(
-      balloonCenter.dx + normalizedDirection.dx * (balloonRadius + margin),
-      balloonCenter.dy + normalizedDirection.dy * (balloonRadius + margin),
-    );
-
-    // 돼지꼬리 곡선을 위한 제어점들
-    const curveLength = 45.0;
-    final midPoint = Offset(
-      arrowStart.dx + normalizedDirection.dx * (curveLength * 0.6),
-      arrowStart.dy + normalizedDirection.dy * (curveLength * 0.6),
-    );
-
-    // 수직 방향 벡터 (돼지꼬리 곡선을 위해)
-    final perpendicular = Offset(-normalizedDirection.dy, normalizedDirection.dx);
-    
-    // 첫 번째 곡선 (시계방향)
-    final curve1Control = Offset(
-      midPoint.dx + perpendicular.dx * 15,
-      midPoint.dy + perpendicular.dy * 15,
-    );
-    
-    // 두 번째 곡선 (반시계방향)
-    final curve2Start = Offset(
-      midPoint.dx + normalizedDirection.dx * 15,
-      midPoint.dy + normalizedDirection.dy * 15,
-    );
-    
-    final curve2Control = Offset(
-      curve2Start.dx - perpendicular.dx * 12,
-      curve2Start.dy - perpendicular.dy * 12,
-    );
-    
-    final arrowEnd = Offset(
-      curve2Start.dx + normalizedDirection.dx * 15,
-      curve2Start.dy + normalizedDirection.dy * 15,
-    );
-
-    // 돼지꼬리 Path 그리기
-    final path = Path();
-    path.moveTo(arrowStart.dx, arrowStart.dy);
-    
-    // 첫 번째 곡선
-    path.quadraticBezierTo(
-      curve1Control.dx, curve1Control.dy,
-      midPoint.dx, midPoint.dy,
-    );
-    
-    // 두 번째 곡선
-    path.quadraticBezierTo(
-      curve2Control.dx, curve2Control.dy,
-      arrowEnd.dx, arrowEnd.dy,
-    );
-
-    canvas.drawPath(path, arrowPaint);
-
-    // 화살표 머리 그리기 (끝점에서)
-    const arrowHeadLength = 12.0;
-    final arrowHead1 = arrowEnd - (normalizedDirection * arrowHeadLength) + (perpendicular * arrowHeadLength * 0.5);
-    final arrowHead2 = arrowEnd - (normalizedDirection * arrowHeadLength) - (perpendicular * arrowHeadLength * 0.5);
-
-    canvas.drawLine(arrowEnd, arrowHead1, arrowPaint);
-    canvas.drawLine(arrowEnd, arrowHead2, arrowPaint);
-  }
 
 
 
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
