@@ -801,7 +801,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () async {
               await _onWillPop();
-              if (mounted) Navigator.of(context).pop();
+              if (context.mounted) Navigator.of(context).pop();
             },
           ),
           flexibleSpace: Container(
@@ -851,7 +851,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () async {
             await _onWillPop();
-            if (mounted) Navigator.of(context).pop();
+            if (context.mounted) Navigator.of(context).pop();
           },
         ),
         actions: [
@@ -1993,7 +1993,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         // 차트의 컬럼 옵션에도 추가
         await _addToChartOptions(key, value);
 
-        // 기본 옵션에서 선택했을 때 스낵바 표시
+        // 기본 옵션에서 선택했을 때 스낵바 표시 (mounted 체크 후)
+        if (!mounted) return;
         final List<String> defaultOptionsForLabel = defaultOptions[label] ?? [];
         if (defaultOptionsForLabel.contains(value)) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2238,8 +2239,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       // 차트의 컬럼 옵션에도 추가
                       await _addToChartOptions(key, controller.text);
                     }
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('"${controller.text}" 옵션이 추가되었습니다.',
                             style:
@@ -2252,6 +2254,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(

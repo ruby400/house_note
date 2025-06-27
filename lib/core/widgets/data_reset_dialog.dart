@@ -222,7 +222,7 @@ class DataResetDialogUtils {
       customMessage: customMessage,
     );
 
-    if (result != null) {
+    if (result != null && context.mounted) {
       showResultSnackBar(context, result);
       return result.isSuccess;
     }

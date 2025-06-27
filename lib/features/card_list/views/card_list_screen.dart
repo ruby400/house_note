@@ -1723,14 +1723,15 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                 onPressed: () async {
                   if (titleController.text.trim().isNotEmpty) {
                     await _createNewChart(titleController.text.trim());
-                    Navigator.of(ctx).pop(); // 새 차트 만들기 다이얼로그 닫기
+                    if (ctx.mounted) Navigator.of(ctx).pop(); // 새 차트 만들기 다이얼로그 닫기
 
                     // 잠시 후 차트 선택 다이얼로그 다시 열기
                     Future.delayed(const Duration(milliseconds: 300), () {
                       _showChartSelectionDialog();
                     });
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
                             '"${titleController.text.trim()}" 차트가 생성되었습니다.',
@@ -1744,6 +1745,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(

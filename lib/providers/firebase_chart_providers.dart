@@ -114,12 +114,8 @@ class IntegratedChartService {
       if (existingChartIndex == -1) {
         // 새 차트인 경우만 추가
         AppLogger.info('새 차트 로컬 저장: ${chart.title} ($chartId)');
-        // 직접 state에 추가 (addChart는 기본 데이터를 변경하므로 사용하지 않음)
-        final currentList = List<PropertyChartModel>.from(existingCharts);
-        currentList.add(chart);
-        _ref.read(propertyChartListProvider.notifier).state = currentList;
-        // 로컬 저장소에도 저장
-        await _ref.read(propertyChartListProvider.notifier).saveToStorage();
+        // Firebase에서 받은 차트를 그대로 추가 (기본 데이터 변경 없이)
+        _ref.read(propertyChartListProvider.notifier).addChartAsIs(chart);
       } else {
         // 기존 차트 업데이트
         AppLogger.info('기존 차트 로컬 업데이트: ${chart.title} ($chartId)');

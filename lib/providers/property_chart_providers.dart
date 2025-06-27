@@ -225,6 +225,17 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
     _saveChartsToStorage(); // 로컬 저장소에 저장
   }
 
+  // Firebase에서 받은 차트를 그대로 추가 (기본 데이터 변경 없이)
+  void addChartAsIs(PropertyChartModel chart) {
+    // 이미 존재하는 차트인지 확인
+    final existingIndex = state.indexWhere((c) => c.id == chart.id);
+    if (existingIndex == -1) {
+      // 새 차트인 경우 추가
+      state = [...state, chart];
+      _saveChartsToStorage();
+    }
+  }
+
   void clearAllCharts() {
     AppLogger.info('모든 로컬 차트 데이터 초기화');
     state = [];

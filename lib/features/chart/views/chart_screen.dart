@@ -1905,7 +1905,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                 final opened = await openAppSettings();
 
                 if (!opened) {
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('설정 페이지를 열 수 없습니다. 수동으로 설정해주세요.'),
