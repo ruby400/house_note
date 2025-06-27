@@ -1101,7 +1101,6 @@ class TooltipPainter extends CustomPainter {
     
     // 말풍선 중심에서 타겟 방향으로 화살표 그리기
     final balloonCenter = balloonRect.center;
-    final targetCenter = balloonCenter + (targetDirection * 70);
 
     // 화살표 제거 - 말풍선만 표시
   }

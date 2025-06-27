@@ -4197,7 +4197,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 스크롤되는 데이터 행 빌더 (순번 제외)
   Widget _buildScrollableDataRow(int index) {
     // 빈 차트인 경우나 인덱스가 범위를 벗어나는 경우 기본 빈 행 표시
-    final hasProperty = _currentChart!.properties.isNotEmpty && index < _currentChart!.properties.length;
 
     return Container(
       height: 60,

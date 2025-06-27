@@ -732,31 +732,31 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           setState(() {
             propertyData = latestPropertyData;
             // 컨트롤러도 업데이트
-            _nameController.text = latestPropertyData!.name;
-            _addressController.text = latestPropertyData!.address;
-            _depositController.text = latestPropertyData!.deposit;
-            _rentController.text = latestPropertyData!.rent;
+            _nameController.text = latestPropertyData.name;
+            _addressController.text = latestPropertyData.address;
+            _depositController.text = latestPropertyData.deposit;
+            _rentController.text = latestPropertyData.rent;
           });
         } else if (mounted && isEditMode) {
           // 편집 중일 때도 백그라운드 데이터는 업데이트 (컨트롤러는 유지)
-          print('🏠 Card Real-time Sync (Edit Mode): address="${latestPropertyData!.address}"');
+          print('🏠 Card Real-time Sync (Edit Mode): address="${latestPropertyData.address}"');
           setState(() {
             propertyData = latestPropertyData;
           });
           
           // 편집 중이더라도 외부에서 변경된 데이터는 컨트롤러에 반영 
           // (사용자가 현재 입력하고 있지 않은 필드만)
-          if (_addressController.text.isEmpty && latestPropertyData!.address.isNotEmpty) {
-            _addressController.text = latestPropertyData!.address;
+          if (_addressController.text.isEmpty && latestPropertyData.address.isNotEmpty) {
+            _addressController.text = latestPropertyData.address;
           }
-          if (_nameController.text.isEmpty && latestPropertyData!.name.isNotEmpty) {
-            _nameController.text = latestPropertyData!.name;
+          if (_nameController.text.isEmpty && latestPropertyData.name.isNotEmpty) {
+            _nameController.text = latestPropertyData.name;
           }
-          if (_depositController.text.isEmpty && latestPropertyData!.deposit.isNotEmpty) {
-            _depositController.text = latestPropertyData!.deposit;
+          if (_depositController.text.isEmpty && latestPropertyData.deposit.isNotEmpty) {
+            _depositController.text = latestPropertyData.deposit;
           }
-          if (_rentController.text.isEmpty && latestPropertyData!.rent.isNotEmpty) {
-            _rentController.text = latestPropertyData!.rent;
+          if (_rentController.text.isEmpty && latestPropertyData.rent.isNotEmpty) {
+            _rentController.text = latestPropertyData.rent;
           }
         }
       });

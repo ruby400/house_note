@@ -310,7 +310,6 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen> {
       onCompleted: () {
         setState(() {
           _isStarted = false;
-          _tutorialCompleted = true;
         });
         
         // 튜토리얼 완료 후 우선순위 설정으로 이동
