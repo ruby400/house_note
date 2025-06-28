@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/features/auth/views/auth_screen.dart';
+import 'package:house_note/features/auth/views/signup_screen.dart';
 import 'package:house_note/features/card_list/views/card_detail_screen.dart';
 import 'package:house_note/features/card_list/views/card_list_screen.dart';
 import 'package:house_note/features/card_list/views/property_detail_screen.dart';
@@ -43,6 +44,11 @@ class AppRouter {
         path: AuthScreen.routePath,
         name: AuthScreen.routeName,
         builder: (context, state) => const AuthScreen(),
+      ),
+      GoRoute(
+        path: SignupScreen.routePath,
+        name: SignupScreen.routeName,
+        builder: (context, state) => const SignupScreen(),
       ),
       // 온보딩 - 프로필 설정
       GoRoute(
@@ -184,7 +190,7 @@ class AppRouter {
         ],
       ),
     ],
-    // 리다이렉트 로직
+    // 리다이렉트 로직 - 로그인 없이도 앱 둘러보기 허용
     redirect: (BuildContext context, GoRouterState state) {
       if (state.matchedLocation == SplashScreen.routePath) return null;
 
@@ -193,23 +199,28 @@ class AppRouter {
       final onboardingCompleted = userModel?.onboardingCompleted ?? false;
 
       final isLoggingIn = state.matchedLocation == AuthScreen.routePath;
+      final isSigningUp = state.matchedLocation == SignupScreen.routePath;
       final isOnboardingFlow = state.matchedLocation.startsWith('/onboarding');
 
-      if (!isAuthenticated) {
-        return isLoggingIn ? null : AuthScreen.routePath;
+      // 로그인된 사용자의 경우
+      if (isAuthenticated) {
+        if (onboardingCompleted) {
+          // 온보딩 완료 시: 로그인/회원가입/온보딩 화면에 있다면 메인으로
+          if (isLoggingIn || isSigningUp || isOnboardingFlow) {
+            return CardListScreen.routePath;
+          }
+        } else {
+          // 온보딩 미완료 시: 온보딩 플로우에 있는게 아니라면 튜토리얼로
+          if (!isOnboardingFlow) {
+            return InteractiveTutorialScreen.routePath;
+          }
+        }
       }
 
-      // 로그인 되어 있는 경우
-      if (onboardingCompleted) {
-        // 온보딩 완료 시: 로그인/온보딩 화면에 있다면 메인으로
-        if (isLoggingIn || isOnboardingFlow) {
-          return CardListScreen.routePath;
-        }
-      } else {
-        // 온보딩 미완료 시: 온보딩 플로우에 있는게 아니라면 튜토리얼로
-        if (!isOnboardingFlow) {
-          return InteractiveTutorialScreen.routePath;
-        }
+      // 로그인하지 않은 사용자는 자유롭게 앱을 둘러볼 수 있음
+      // 단, 온보딩 화면에는 접근 불가
+      if (!isAuthenticated && isOnboardingFlow) {
+        return CardListScreen.routePath;
       }
 
       return null;
