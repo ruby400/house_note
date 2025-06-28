@@ -544,7 +544,6 @@ class _InteractiveGuideOverlayState extends State<InteractiveGuideOverlay>
             style: const TextStyle(
               fontSize: 16,
               color: Color(0xFF4A5568),
-              height: 1.4,
             ),
           ),
 

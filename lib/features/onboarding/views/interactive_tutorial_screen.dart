@@ -105,7 +105,6 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen> {
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF2D3748),
-                        height: 1.3,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -118,7 +117,6 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         color: Color(0xFF4A5568),
-                        height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),

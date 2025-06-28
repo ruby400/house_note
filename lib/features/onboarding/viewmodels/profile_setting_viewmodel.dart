@@ -26,15 +26,41 @@ class ProfileSettingViewModel extends StateNotifier<ProfileSettingState> {
       this._userRepository, this._authRepository, this._userId)
       : super(const ProfileSettingState());
 
-  Future<String?> saveProfile(String displayName) async {
+  Future<String?> saveProfile({
+    required String nickname,
+    String? realName,
+    String? ageGroup,
+    String? gender,
+  }) async {
     if (_userId == null) return "사용자 정보가 없습니다.";
-    if (displayName.trim().isEmpty) return "닉네임을 입력해주세요.";
+    if (nickname.trim().isEmpty) return "닉네임을 입력해주세요.";
 
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _authRepository.updateProfile(displayName: displayName);
-      await _userRepository.updateUser(_userId!, {'displayName': displayName});
+      // Firebase Auth 프로필 업데이트 (displayName은 닉네임으로 설정)
+      await _authRepository.updateProfile(displayName: nickname);
+      
+      // Firestore 사용자 문서 업데이트
+      final updateData = <String, dynamic>{
+        'displayName': nickname,
+        'nickname': nickname,
+        'updatedAt': DateTime.now(),
+      };
+      
+      // 선택적 필드들 추가
+      if (realName != null && realName.trim().isNotEmpty) {
+        updateData['realName'] = realName.trim();
+      }
+      if (ageGroup != null && ageGroup.isNotEmpty) {
+        updateData['ageGroup'] = ageGroup;
+      }
+      if (gender != null && gender.isNotEmpty) {
+        updateData['gender'] = gender;
+      }
+      
+      await _userRepository.updateUser(_userId!, updateData);
       await _userRepository.updateOnboardingStatus(_userId!, true);
+      
       state = state.copyWith(isLoading: false);
       return null;
     } catch (e) {

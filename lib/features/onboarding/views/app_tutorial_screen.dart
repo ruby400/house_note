@@ -348,7 +348,6 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black54,
-              height: 1.5,
             ),
             textAlign: TextAlign.center,
           ),
@@ -409,7 +408,6 @@ class _AppTutorialScreenState extends State<AppTutorialScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.black87,
-                            height: 1.4,
                           ),
                         ),
                       ),

@@ -24,19 +24,17 @@ class SplashState {
 class SplashViewModel extends StateNotifier<SplashState> {
   SplashViewModel() : super(const SplashState());
 
-  static final _logger = Logger('SplashViewModel');
-
   Future<void> initialize() async {
     try {
-      _logger.info('q 0T ܑ');
+      AppLogger.info('스플래시 초기화 시작');
       
-      // D�\ 0T �� �
+      // 스플래시 화면 표시 시간
       await Future.delayed(const Duration(seconds: 2));
       
       state = state.copyWith(isLoading: false);
-      _logger.info('q 0T D�');
+      AppLogger.info('스플래시 초기화 완료');
     } catch (e) {
-      _logger.error('q 0T $X: $e');
+      AppLogger.error('스플래시 초기화 오류: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
