@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
+import 'package:house_note/features/auth/views/auth_screen.dart';
+import 'package:house_note/features/auth/views/signup_screen.dart';
 import 'package:house_note/features/my_page/viewmodels/my_page_viewmodel.dart';
 import 'package:house_note/providers/user_providers.dart'; // userModelProvider
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
@@ -131,8 +133,9 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
       ),
       body: userModelAsyncValue.when(
         data: (user) {
+          // 로그인되지 않은 사용자를 위한 화면
           if (user == null && !myPageViewModel.isLoggingOut) {
-            return const Center(child: Text('사용자 정보를 불러올 수 없습니다.'));
+            return _buildGuestUserScreen();
           }
           return Stack(
             children: [
@@ -358,5 +361,155 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
         },
       );
     }
+  }
+
+  // 로그인되지 않은 사용자를 위한 화면
+  Widget _buildGuestUserScreen() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 아이콘
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              size: 60,
+              color: Color(0xFFFF8A65),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // 제목
+          const Text(
+            '로그인하고 더 많은 기능을\n이용해보세요!',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+
+          // 설명
+          const Text(
+            '• 매물 정보 저장 및 관리\n• 차트 생성 및 비교\n• 개인 맞춤 설정\n• 데이터 동기화',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black54,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+
+          // 로그인 버튼
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () => context.push(AuthScreen.routePath),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.login, size: 24),
+                    SizedBox(width: 12),
+                    Text(
+                      '로그인',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 회원가입 링크
+          TextButton(
+            onPressed: () => context.push(SignupScreen.routePath),
+            child: RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+                children: [
+                  TextSpan(text: '계정이 없으신가요? '),
+                  TextSpan(
+                    text: '회원가입',
+                    style: TextStyle(
+                      color: Color(0xFFFF8A65),
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // 둘러보기 설명
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Color(0xFFFF8A65),
+                  size: 24,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '현재 둘러보기 모드입니다!\n입력한 데이터는 저장되지 않으며, 저장하려면 로그인이 필요합니다.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

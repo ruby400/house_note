@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_note/core/widgets/guest_mode_banner.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
+import 'package:house_note/providers/auth_providers.dart';
 // TODO: ViewModel, 지도 데이터 Provider import
 // import 'package:google_maps_flutter/google_maps_flutter.dart'; // google_maps_flutter 사용시
 
@@ -128,6 +130,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       ),
       body: Column(
         children: [
+          // 게스트 모드 배너 (로그인하지 않은 사용자에게만 표시)
+          Consumer(
+            builder: (context, ref, child) {
+              final isAuthenticated = ref.watch(authStateChangesProvider).value != null;
+              if (!isAuthenticated) {
+                return const GuestModeBanner();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           // 검색 바 영역
           Container(
             padding: const EdgeInsets.all(16.0),

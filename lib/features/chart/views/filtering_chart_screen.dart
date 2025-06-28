@@ -2083,7 +2083,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                 style: const TextStyle(
                   fontSize: 16,
                   color: Color(0xFF718096),
-                  height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),

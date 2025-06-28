@@ -147,7 +147,6 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
             '선택한 사진을 삭제하시겠습니까?\n삭제된 사진은 복구할 수 없습니다.',
             style: TextStyle(
               fontSize: 15,
-              height: 1.5,
               color: Color(0xFF4A5568),
             ),
           ),

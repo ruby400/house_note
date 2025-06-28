@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/core/utils/logger.dart';
+import 'package:house_note/core/widgets/guest_mode_banner.dart';
+import 'package:house_note/core/widgets/login_prompt_dialog.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
+import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:path_provider/path_provider.dart';
@@ -738,6 +741,16 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       ),
       body: Column(
         children: [
+          // 게스트 모드 배너 (로그인하지 않은 사용자에게만 표시)
+          Consumer(
+            builder: (context, ref, child) {
+              final isAuthenticated = ref.watch(authStateChangesProvider).value != null;
+              if (!isAuthenticated) {
+                return const GuestModeBanner();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           _buildSearchAndFilterSection(),
           Expanded(
             child: Consumer(
@@ -1080,6 +1093,20 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                 onSelected: (String value) {
                   switch (value) {
                     case 'add_chart':
+                      // 로그인 상태 확인
+                      final isAuthenticated = ref.read(authStateChangesProvider).value != null;
+                      
+                      if (!isAuthenticated) {
+                        // 게스트 사용자는 로그인 프롬프트 표시
+                        LoginPromptDialog.show(
+                          context,
+                          title: '차트 생성',
+                          message: '현재 둘러보기 모드입니다.\n데이터를 저장하려면 로그인이 필요합니다.\n\n지금 로그인하시겠습니까?',
+                          icon: Icons.add_chart,
+                        );
+                        return;
+                      }
+                      
                       _showAddChartDialog();
                       break;
                     case 'export_pdf':

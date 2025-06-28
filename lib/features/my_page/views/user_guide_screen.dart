@@ -406,7 +406,6 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.black54,
-                    height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -490,7 +489,6 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.black54,
-                      height: 1.5,
                     ),
                   ),
                   
@@ -534,7 +532,6 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.black87,
-                            height: 1.6,
                           ),
                         ),
                       ],
@@ -559,7 +556,6 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFFE65100),
-                          height: 1.4,
                         ),
                       ),
                     ),
