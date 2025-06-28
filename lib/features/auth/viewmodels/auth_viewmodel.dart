@@ -87,9 +87,15 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return '다른 로그인 방법으로 이미 가입된 계정입니다.';
     } else if (errorMessage.contains('popup-closed-by-user')) {
       return '로그인이 취소되었습니다.';
+    } else if (errorMessage.contains('user-not-found')) {
+      return '등록되지 않은 이메일입니다.';
+    } else if (errorMessage.contains('invalid-email')) {
+      return '유효하지 않은 이메일 주소입니다.';
+    } else if (errorMessage.contains('missing-email')) {
+      return '이메일 주소를 입력해주세요.';
     } else {
       // 디버깅을 위해 실제 오류 메시지도 포함
-      return '로그인 중 오류가 발생했습니다.\n오류: $errorMessage';
+      return '오류가 발생했습니다.\n오류: $errorMessage';
     }
   }
 
@@ -189,6 +195,19 @@ class AuthViewModel extends StateNotifier<AuthState> {
     } catch (e) {
       final errorMessage = _getKoreanErrorMessage(e.toString());
       state = state.copyWith(isLoading: false, error: errorMessage);
+    }
+  }
+
+  Future<bool> sendPasswordResetEmail(String email) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      final errorMessage = _getKoreanErrorMessage(e.toString());
+      state = state.copyWith(isLoading: false, error: errorMessage);
+      return false;
     }
   }
 }

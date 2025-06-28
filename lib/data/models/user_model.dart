@@ -36,6 +36,12 @@ class UserModel {
   final List<PriorityItem> priorityItems; // 새로운 구조화된 우선순위 항목들
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  
+  // 개인정보 필드 추가
+  final String? realName; // 실명
+  final String? nickname; // 닉네임
+  final String? ageGroup; // 나이대 ('20대', '30대', '40대', '50대', '60대 이상')
+  final String? gender; // 성별 ('남성', '여성', '선택안함')
 
   UserModel({
     required this.uid,
@@ -47,6 +53,10 @@ class UserModel {
     this.priorityItems = const [],
     this.createdAt,
     this.updatedAt,
+    this.realName,
+    this.nickname,
+    this.ageGroup,
+    this.gender,
   });
 
   // Firestore 데이터 변환을 위한 factory constructor 및 toJson 메서드 추가
@@ -67,6 +77,10 @@ class UserModel {
           : [],
       createdAt: data['createdAt']?.toDate(),
       updatedAt: data['updatedAt']?.toDate(),
+      realName: data['realName'],
+      nickname: data['nickname'],
+      ageGroup: data['ageGroup'],
+      gender: data['gender'],
     );
   }
 
@@ -80,6 +94,10 @@ class UserModel {
       'priorityItems': priorityItems.map((item) => item.toMap()).toList(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'realName': realName,
+      'nickname': nickname,
+      'ageGroup': ageGroup,
+      'gender': gender,
       // uid는 문서 ID로 사용되므로 map에 포함하지 않을 수 있음
     };
   }
@@ -94,6 +112,10 @@ class UserModel {
     List<PriorityItem>? priorityItems,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? realName,
+    String? nickname,
+    String? ageGroup,
+    String? gender,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -105,6 +127,10 @@ class UserModel {
       priorityItems: priorityItems ?? this.priorityItems,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      realName: realName ?? this.realName,
+      nickname: nickname ?? this.nickname,
+      ageGroup: ageGroup ?? this.ageGroup,
+      gender: gender ?? this.gender,
     );
   }
 }

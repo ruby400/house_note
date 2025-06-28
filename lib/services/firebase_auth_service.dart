@@ -147,6 +147,21 @@ class FirebaseAuthService {
     }
   }
 
+  // 비밀번호 재설정 이메일 전송
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      AppLogger.info('📧 비밀번호 재설정 이메일 전송 시도: $email');
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      AppLogger.info('✅ 비밀번호 재설정 이메일 전송 성공');
+    } on FirebaseAuthException catch (e) {
+      AppLogger.error('❌ Firebase Auth 오류 (비밀번호 재설정): ${e.code}', error: e);
+      throw Exception('${e.code}: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ 비밀번호 재설정 일반 오류', error: e);
+      throw Exception('비밀번호 재설정 중 예상치 못한 오류: $e');
+    }
+  }
+
   // 계정 삭제
   Future<void> deleteAccount() async {
     try {
