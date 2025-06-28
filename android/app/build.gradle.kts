@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.house_note"
+    namespace = "com.ruby444.house_note"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.house_note"
+        applicationId = "com.ruby444.house_note"
         minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode

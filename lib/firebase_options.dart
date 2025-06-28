@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDGz-a8BIg2jGq9BuFHbrpWENgEz2FbAUU',
-    appId: '1:567850827737:android:c833409b46fe4346c9e3c8',
+    appId: '1:567850827737:android:56b35f99a3a8da53c9e3c8',
     messagingSenderId: '567850827737',
     projectId: 'house-note-e2e9e',
     storageBucket: 'house-note-e2e9e.firebasestorage.app',
@@ -60,13 +60,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBdHKmphWQ86roOGeMr3QDa1_t4a6eU2v0',
-    appId: '1:567850827737:ios:9f8f01c1a6b8eb16c9e3c8',
+    appId: '1:567850827737:ios:65a6a25a755cbdeac9e3c8',
     messagingSenderId: '567850827737',
     projectId: 'house-note-e2e9e',
     storageBucket: 'house-note-e2e9e.firebasestorage.app',
     androidClientId: '567850827737-2eifg1fh3268aoslqgralk2onrgs8bvg.apps.googleusercontent.com',
-    iosClientId: '567850827737-q6f95t09hf5fjqhvv3lhf2l6r6d01ksv.apps.googleusercontent.com',
-    iosBundleId: 'com.example.houseNote',
+    iosClientId: '567850827737-mkkgfnspnbk089a4c9bgv2nck0tgi864.apps.googleusercontent.com',
+    iosBundleId: 'com.ruby444.houseNote',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
