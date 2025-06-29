@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/repositories/user_repository.dart';
 import 'package:house_note/services/firebase_auth_service.dart';
 import 'package:house_note/providers/firebase_chart_providers.dart';
+import 'package:house_note/features/main_navigation/views/main_navigation_screen.dart';
 import 'package:house_note/core/utils/logger.dart';
 
 // 상태 정의
@@ -28,15 +30,22 @@ class AuthViewModel extends StateNotifier<AuthState> {
   final FirebaseAuthService _authService;
   final UserRepository _userRepository;
   final Ref _ref;
+  
+  // 회원가입 과정 중인지 추적하는 플래그
+  bool _isSigningUp = false;
 
   AuthViewModel(this._authService, this._userRepository, this._ref)
       : super(AuthState(user: _authService.currentUser)) {
     // 초기 사용자 상태 설정
     _authService.authStateChanges.listen((user) {
+      debugPrint('🔄 Auth state changed: ${user?.uid}, isSigningUp: $_isSigningUp');
       state = state.copyWith(user: user, isLoading: false);
-      // 로그인 시 데이터 동기화
-      if (user != null) {
+      // 로그인 시 데이터 동기화 및 하단바 상태 초기화 (회원가입 중이 아닐 때만)
+      if (user != null && !_isSigningUp) {
+        debugPrint('🔄 Syncing data after login');
         _syncDataAfterLogin();
+        // 하단바를 카드목록 탭(0번)으로 초기화
+        _ref.read(selectedPageIndexProvider.notifier).state = 0;
       }
     });
   }
@@ -102,33 +111,44 @@ class AuthViewModel extends StateNotifier<AuthState> {
   Future<bool> signInWithEmail(String email, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      debugPrint('🔐 로그인 시도: $email');
       final userCredential =
           await _authService.signInWithEmailAndPassword(email, password);
+      debugPrint('🔐 로그인 결과: ${userCredential?.user?.uid}');
       state = state.copyWith(isLoading: false, user: userCredential?.user);
       return userCredential != null;
     } catch (e) {
+      debugPrint('🔐 로그인 에러: $e');
       final errorMessage = _getKoreanErrorMessage(e.toString());
       state = state.copyWith(isLoading: false, error: errorMessage);
       return false;
     }
   }
 
-  Future<bool> signUpWithEmail(String email, String password) async {
+  Future<bool> signUpWithEmail(String email, String password, {String? nickname}) async {
     state = state.copyWith(isLoading: true, clearError: true);
+    _isSigningUp = true; // 회원가입 과정 시작
+    
     try {
       final userCredential =
           await _authService.createUserWithEmailAndPassword(email, password);
       
       if (userCredential != null && userCredential.user != null) {
-        // Firestore에 사용자 프로필 생성
-        await _userRepository.createUserProfile(userCredential.user!);
-        state = state.copyWith(isLoading: false, user: userCredential.user);
+        // Firestore에 사용자 프로필 생성 (닉네임 포함)
+        await _userRepository.createUserProfile(userCredential.user!, nickname: nickname);
+        
+        // 회원가입 후 자동 로그인하지 않고 로그아웃 처리
+        await _authService.signOut();
+        state = state.copyWith(isLoading: false, user: null);
+        _isSigningUp = false; // 회원가입 과정 완료
         return true;
       }
       
+      _isSigningUp = false; // 회원가입 과정 완료
       state = state.copyWith(isLoading: false);
       return false;
     } catch (e) {
+      _isSigningUp = false; // 회원가입 과정 완료 (에러 발생 시에도)
       final errorMessage = _getKoreanErrorMessage(e.toString());
       state = state.copyWith(isLoading: false, error: errorMessage);
       return false;

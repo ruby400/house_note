@@ -375,54 +375,195 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _showWithdrawDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('회원탈퇴'),
-          content: const Text('정말로 회원탈퇴를 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('취소'),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () async {
-                // 다이얼로그를 먼저 닫고 비동기 작업을 수행합니다.
-                Navigator.of(dialogContext).pop();
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 경고 아이콘
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_rounded,
+                    size: 40,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                final notifier =
-                    ref.read(profileSettingsViewModelProvider.notifier);
-                final success = await notifier.deleteAccount();
+                // 제목
+                const Text(
+                  '회원탈퇴',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
-                if (!mounted) return;
-
-                if (success) {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      const SnackBar(
-                        content: Text('회원탈퇴가 완료되었습니다'),
-                        duration: Duration(milliseconds: 800),
+                // 경고 메시지
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Column(
+                    children: [
+                      Text(
+                        '⚠️ 주의사항',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
                       ),
-                    );
-                  context.go('/auth');
-                } else {
-                  final error =
-                      ref.read(profileSettingsViewModelProvider).error;
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: Text('오류: $error'),
-                        backgroundColor: Colors.red,
-                        duration: const Duration(milliseconds: 800),
+                      SizedBox(height: 8),
+                      Text(
+                        '• 모든 매물 데이터가 영구 삭제됩니다\n• 작성한 차트와 기록이 모두 사라집니다\n• 이 작업은 되돌릴 수 없습니다',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.red,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.left,
                       ),
-                    );
-                }
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('탈퇴'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 버튼들
+                Row(
+                  children: [
+                    // 취소 버튼
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey[300]!),
+                          ),
+                        ),
+                        child: const Text(
+                          '취소',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // 탈퇴 버튼
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Colors.red, Color(0xFFE53935)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // 다이얼로그를 먼저 닫고 비동기 작업을 수행합니다.
+                            Navigator.of(dialogContext).pop();
+
+                            final notifier =
+                                ref.read(profileSettingsViewModelProvider.notifier);
+                            final success = await notifier.deleteAccount();
+
+                            if (!mounted) return;
+
+                            if (success) {
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content: Text('회원탈퇴가 완료되었습니다'),
+                                    duration: Duration(milliseconds: 800),
+                                  ),
+                                );
+                              context.go('/auth');
+                            } else {
+                              final error =
+                                  ref.read(profileSettingsViewModelProvider).error;
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text('오류: $error'),
+                                    backgroundColor: Colors.red,
+                                    duration: const Duration(milliseconds: 800),
+                                  ),
+                                );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            '탈퇴하기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

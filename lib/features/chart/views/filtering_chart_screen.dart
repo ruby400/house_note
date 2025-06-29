@@ -107,9 +107,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '창문': ['난초그림시트', '격자무늬 시트지', '네모패턴시트지', '없음'],
   };
 
-  // 확장된 컬럼 정의 (사용자 요구사항 기반)
+  // 확장된 컬럼 정의 (사용자 요구사항 기반) - 제목은 고정 컬럼이므로 제외
   List<String> _columns = [
-    '제목',
     '집 이름',
     '보증금',
     '월세',
@@ -285,7 +284,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 카테고리 정의 (순서대로 정렬)
   final Map<String, List<String>> _categoryGroups = {
     '필수정보': [
-      '제목',
       '집 이름',
       '보증금',
       '월세',
@@ -496,12 +494,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 카테고리 관련 헬퍼 메서드들
   List<String> _getVisibleColumns() {
-    final visibleColumns = <String>['제목']; // 제목은 항상 표시
+    final visibleColumns = <String>[]; // 제목은 고정 컬럼이므로 제외
 
     // 사용자가 설정한 _columns 순서를 따르되, 카테고리 접기 상태를 고려
     // AppLogger.d('📋 _getVisibleColumns 호출, 현재 _columns: $_columns');
     for (final column in _columns) {
-      if (column == '제목') continue; // 이미 추가됨
 
       // 해당 컬럼이 속한 카테고리 찾기
       String? belongsToCategory;
@@ -592,7 +589,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           properties: [
             PropertyData(
               id: '1',
-              order: '1',
               name: '',
               deposit: '',
               rent: '',
@@ -631,11 +627,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         setState(() {
           _currentChart = chartToUse;
 
-          // 저장된 컬럼 순서가 있으면 적용
+          // 저장된 컬럼 순서가 있으면 적용 (제목과 순은 고정 컬럼이므로 제외)
           if (chartToUse.columnOrder != null &&
               chartToUse.columnOrder!.isNotEmpty) {
             // AppLogger.d('🔄 차트 로드 시 저장된 컬럼 순서 적용: ${chartToUse.columnOrder}');
-            _columns = List.from(chartToUse.columnOrder!);
+            _columns = chartToUse.columnOrder!.where((column) => column != '제목' && column != '순').toList();
             // AppLogger.d('🔄 적용된 _columns: $_columns');
           } else {
             // AppLogger.d('⚠️ 저장된 컬럼 순서가 없음, 기본 순서 유지: $_columns');
@@ -685,7 +681,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         properties: [
           PropertyData(
             id: '1',
-            order: '1',
             name: '',
             deposit: '',
             rent: '',
@@ -922,10 +917,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
     // 빈 차트이거나 인덱스가 범위를 벗어나는 경우 빈 값 반환
     if (_currentChart!.properties.isEmpty || rowIndex >= _currentChart!.properties.length) {
-      // 순번 컬럼인 경우만 인덱스 기반 값 반환
-      if (columnIndex == 0) {
-        return '${rowIndex + 1}';
-      }
       return '';
     }
 
@@ -938,9 +929,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (columnKey['type'] == 'base') {
       // 기본 컬럼에서 값 가져오기
       switch (columnKey['key']) {
-        case 'order':
-          value = property.order;
-          break;
         case 'name':
           value = property.name;
           break;
@@ -1154,7 +1142,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
       final newProperty = PropertyData(
         id: '${DateTime.now().millisecondsSinceEpoch}_${properties.length}',
-        order: (properties.length + 1).toString(),
         additionalData: additionalData, // 추가 데이터 포함
       );
       properties.add(newProperty);
@@ -1168,18 +1155,18 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       return _currentChart!.columnWidths[index]!;
     }
 
-    // 기본 너비 (순번 칸 최대한 좁게)
+    // 기본 너비 (제목 컬럼과 스크롤 컬럼 구분)
     switch (index) {
       case 0:
-        return 45; // 순 (매우 좁게)
+        return 160; // 집 이름
       case 1:
-        return 140; // 집 이름
+        return 80; // 보증금 (좁게)
       case 2:
-        return 100; // 보증금
-      case 3:
         return 80; // 월세
+      case 3:
+        return 160; // 주소 (넓게)
       case 4:
-        return 120; // 주소
+        return 120; // 주거 형태
       case 5:
         return 140; // 집주인 환경
       case 6:
@@ -1728,9 +1715,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       additionalData['col_$i'] = ''; // 모든 추가 컬럼에 빈 문자열 설정
     }
 
+    final now = DateTime.now();
     final newProperty = PropertyData(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      order: (_currentChart!.properties.length + 1).toString(),
+      id: now.millisecondsSinceEpoch.toString(),
+      createdAt: now, // 생성 시간 명시적 설정
       additionalData: additionalData, // 추가 데이터 포함
     );
 
@@ -1977,7 +1965,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       // PropertyData 복사 (기존 데이터 모두 유지)
       final updatedProperty = PropertyData(
         id: property.id, // 기존 ID 유지
-        order: property.order,
         name: property.name,
         deposit: property.deposit,
         rent: property.rent,
@@ -2032,7 +2019,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
     final property = _currentChart!.properties[rowIndex];
     final rowName =
-        property.name.isNotEmpty ? property.name : '${property.order}번 행';
+        property.name.isNotEmpty ? property.name : '${rowIndex + 1}번 행';
 
     showModalBottomSheet(
       context: context,
@@ -2156,7 +2143,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
     final property = _currentChart!.properties[rowIndex];
     final rowName =
-        property.name.isNotEmpty ? property.name : '${property.order}번 행';
+        property.name.isNotEmpty ? property.name : '${rowIndex + 1}번 행';
 
     AppLogger.d('=== ROW DELETE START ===');
     AppLogger.d(
@@ -2175,15 +2162,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
         'Properties before deletion: ${_currentChart!.properties.length}');
     AppLogger.d('Properties after deletion: ${updatedProperties.length}');
 
-    // 순번을 재정렬 (선택사항 - 원한다면)
-    for (int i = 0; i < updatedProperties.length; i++) {
-      final property = updatedProperties[i];
-      if (property.order != (i + 1).toString()) {
-        updatedProperties[i] = property.copyWith(order: (i + 1).toString());
-        AppLogger.d(
-            'Reordered property ${property.id}: order changed to ${i + 1}');
-      }
-    }
+    // 순번은 리스트의 인덱스로 자동 관리됨 (order 필드 제거됨)
 
     setState(() {
       _currentChart = _currentChart!.copyWith(properties: updatedProperties);
@@ -2699,20 +2678,27 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     try {
       final properties = List<PropertyData>.from(_currentChart!.properties);
 
-      // ID나 createdAt 기준으로 원래 생성 순서대로 정렬
+      // createdAt 기준으로 원래 생성 순서대로 정렬
       properties.sort((a, b) {
-        // createdAt이 있으면 그것으로, 없으면 ID로 정렬
+        // 둘 다 createdAt이 있으면 시간 비교
         if (a.createdAt != null && b.createdAt != null) {
           return a.createdAt!.compareTo(b.createdAt!);
-        } else {
-          return a.id.compareTo(b.id);
         }
+        // a만 createdAt이 없으면 a를 뒤로
+        if (a.createdAt == null && b.createdAt != null) {
+          return 1;
+        }
+        // b만 createdAt이 없으면 b를 뒤로  
+        if (a.createdAt != null && b.createdAt == null) {
+          return -1;
+        }
+        // 둘 다 createdAt이 없으면 ID 기준 정렬 (숫자 형태 ID이므로 숫자로 변환하여 비교)
+        final aIdNum = int.tryParse(a.id) ?? 0;
+        final bIdNum = int.tryParse(b.id) ?? 0;
+        return aIdNum.compareTo(bIdNum);
       });
 
-      // 순번을 1부터 다시 할당
-      for (int i = 0; i < properties.length; i++) {
-        properties[i] = properties[i].copyWith(order: '${i + 1}');
-      }
+      // 순번은 리스트의 인덱스로 자동 관리됨 (order 필드 제거됨)
 
       setState(() {
         _currentChart = _currentChart!.copyWith(properties: properties);
@@ -2775,9 +2761,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 전체 항목 우선순위 설정
   void _showGlobalPrioritySettings() {
-    // 임시 컬럼 순서 (팝업 내에서만 사용, '순' 컬럼 제외)
+    // 임시 컬럼 순서 (팝업 내에서만 사용, 고정 컬럼들 제외)
     List<String> tempColumns =
-        _columns.where((column) => column != '순').toList();
+        _columns.where((column) => column != '순' && column != '제목').toList();
 
     // 컬럼 표시 여부를 관리하는 Map (저장된 값이 있으면 사용, 없으면 기본값 false)
     // 필수 컬럼들('집 이름', '월세', '보증금')은 항상 true로 설정
@@ -2984,8 +2970,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            // '순' 컬럼을 맨 앞에 유지하고 나머지 순서 적용
-                            _columns = ['순', ...tempColumns];
+                            // 순과 제목은 고정 컬럼이므로 제외하고 순서 적용
+                            _columns = tempColumns.where((column) => column != '순' && column != '제목').toList();
                           });
                           Navigator.pop(context);
 
@@ -3385,10 +3371,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           return _sortAscending ? comparison : -comparison;
         });
 
-        // 정렬 후 순번을 다시 1, 2, 3... 순서로 재할당
-        for (int i = 0; i < properties.length; i++) {
-          properties[i] = properties[i].copyWith(order: '${i + 1}');
-        }
+        // 순번은 리스트의 인덱스로 자동 관리됨 (order 필드 제거됨)
       }
 
       // 차트 업데이트
@@ -3413,7 +3396,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     if (columnKey['type'] == 'base') {
       switch (columnKey['key']) {
         case 'order':
-          return property.order;
+          // order 필드가 제거되었으므로, 리스트에서의 위치를 반환
+          final index = _currentChart!.properties.indexOf(property);
+          return (index + 1).toString();
         case 'name':
           return property.name;
         case 'deposit':
@@ -3907,9 +3892,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           Expanded(
             child: Row(
               children: [
-                // 고정된 순번 컬럼 (헤더 + 데이터)
+                // 고정된 제목 컬럼 (헤더 + 데이터)
                 SizedBox(
-                  width: _getColumnWidth(0),
+                  width: 40, // 제목 컬럼 최소 너비
                   child: Column(
                     children: [
                       // 카테고리 헤더 높이만큼 빈 공간
@@ -3925,11 +3910,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                           ),
                         ),
                       ),
-                      // 순번 헤더
+                      // 제목 헤더
                       Container(
                         height: 60,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 4),
+                            horizontal: 2, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           border: Border(
@@ -3940,36 +3925,22 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                           ),
                         ),
                         child: const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '제',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color.fromARGB(255, 84, 84, 84),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                '목',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color.fromARGB(255, 84, 84, 84),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                          child: Text(
+                            '제목',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Color.fromARGB(255, 84, 84, 84),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                      // 순번 데이터들
+                      // 제목 데이터들 (1, 2, 3... 숫자 표시)
                       Expanded(
                         child: NotificationListener<ScrollNotification>(
                           onNotification: (notification) {
-                            // 순번 컬럼 스크롤시 데이터 영역도 동기화
+                            // 제목 컬럼 스크롤시 데이터 영역도 동기화
                             if (notification is ScrollUpdateNotification) {
                               _synchronizeScrollOffset();
                             }
@@ -3980,17 +3951,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                             physics: const ClampingScrollPhysics(),
                             itemCount: _currentChart!.properties.isEmpty ? 1 : _currentChart!.properties.length,
                             itemBuilder: (context, index) {
-                              // 빈 차트인 경우 기본 빈 행 표시
-                              final property = _currentChart!.properties.isEmpty || index >= _currentChart!.properties.length
-                                  ? PropertyData(id: 'temp_$index', order: '${index + 1}')
-                                  : _currentChart!.properties[index];
-                              final rowData =
-                                  property.getRowData(_columns.length);
-
                               return Container(
                                 height: 60,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 8),
+                                    horizontal: 2, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: index % 2 == 0
                                       ? Colors.white
@@ -4022,9 +3986,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                                     height: double.infinity,
                                     alignment: Alignment.center,
                                     child: Text(
-                                      rowData.isNotEmpty ? rowData[0] : '',
+                                      '${index + 1}',
                                       style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color:
                                               Color.fromARGB(255, 84, 84, 84)),
@@ -4065,7 +4029,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               height: 35,
                               child: Row(
                                 children: _buildCategoryHeaders(
-                                    _getVisibleColumns().skip(1).toList()),
+                                    _getVisibleColumns()),
                               ),
                             ),
                             // 스크롤되는 헤더
@@ -4079,10 +4043,8 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  // 순번 제외한 나머지 컬럼들 (가시성 적용)
+                                  // 제목 제외한 나머지 컬럼들 (가시성 적용)
                                   ..._getVisibleColumns()
-                                      .skip(1)
-                                      .toList()
                                       .asMap()
                                       .entries
                                       .map((entry) {
@@ -4175,7 +4137,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   double _getTotalScrollableWidth() {
     double totalWidth = 0;
     final visibleColumns = _getVisibleColumns();
-    for (int i = 1; i < visibleColumns.length; i++) {
+    for (int i = 0; i < visibleColumns.length; i++) {
       final columnName = visibleColumns[i];
       final originalIndex = _columns.indexOf(columnName);
       if (originalIndex != -1) {
@@ -4200,10 +4162,10 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       ),
       child: Row(
         children: [
-          // 순번 제외한 나머지 셀들 (가시성 적용)
-          ...List.generate(_getVisibleColumns().length - 1, (i) {
+          // 제목 제외한 나머지 셀들 (가시성 적용)
+          ...List.generate(_getVisibleColumns().length, (i) {
             final visibleColumns = _getVisibleColumns();
-            final columnName = visibleColumns[i + 1]; // 순 제외
+            final columnName = visibleColumns[i]; // 제목은 고정 컬럼이므로 visibleColumns에 포함안됨
             final columnIndex = _columns.indexOf(columnName);
             final width = _getColumnWidth(columnIndex);
             final value = _getCurrentCellValue(index, columnIndex);

@@ -7,13 +7,13 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Firebase 초기화
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
-  print('🚀 앱 시작 (단순 모드)...');
+
+  debugPrint('🚀 앱 시작 (단순 모드)...');
   runApp(
     const ProviderScope(
       child: TripleOApp(),

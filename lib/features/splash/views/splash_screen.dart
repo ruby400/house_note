@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/core/widgets/browse_mode_intro_dialog.dart';
 import 'package:house_note/features/card_list/views/card_list_screen.dart';
+import 'package:house_note/features/main_navigation/views/main_navigation_screen.dart';
+import 'package:house_note/providers/auth_providers.dart';
 // import 'package:house_note/features/onboarding/views/priority_setting_screen.dart'; // 일시적으로 비활성화
 // import 'package:house_note/providers/app_state_providers.dart'; // 일시적으로 비활성화
-// import 'package:house_note/providers/auth_providers.dart'; // 일시적으로 비활성화
 // import 'package:house_note/providers/user_providers.dart'; // 일시적으로 비활성화
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool _hasShownWelcomeDialog = false;
+  Timer? _delayTimer;
 
   @override
   void initState() {
@@ -45,6 +49,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _delayTimer?.cancel();
     super.dispose();
   }
 
@@ -56,17 +61,48 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     try {
-      // 간단하게 카드 목록 화면으로 이동
+      // 카드 목록 화면으로 이동하고 하단바 상태 초기화
+      ref.read(selectedPageIndexProvider.notifier).state = 0; // 카드목록 탭 (0번)
       context.go(CardListScreen.routePath);
       
-      // 앱 시작 시 환영 팝업 표시
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted) {
-          BrowseModeIntroDialog.show(context);
-        }
+      // 로그인하지 않은 사용자에게만 환영 팝업 표시 (중복 방지)
+      _delayTimer = Timer(const Duration(milliseconds: 1000), () {
+        if (!mounted || _hasShownWelcomeDialog) return;
+        
+        final authState = ref.read(authStateChangesProvider);
+        authState.when(
+          data: (user) {
+            // 로그인하지 않은 사용자에게만 환영 팝업 표시
+            if (user == null && !_hasShownWelcomeDialog && mounted) {
+              _hasShownWelcomeDialog = true;
+              BrowseModeIntroDialog.show(context);
+            }
+          },
+          loading: () {
+            // 로딩 중일 때는 잠시 후 다시 확인
+            _delayTimer = Timer(const Duration(milliseconds: 500), () {
+              if (!mounted || _hasShownWelcomeDialog) return;
+              
+              final currentAuthState = ref.read(authStateChangesProvider);
+              currentAuthState.whenData((user) {
+                if (user == null && !_hasShownWelcomeDialog && mounted) {
+                  _hasShownWelcomeDialog = true;
+                  BrowseModeIntroDialog.show(context);
+                }
+              });
+            });
+          },
+          error: (error, stackTrace) {
+            // 에러 시에도 환영 팝업 표시 (게스트 모드로 간주)
+            if (!_hasShownWelcomeDialog && mounted) {
+              _hasShownWelcomeDialog = true;
+              BrowseModeIntroDialog.show(context);
+            }
+          },
+        );
       });
     } catch (e) {
-      print('네비게이션 오류: $e');
+      debugPrint('네비게이션 오류: $e');
     }
   }
 

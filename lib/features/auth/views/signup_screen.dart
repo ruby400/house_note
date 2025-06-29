@@ -16,7 +16,7 @@ class SignupScreen extends ConsumerStatefulWidget {
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(debugLabel: 'Signup_Form');
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -49,7 +49,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
-    // TODO: 실제 이메일 중복 확인 로직 구현
     // Firebase Auth에서는 회원가입 시점에 중복 확인이 됨
     setState(() {
       _isEmailChecked = true;
@@ -74,7 +73,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
-    // TODO: 실제 닉네임 중복 확인 로직 구현
     // Firestore에서 닉네임 중복 확인
     setState(() {
       _isNicknameChecked = true;
@@ -87,14 +85,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-      ),
-    );
-  }
 
   void _showPrettyDialog(
       String title, String message, IconData icon, Color iconColor) {
@@ -278,8 +268,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     AppLogger.d('🔄 회원가입 시작: $email, 닉네임: $nickname');
 
-    // TODO: 닉네임도 함께 저장하도록 signUpWithEmail 메서드 수정 필요
-    final success = await viewModel.signUpWithEmail(email, password);
+    // 닉네임을 포함하여 회원가입 진행
+    final success = await viewModel.signUpWithEmail(email, password, nickname: nickname);
 
     if (success && mounted) {
       _showPrettyDialog(
@@ -291,7 +281,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       // 잠시 후 로그인 화면으로 이동
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
-          context.pop();
+          context.go('/auth'); // 로그인 화면으로 이동
         }
       });
     }
@@ -551,7 +541,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/auth'); // 팝할 수 없으면 로그인 화면으로
+            }
+          },
         ),
       ),
       body: Center(

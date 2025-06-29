@@ -46,6 +46,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
 
     // 🔥 추가적으로 쓰고 싶은 기능이 있다면 아래처럼 추가
-    // implementation("com.google.firebase:firebase-auth")
-    // implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 }

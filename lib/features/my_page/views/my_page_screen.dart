@@ -23,7 +23,6 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
   // 가이드용 GlobalKey들
   final GlobalKey _profileKey = GlobalKey();
   final GlobalKey _editKey = GlobalKey();
-  final GlobalKey _priorityKey = GlobalKey();
   final GlobalKey _guideKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey();
 
@@ -41,13 +40,6 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
         description: '프로필 사진과 닉네임 수정 가능',
         targetKey: _editKey,
         icon: Icons.edit,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '우선순위 설정',
-        description: '중요한 항목의 우선순위 설정 가능',
-        targetKey: _priorityKey,
-        icon: Icons.tune,
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
       GuideStep(
@@ -107,13 +99,25 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
         centerTitle: true,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.help_outline,
-              color: Colors.white,
-              size: 24,
-            ),
-            onPressed: () => _showInteractiveGuide(),
+          // 로그인된 사용자만 인터랙티브 가이드 표시
+          Consumer(
+            builder: (context, ref, child) {
+              final userAsyncValue = ref.watch(userModelProvider);
+              return userAsyncValue.when(
+                data: (user) => user != null 
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.help_outline,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: () => _showInteractiveGuide(),
+                    )
+                  : const SizedBox.shrink(),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              );
+            },
           ),
         ],
         flexibleSpace: Container(
@@ -182,7 +186,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                user?.displayName ?? '닉네임 없음',
+                                user?.nickname ?? user?.displayName ?? '닉네임 없음',
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -252,15 +256,6 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
-                          _buildMenuItem(
-                            key: _priorityKey,
-                            icon: Icons.tune,
-                            title: '우선순위 설정',
-                            onTap: () {
-                              context.push('/priority-settings');
-                            },
-                          ),
-                          const Divider(height: 1),
                           _buildMenuItem(
                             key: _guideKey,
                             icon: Icons.help_outline,

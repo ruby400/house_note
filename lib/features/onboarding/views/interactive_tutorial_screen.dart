@@ -24,10 +24,12 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen> {
   @override
   void initState() {
     super.initState();
-    // 화면이 로드되면 자동으로 튜토리얼 시작
+    // 자동 튜토리얼 시작 비활성화 (구멍뚫린 화면 방지)
+    /*
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startInteractiveTutorial();
     });
+    */
   }
 
   @override

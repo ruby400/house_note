@@ -471,7 +471,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
   pw.Widget _buildPdfTable(
       PropertyChartModel chart, pw.Font font, pw.Font fontBold) {
-    final headers = ['순번', '집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
+    final headers = ['집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
 
     return pw.Table(
       border: pw.TableBorder.all(),
@@ -497,7 +497,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         ...chart.properties.map(
           (property) => pw.TableRow(
             children: [
-              _buildPdfCell(property.order, font),
               _buildPdfCell(property.name, font),
               _buildPdfCell(property.deposit, font),
               _buildPdfCell(property.rent, font),
@@ -582,7 +581,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   Widget _buildImageTable(PropertyChartModel chart) {
-    final headers = ['순번', '집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
+    final headers = ['집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
 
     return Table(
       border: TableBorder.all(
@@ -621,7 +620,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
               color: index % 2 == 0 ? Colors.white : Colors.grey[50],
             ),
             children: [
-              _buildImageCell(property.order),
               _buildImageCell(property.name),
               _buildImageCell(property.deposit),
               _buildImageCell(property.rent),

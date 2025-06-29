@@ -331,7 +331,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         (prop) => prop.id == widget.cardId,
         orElse: () => PropertyData(
           id: widget.cardId,
-          order: '',
           name: '',
           deposit: '',
           rent: '',
@@ -349,7 +348,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       // 기본값 생성
       propertyData = PropertyData(
         id: widget.cardId,
-        order: '',
         name: '',
         address: '',
         deposit: '',
@@ -711,7 +709,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           rent: '',
           rating: 0,
           memo: '',
-          order: '',
           direction: '',
           landlordEnvironment: '',
           additionalData: {},
@@ -2016,8 +2013,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   String _getPropertyValue(String key) {
     switch (key) {
-      case 'order':
-        return propertyData!.order;
       case 'name':
         return propertyData!.name;
       case 'deposit':
@@ -2331,7 +2326,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       for (String key in editedValues.keys) {
         switch (key) {
           case 'order':
-            propertyData = propertyData!.copyWith(order: editedValues[key]!);
+            // order field removed - skip
             break;
           case 'name':
             propertyData = propertyData!.copyWith(name: editedValues[key]!);
@@ -2451,7 +2446,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       for (String key in editedValues.keys) {
         switch (key) {
           case 'order':
-            propertyData = propertyData!.copyWith(order: editedValues[key]!);
+            // order field removed - skip
             break;
           case 'name':
             propertyData = propertyData!.copyWith(name: editedValues[key]!);

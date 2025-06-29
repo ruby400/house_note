@@ -43,7 +43,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       properties: [
         PropertyData(
           id: '1',
-          order: '1',
+          // order field removed
           name: '서라벌 오피스텔',
           deposit: '1000',
           rent: '55',
@@ -66,7 +66,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         ),
         PropertyData(
           id: '2',
-          order: '2',
+          // order field removed
           name: '라인빌',
           deposit: '2000',
           rent: '75',
@@ -89,7 +89,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         ),
         PropertyData(
           id: '3',
-          order: '3',
+          // order field removed
           name: '신촌센트럴빌',
           deposit: '1500',
           rent: '65',
@@ -178,7 +178,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       properties: [
         PropertyData(
           id: uniquePropertyId,
-          order: '1',
+          // order field removed
           name: '',
           deposit: '',
           rent: '',
@@ -251,7 +251,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         properties: [
           PropertyData(
             id: '1',
-            order: '1',
+            // order field removed
             name: '서라벌 오피스텔',
             deposit: '1000',
             rent: '55',
@@ -274,7 +274,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           ),
           PropertyData(
             id: '2',
-            order: '2',
+            // order field removed
             name: '라인빌',
             deposit: '2000',
             rent: '75',
@@ -297,7 +297,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           ),
           PropertyData(
             id: '3',
-            order: '3',
+            // order field removed
             name: '신촌센트럴빌',
             deposit: '1500',
             rent: '65',

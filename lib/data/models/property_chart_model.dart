@@ -237,7 +237,6 @@ class PropertyChartModel {
 
 class PropertyData {
   final String id;
-  final String order; // 순번
   final String name; // 집 이름
   final String address; // 주소
   final String deposit; // 보증금
@@ -252,7 +251,6 @@ class PropertyData {
   
   PropertyData({
     required this.id,
-    this.order = '',
     this.name = '',
     this.address = '',
     this.deposit = '',
@@ -269,7 +267,6 @@ class PropertyData {
   
   PropertyData copyWith({
     String? id,
-    String? order,
     String? name,
     String? address,
     String? deposit,
@@ -284,7 +281,6 @@ class PropertyData {
   }) {
     return PropertyData(
       id: id ?? this.id,
-      order: order ?? this.order,
       name: name ?? this.name,
       address: address ?? this.address,
       deposit: deposit ?? this.deposit,
@@ -301,14 +297,13 @@ class PropertyData {
   
   List<String> getRowData([int? maxColumns]) {
     final baseData = [
-      order,           // 0: 제목
-      name,            // 1: 집 이름
-      deposit,         // 2: 보증금
-      rent,            // 3: 월세
-      address,         // 4: 상세주소
-      direction,       // 5: 방향 등 (additionalData에서 처리)
-      landlordEnvironment, // 6: 집주인 환경 등 (additionalData에서 처리)
-      rating.toString(),   // 7: 별점
+      name,            // 0: 집 이름
+      deposit,         // 1: 보증금
+      rent,            // 2: 월세
+      address,         // 3: 상세주소
+      direction,       // 4: 방향 등 (additionalData에서 처리)
+      landlordEnvironment, // 5: 집주인 환경 등 (additionalData에서 처리)
+      rating.toString(),   // 6: 별점
     ];
     
     // 추가된 컬럼 데이터를 포함
@@ -318,12 +313,12 @@ class PropertyData {
     // AppLogger.d('getRowData for Property $id: maxColumns=$maxColumns');
     
     // ALWAYS use maxColumns logic to ensure consistency
-    final targetColumns = maxColumns ?? (additionalData.isEmpty ? 8 : additionalData.keys.length + 8);
+    final targetColumns = maxColumns ?? (additionalData.isEmpty ? 7 : additionalData.keys.length + 7);
     // AppLogger.d('Target columns: $targetColumns');
     
-    if (targetColumns > 8) {
-      // AppLogger.d('Processing additional columns from 8 to ${targetColumns - 1}');
-      for (int columnIndex = 8; columnIndex < targetColumns; columnIndex++) {
+    if (targetColumns > 7) {
+      // AppLogger.d('Processing additional columns from 7 to ${targetColumns - 1}');
+      for (int columnIndex = 7; columnIndex < targetColumns; columnIndex++) {
         // Force fetch each value individually to avoid reference issues
         final key = 'col_$columnIndex';
         final value = additionalData.containsKey(key) ? additionalData[key]! : '';
@@ -347,8 +342,6 @@ class PropertyData {
       if (columnKey['type'] == 'base') {
         // 기본 컬럼 업데이트
         switch (columnKey['key']) {
-          case 'order':
-            return copyWith(order: safeValue);
           case 'name':
             return copyWith(name: safeValue);
           case 'address':
@@ -394,25 +387,23 @@ class PropertyData {
       
       switch (columnIndex) {
         case 0: 
-          return copyWith(order: safeValue);
-        case 1: 
           return copyWith(name: safeValue);
-        case 2: 
+        case 1: 
           return copyWith(deposit: safeValue);
-        case 3: 
+        case 2: 
           return copyWith(rent: safeValue);
-        case 4: 
+        case 3: 
           return copyWith(address: safeValue);
-        case 5: 
+        case 4: 
           return copyWith(direction: safeValue);
-        case 6: 
+        case 5: 
           return copyWith(landlordEnvironment: safeValue);
-        case 7: 
+        case 6: 
           final ratingValue = int.tryParse(safeValue) ?? 0;
           final clampedRating = ratingValue.clamp(0, 5);
           return copyWith(rating: clampedRating);
         default: 
-          // 추가 컨럼의 경우 (8번 인덱스부터)
+          // 추가 컨럼의 경우 (7번 인덱스부터)
           final newAdditionalData = Map<String, String>.from(additionalData);
           newAdditionalData['col_$columnIndex'] = safeValue;
           return copyWith(additionalData: newAdditionalData);
@@ -426,7 +417,6 @@ class PropertyData {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'order': order,
       'name': name,
       'address': address,
       'deposit': deposit,
@@ -450,7 +440,6 @@ class PropertyData {
 
       return PropertyData(
         id: _parsePropertyId(json['id']),
-        order: _parseString(json['order']),
         name: _parseString(json['name']),
         address: _parseString(json['address']),
         deposit: _parseString(json['deposit']),
@@ -526,7 +515,6 @@ class PropertyData {
   static PropertyData _createDefault() {
     return PropertyData(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      order: '',
       name: '',
       deposit: '',
       rent: '',

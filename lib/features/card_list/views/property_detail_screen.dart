@@ -408,7 +408,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                         child: Text(
                           widget.propertyData.name.isNotEmpty
                               ? widget.propertyData.name
-                              : '부동산 ${widget.propertyData.order}',
+                              : '부동산 정보',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,

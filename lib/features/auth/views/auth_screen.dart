@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:house_note/features/auth/viewmodels/auth_viewmodel.dart';
 import 'package:house_note/features/auth/views/signup_screen.dart';
+import 'package:house_note/features/card_list/views/card_list_screen.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/core/widgets/loading_indicator.dart';
 import 'package:house_note/core/utils/logger.dart';
@@ -24,14 +25,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // 튜토리얼 관련 GlobalKey들
-  final GlobalKey _emailFieldKey = GlobalKey();
-  final GlobalKey _passwordFieldKey = GlobalKey();
-  final GlobalKey _loginButtonKey = GlobalKey();
-  final GlobalKey _googleButtonKey = GlobalKey();
-  final GlobalKey _naverButtonKey = GlobalKey();
-  final GlobalKey _switchModeKey = GlobalKey();
-  final GlobalKey _helpButtonKey = GlobalKey();
+  // 인터랙티브 가이드에 필요한 최소한의 GlobalKey만 유지
+  final GlobalKey _helpButtonKey = GlobalKey(debugLabel: 'Auth_Help');
 
   @override
   void dispose() {
@@ -53,7 +48,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       AppLogger.d('🏁 로그인 결과: ${success ? "성공" : "실패"}');
 
       if (success && mounted) {
-        // 로그인 성공 후 리다이렉트는 GoRouter의 redirect 로직에 의해 처리됨
+        // 로그인 성공 후 카드목록 화면으로 이동
+        context.go(CardListScreen.routePath);
       }
     }
   }
@@ -62,8 +58,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final viewModel = ref.read(authViewModelProvider.notifier);
     bool success = await viewModel.signInWithGoogle();
     if (success && mounted) {
-      // 구글 로그인 성공 후 처리 (GoRouter redirect에 의해 처리될 수 있음)
-      // 예시: context.go(PrioritySettingScreen.routePath);
+      // 구글 로그인 성공 후 카드목록 화면으로 이동
+      context.go(CardListScreen.routePath);
     }
   }
 
@@ -71,8 +67,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final viewModel = ref.read(authViewModelProvider.notifier);
     bool success = await viewModel.signInWithNaver();
     if (success && mounted) {
-      // 네이버 로그인 성공 후 처리 (GoRouter redirect에 의해 처리될 수 있음)
-      // 예시: context.go(PrioritySettingScreen.routePath);
+      // 네이버 로그인 성공 후 카드목록 화면으로 이동
+      context.go(CardListScreen.routePath);
     }
   }
 
@@ -157,7 +153,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: 40),
                 Container(
-                  key: _emailFieldKey,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -197,7 +192,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: 16),
                 Container(
-                  key: _passwordFieldKey,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -238,7 +232,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   const LoadingIndicator()
                 else
                   SizedBox(
-                    key: _loginButtonKey,
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
@@ -264,7 +257,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 Column(
                   children: [
                     TextButton(
-                      key: _switchModeKey,
                       onPressed: () {
                         context.push(SignupScreen.routePath);
                       },
@@ -301,7 +293,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         children: [
                           // Google 로그인 버튼
                           GestureDetector(
-                            key: _googleButtonKey,
                             onTap: _googleSignIn,
                             child: Container(
                               width: 60,
@@ -340,7 +331,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           const SizedBox(width: 24),
                           // Naver 로그인 버튼
                           GestureDetector(
-                            key: _naverButtonKey,
                             onTap: _naverSignIn,
                             child: Container(
                               width: 60,
@@ -639,52 +629,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final steps = [
       GuideStep(
         title: '하우스노트에 오신걸 환영합니다!',
-        description: '이 화면에서 계정에 로그인하거나 새 계정을 만들 수 있습니다.',
+        description: '이 화면에서 계정에 로그인하거나 새 계정을 만들 수 있습니다. 이메일과 비밀번호를 입력하여 로그인하거나, 회원가입 버튼을 눌러 새 계정을 만드세요.',
         targetKey: _helpButtonKey,
         tooltipPosition: GuideTooltipPosition.left,
         icon: Icons.waving_hand,
-      ),
-      GuideStep(
-        title: '이메일 입력',
-        description: '가입할 이메일 주소를 입력해주세요. 유효한 이메일 형식이어야 합니다.',
-        targetKey: _emailFieldKey,
-        tooltipPosition: GuideTooltipPosition.bottom,
-        icon: Icons.email,
-      ),
-      GuideStep(
-        title: '비밀번호 입력',
-        description: '비밀번호는 6자 이상이어야 합니다. 안전한 비밀번호를 사용하세요.',
-        targetKey: _passwordFieldKey,
-        tooltipPosition: GuideTooltipPosition.bottom,
-        icon: Icons.lock,
-      ),
-      GuideStep(
-        title: '로그인/회원가입',
-        description: '정보를 입력한 후 이 버튼을 눌러 로그인하거나 회원가입하세요.',
-        targetKey: _loginButtonKey,
-        tooltipPosition: GuideTooltipPosition.top,
-        icon: Icons.login,
-      ),
-      GuideStep(
-        title: '회원가입 링크',
-        description: '아직 계정이 없다면 여기를 눌러 회원가입 화면으로 이동하세요.',
-        targetKey: _switchModeKey,
-        tooltipPosition: GuideTooltipPosition.top,
-        icon: Icons.person_add,
-      ),
-      GuideStep(
-        title: 'Google 로그인',
-        description: 'Google 계정으로도 간편하게 로그인할 수 있습니다.',
-        targetKey: _googleButtonKey,
-        tooltipPosition: GuideTooltipPosition.top,
-        icon: Icons.g_mobiledata,
-      ),
-      GuideStep(
-        title: '네이버 로그인',
-        description: '네이버 계정으로도 간편하게 로그인할 수 있습니다.',
-        targetKey: _naverButtonKey,
-        tooltipPosition: GuideTooltipPosition.top,
-        icon: Icons.account_circle,
       ),
     ];
 

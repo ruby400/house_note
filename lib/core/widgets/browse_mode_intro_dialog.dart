@@ -99,7 +99,7 @@ class BrowseModeIntroDialog {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '• 앱의 모든 기능을 자유롭게 체험해보세요\n• 입력한 데이터는 저장되지 않습니다\n• 데이터 저장을 원하시면 로그인해주세요',
+                        '하우스노트는 부동산 매물을 체계적으로 관리하고 비교할 수 있는 스마트한 도구입니다.\n\n• 매물 정보를 손쉽게 기록하고 관리해보세요\n• 여러 매물을 한눈에 비교해보세요\n• 완벽한 집을 찾는 여정을 시작해보세요!',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFFBF360C),

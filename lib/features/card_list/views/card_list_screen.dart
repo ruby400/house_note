@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:house_note/data/models/user_model.dart'; // 사용되지 않으므로 제거
-import 'package:house_note/providers/user_providers.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/core/widgets/guest_mode_banner.dart';
@@ -18,7 +18,6 @@ import 'package:house_note/features/onboarding/views/interactive_guide_overlay.d
 class CardListScreen extends ConsumerStatefulWidget {
   static const routeName = 'card-list';
   static const routePath = '/cards';
-  static final GlobalKey bottomNavKey = GlobalKey(); // 하단바용 GlobalKey
 
   const CardListScreen({super.key});
 
@@ -61,27 +60,18 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   // 재할당되지 않으므로 final로 변경
   final List<String> _customSortOptions = ['최신순', '거리순', '월세순']; // 사용자 정의 정렬 옵션
 
-  // 가이드용 GlobalKey들
-  final GlobalKey _addButtonKey = GlobalKey();
-  final GlobalKey _searchKey = GlobalKey();
-  final GlobalKey _filterKey =
-      GlobalKey(); // PopupMenuButton child Container용 - 디버깅 로그 추가됨
-  final GlobalKey _newCardButtonKey = GlobalKey();
-  final GlobalKey _chartFilterKey = GlobalKey();
-  final GlobalKey _sortAddButtonKey = GlobalKey();
-  final GlobalKey _cardItemKey = GlobalKey();
-  final GlobalKey _clearButtonKey = GlobalKey();
+  // 가이드용 GlobalKey들 (디버그 라벨 추가로 충돌 방지)
+  final GlobalKey _addButtonKey = GlobalKey(debugLabel: 'CardList_AddButton');
+  final GlobalKey _searchKey = GlobalKey(debugLabel: 'CardList_Search');
+  final GlobalKey _filterKey = GlobalKey(debugLabel: 'CardList_Filter');
+  final GlobalKey _newCardButtonKey = GlobalKey(debugLabel: 'CardList_NewCard');
+  final GlobalKey _chartFilterKey = GlobalKey(debugLabel: 'CardList_ChartFilter');
+  final GlobalKey _sortAddButtonKey = GlobalKey(debugLabel: 'CardList_SortAdd');
+  final GlobalKey _clearButtonKey = GlobalKey(debugLabel: 'CardList_Clear');
 
   // 동적 UI 요소용 GlobalKey들 (필요시 활성화)
   // final GlobalKey _popupMenuKey = GlobalKey(); // 팝업 메뉴 전체용
   // final List<GlobalKey> _sortOptionKeys = []; // 정렬 옵션들용
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
 
   // 실제 인터렉티브 튜토리얼 상태 변수들
   // bool _isSearching = false; // 현재 사용하지 않음
@@ -90,24 +80,41 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
 
   // 포커스 관리를 위한 FocusNode
   final FocusNode _searchFocusNode = FocusNode();
+  
+  // Timer 관리 (메모리 누수 방지)
+  final List<Timer> _timers = [];
+
+  @override
+  void dispose() {
+    // Timer 정리
+    for (final timer in _timers) {
+      timer.cancel();
+    }
+    _timers.clear();
+    
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
-    // 튜토리얼에서 왔을 때 자동으로 인터랙티브 가이드 시작
+    // 인터랙티브 가이드 자동 실행 완전히 비활성화
+    // (환영 다이얼로그 전에 나타나는 구멍뚫린 화면 방지)
+    /*
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // URL 상태를 확인하여 튜토리얼에서 왔는지 확인
-      final routeInformation =
-          GoRouter.of(context).routeInformationProvider.value;
-      final uri = routeInformation.uri.toString();
-      if (uri.contains('/cards') &&
-          (uri.contains('from_tutorial') || uri.contains('guide=true'))) {
-        _showInteractiveGuide();
-      }
+      // 자동 가이드 실행 비활성화됨
     });
+    */
   }
 
   void _showInteractiveGuide() {
+    // 이미 가이드가 실행 중이면 중복 실행 방지
+    if (InteractiveGuideManager.isShowing) {
+      return;
+    }
+    
     // 상태 초기화
     setState(() {
       // _isSearching = false; // 현재 사용하지 않음
@@ -117,14 +124,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     });
 
     final steps = [
-      // 1단계: 환영 및 소개
-      GuideStep(
-        title: '매물 카드 관리 가이드 🏠',
-        description: '실제 기능을 직접 체험하면서 매물 카드 관리 방법을 배워보겠습니다. "다음" 버튼을 눌러 계속하세요.',
-        waitForUserAction: false,
-      ),
-
-      // 2단계: 검색 기능 체험
+      // 1단계: 검색 기능 체험 (환영 단계 제거)
       GuideStep(
         title: '검색 기능 체험하기 🔍',
         description: '검색창에 텍스트를 입력하면 실시간으로 매물이 필터링됩니다. 다음 버튼을 눌러 계속하세요.',
@@ -133,10 +133,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         waitForUserAction: false,
         autoNext: true,
         forceUIAction: () {
-          // 검색창에 포커스 주기
-          Future.delayed(const Duration(milliseconds: 500), () {
-            _searchFocusNode.requestFocus();
+          // 검색창에 포커스 주기 (안전한 방식)
+          final timer = Timer(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              _searchFocusNode.requestFocus();
+            }
           });
+          _timers.add(timer);
         },
       ),
 
@@ -146,10 +149,12 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         description: '훌륭해요! 검색어가 입력되면 실시간으로 매물이 필터링됩니다. "다음" 버튼을 눌러 계속하세요.',
         waitForUserAction: false,
         onStepExit: () {
-          // 검색어 초기화
-          setState(() {
-            _searchController.clear();
-                });
+          // 검색어 초기화 (안전한 방식)
+          if (mounted) {
+            setState(() {
+              _searchController.clear();
+            });
+          }
         },
       ),
 
@@ -173,21 +178,23 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         },
         forceUIAction: () {
           // 잠시 후 자동으로 정렬 메뉴를 열어줌 (사용자가 클릭하지 않을 경우를 대비)
-          Future.delayed(const Duration(seconds: 3), () {
-            if (!_isFilterOpen) {
+          final timer1 = Timer(const Duration(seconds: 3), () {
+            if (mounted && !_isFilterOpen) {
               setState(() {
                 _isFilterOpen = true;
               });
               // 3초 후 자동으로 닫기
-              Future.delayed(const Duration(seconds: 2), () {
-                if (_isFilterOpen) {
+              final timer2 = Timer(const Duration(seconds: 2), () {
+                if (mounted && _isFilterOpen) {
                   setState(() {
                     _isFilterOpen = false;
                   });
                 }
               });
+              _timers.add(timer2);
             }
           });
+          _timers.add(timer1);
         },
       ),
 
@@ -197,10 +204,12 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         description: '정렬 메뉴가 열렸습니다! 원하는 정렬 방식을 선택할 수 있습니다. "다음" 버튼을 눌러 계속하세요.',
         waitForUserAction: false,
         onStepExit: () {
-          // 정렬 메뉴 닫기
-          setState(() {
-            _isFilterOpen = false;
-          });
+          // 정렬 메뉴 닫기 (안전한 방식)
+          if (mounted) {
+            setState(() {
+              _isFilterOpen = false;
+            });
+          }
         },
       ),
 
@@ -215,16 +224,21 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         shouldAvoidDynamicArea: () => _hasAddedCard, // 바텀시트가 나타났을 때 말풍선 위치 조정
         getDynamicArea: () {
           // 바텀시트가 나타났을 때의 영역 (더 정확한 계산)
-          if (_hasAddedCard) {
-            final screenHeight = MediaQuery.of(context).size.height;
-            final screenWidth = MediaQuery.of(context).size.width;
-            // 바텀시트는 보통 화면 하단 70% 정도를 차지함
-            return Rect.fromLTWH(
-              0,
-              screenHeight * 0.25, // 화면 상단 25%부터 시작
-              screenWidth,
-              screenHeight * 0.75, // 화면 하단 75% 영역
-            );
+          if (_hasAddedCard && mounted) {
+            try {
+              final screenHeight = MediaQuery.of(context).size.height;
+              final screenWidth = MediaQuery.of(context).size.width;
+              // 바텀시트는 보통 화면 하단 70% 정도를 차지함
+              return Rect.fromLTWH(
+                0,
+                screenHeight * 0.25, // 화면 상단 25%부터 시작
+                screenWidth,
+                screenHeight * 0.75, // 화면 하단 75% 영역
+              );
+            } catch (e) {
+              // MediaQuery 접근 실패시 기본값 반환
+              return Rect.zero;
+            }
           }
           return Rect.zero;
         },
@@ -243,120 +257,27 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       context,
       steps: steps,
       onCompleted: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 인터렉티브 가이드가 완료되었습니다!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🎉 인터렉티브 가이드가 완료되었습니다!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       },
       onSkipped: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('가이드를 건너뛰었습니다.'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('가이드를 건너뛰었습니다.'),
+            ),
+          );
+        }
       },
     );
   }
 
-  // 기존의 간단한 가이드 (도움말 버튼용)
-  void _showSimpleGuide() {
-    final steps = [
-      GuideStep(
-        title: '매물 추가',
-        description: '+ 버튼 눌러서 매물 추가 가능',
-        targetKey: _addButtonKey,
-        icon: Icons.add_circle,
-        tooltipPosition: GuideTooltipPosition.top,
-      ),
-      GuideStep(
-        title: '새카드 만들기',
-        description: '버튼 눌러서 새 차트에 매물 추가 가능',
-        targetKey: _newCardButtonKey,
-        icon: Icons.add_card,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '매물 편집',
-        description: '카드 눌러서 상세정보 편집 가능',
-        targetKey: _cardItemKey,
-        icon: Icons.edit,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '이미지 추가',
-        description: '상세화면에서 이미지 추가/삭제 가능',
-        targetKey: _cardItemKey,
-        icon: Icons.photo_library,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '실시간 검색',
-        description: '검색창에서 매물명, 가격, 위치 검색 가능',
-        targetKey: _searchKey,
-        icon: Icons.search,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '검색 초기화',
-        description: 'X 버튼 눌러서 검색어 지우기 가능',
-        targetKey: _clearButtonKey,
-        icon: Icons.clear,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '정렬 기능',
-        description: '최신순, 월세순 등 정렬 옵션 선택 가능',
-        targetKey: _filterKey,
-        icon: Icons.sort,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '정렬 추가',
-        description: '사용자 정의 정렬 방식 추가 가능',
-        targetKey: _sortAddButtonKey,
-        icon: Icons.add_box,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '차트 필터',
-        description: '원하는 차트만 선택해서 보기 가능',
-        targetKey: _chartFilterKey,
-        icon: Icons.filter_alt,
-        tooltipPosition: GuideTooltipPosition.bottom,
-      ),
-      GuideStep(
-        title: '가이드 완료 🎉',
-        description: '매물 카드 관리 기능을 모두 확인했습니다! 하단 탭으로 다른 화면도 둘러보세요.',
-        targetKey: _searchKey,
-        icon: Icons.check_circle,
-        tooltipPosition: GuideTooltipPosition.bottom,
-        waitForUserAction: false,
-        autoNext: true,
-      ),
-    ];
-
-    InteractiveGuideManager.showGuide(
-      context,
-      steps: steps,
-      onCompleted: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('가이드가 완료되었습니다!'),
-            backgroundColor: Color(0xFFFF8A65),
-          ),
-        );
-      },
-      onSkipped: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('가이드를 건너뛰었습니다.'),
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -369,41 +290,13 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         centerTitle: true,
         elevation: 0,
         actions: [
-          PopupMenuButton<String>(
+          IconButton(
             icon: const Icon(
               Icons.help_outline,
               color: Colors.white,
               size: 24,
             ),
-            onSelected: (value) {
-              if (value == 'interactive') {
-                _showInteractiveGuide();
-              } else if (value == 'simple') {
-                _showSimpleGuide();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'interactive',
-                child: Row(
-                  children: [
-                    Icon(Icons.gamepad, size: 20),
-                    SizedBox(width: 8),
-                    Text('🎮 인터렉티브 가이드'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'simple',
-                child: Row(
-                  children: [
-                    Icon(Icons.help_outline, size: 20),
-                    SizedBox(width: 8),
-                    Text('📖 빠른 도움말'),
-                  ],
-                ),
-              ),
-            ],
+            onPressed: _showInteractiveGuide,
           ),
         ],
         flexibleSpace: Container(
@@ -904,9 +797,10 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                             _hasAddedCard = true; // 튜토리얼 상태 업데이트
                           });
                           // 바텀시트를 열기 전에 잠시 대기 (말풍선 위치 조정을 위해)
-                          Future.delayed(const Duration(milliseconds: 100), () {
+                          final timer = Timer(const Duration(milliseconds: 100), () {
                             _showChartSelectionDialog();
                           });
+                          _timers.add(timer);
                         },
                         child: Container(
                           key: _newCardButtonKey,
@@ -1330,7 +1224,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   Widget _buildCardItem(PropertyData property, String? chartId) {
     return Consumer(
       builder: (context, ref, child) {
-        final userPriorities = ref.watch(userPrioritiesProvider);
+        // final userPriorities = ref.watch(userPrioritiesProvider); // 현재 사용하지 않음
 
         return GestureDetector(
             onTap: () {
@@ -1438,10 +1332,9 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                               _buildPropertyThumbnail(property),
                             ],
                           ),
-                          if (userPriorities.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            _buildPriorityTags(property),
-                          ],
+                          // 추가 정보 태그들을 항상 표시 (userPriorities 조건 제거)
+                          const SizedBox(height: 8),
+                          _buildPriorityTags(property),
                         ],
                       ),
                     ),
@@ -1466,6 +1359,11 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
             break;
           }
         }
+        
+        // 디버깅용 로그
+        AppLogger.d('PropertyData ID: ${property.id}');
+        AppLogger.d('Found chart: ${currentChart?.title ?? "없음"}');
+        AppLogger.d('Chart columnVisibility: ${currentChart?.columnVisibility}');
 
         List<Widget> tags = [];
         Set<String> addedTags = {};
@@ -1473,39 +1371,50 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
         const fixedItems = {'집 이름', '월세', '보증금', '순'};
 
         final visibilityMap = currentChart?.columnVisibility;
-
+        
+        List<String> visibleColumns = [];
+        
         if (visibilityMap != null && visibilityMap.isNotEmpty) {
-          final visibleColumns = visibilityMap.entries
+          visibleColumns = visibilityMap.entries
               .where((entry) => entry.value == true)
               .map((entry) => entry.key)
               .where((column) => !fixedItems.contains(column))
               .take(6)
               .toList();
+        } else {
+          // 기본 표시 컬럼들 (columnVisibility가 설정되지 않은 경우)
+          final defaultColumns = ['주거 형태', '재계/방향', '집주인 환경', '주소'];
+          visibleColumns = defaultColumns
+              .where((column) => !fixedItems.contains(column))
+              .take(6)
+              .toList();
+          AppLogger.d('기본 컬럼 사용: $visibleColumns');
+        }
 
-          for (String column in visibleColumns) {
-            if (addedTags.contains(column)) continue;
+        for (String column in visibleColumns) {
+          if (addedTags.contains(column)) continue;
 
-            String? value = _getColumnValueForProperty(column, property);
+          String? value = _getColumnValueForProperty(column, property);
+          AppLogger.d('컬럼: $column, 값: $value');
 
-            final displayValue =
-                (value != null && value.isNotEmpty && value != '-')
-                    ? value
-                    : '미입력';
+          final displayValue =
+              (value != null && value.isNotEmpty && value != '-')
+                  ? value
+                  : '미입력';
 
-            addedTags.add(column);
-            tags.add(
-              Text(
-                '$column: $displayValue',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: (value != null && value.isNotEmpty && value != '-')
-                      ? Colors.grey[600]
-                      : Colors.orange[600],
-                  fontWeight: FontWeight.normal,
-                ),
+          addedTags.add(column);
+          tags.add(
+            Text(
+              '$column: $displayValue',
+              style: TextStyle(
+                fontSize: 14,
+                color: (value != null && value.isNotEmpty && value != '-')
+                    ? Colors.grey[600]
+                    : Colors.orange[600],
+                fontWeight: FontWeight.normal,
               ),
-            );
-          }
+            ),
+          );
         }
 
         if (tags.isEmpty) return const SizedBox.shrink();
@@ -1806,9 +1715,10 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                     if (ctx.mounted) Navigator.of(ctx).pop(); // 새 차트 만들기 다이얼로그 닫기
 
                     // 잠시 후 차트 선택 다이얼로그 다시 열기
-                    Future.delayed(const Duration(milliseconds: 300), () {
+                    final timer = Timer(const Duration(milliseconds: 300), () {
                       _showChartSelectionDialog();
                     });
+                    _timers.add(timer);
 
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1848,11 +1758,20 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   }
 
   Future<void> _createNewChart(String title) async {
+    // 기본 컬럼 가시성 설정 (필수 컬럼만 true로 설정)
+    final Map<String, bool> defaultColumnVisibility = {
+      '집 이름': true,
+      '월세': true,
+      '보증금': true,
+      // 다른 모든 컬럼은 false로 기본 설정됨
+    };
+
     final newChart = PropertyChartModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
       date: DateTime.now(),
       properties: [],
+      columnVisibility: defaultColumnVisibility,
     );
 
     final integratedService = ref.read(integratedChartServiceProvider);
@@ -1878,7 +1797,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           contentPadding: EdgeInsets.zero,
           content: Container(
             width: 400,
-            height: 450,
+            height: 600,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),

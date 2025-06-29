@@ -19,7 +19,7 @@ class UserRepository {
           );
 
   Future<void> createUserProfile(fb_auth.User firebaseUser,
-      {String? displayName}) async {
+      {String? nickname}) async {
     // 이미 존재하는지 확인
     final doc = await _usersCollection.doc(firebaseUser.uid).get();
     if (doc.exists) {
@@ -29,7 +29,8 @@ class UserRepository {
     final userModel = UserModel(
       uid: firebaseUser.uid,
       email: firebaseUser.email,
-      displayName: displayName ?? firebaseUser.displayName,
+      displayName: nickname ?? firebaseUser.displayName,
+      nickname: nickname, // 닉네임 필드에도 저장
       photoURL: firebaseUser.photoURL,
       onboardingCompleted: false,
       createdAt: DateTime.now(),

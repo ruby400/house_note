@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "567850827737-q6f95t09hf5fjqhvv3lhf2l6r6d01ksv.apps.googleusercontent.com",
+              "client_id": "567850827737-mkkgfnspnbk089a4c9bgv2nck0tgi864.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.houseNote"
+                "bundle_id": "com.ruby444.houseNote"
               }
             }
           ]
@@ -57,6 +57,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "567850827737-8gj73f5qca06oget99inamplbt8lt0vv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ruby444.house_note",
+            "certificate_hash": "ccf439628a66cc56f1aae96ea3efa9e20ed92a51"
+          }
+        },
         {
           "client_id": "567850827737-81u28nimr6jj6pfqbshijjdp4nm7t4ud.apps.googleusercontent.com",
           "client_type": 3
@@ -75,10 +83,10 @@
               "client_type": 3
             },
             {
-              "client_id": "567850827737-q6f95t09hf5fjqhvv3lhf2l6r6d01ksv.apps.googleusercontent.com",
+              "client_id": "567850827737-mkkgfnspnbk089a4c9bgv2nck0tgi864.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.houseNote"
+                "bundle_id": "com.ruby444.houseNote"
               }
             }
           ]

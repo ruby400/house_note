@@ -12,16 +12,14 @@ import 'package:house_note/features/chart/views/filtering_chart_screen.dart';
 import 'package:house_note/features/main_navigation/views/main_navigation_screen.dart';
 import 'package:house_note/features/map/views/map_screen.dart';
 import 'package:house_note/features/my_page/views/my_page_screen.dart';
-import 'package:house_note/features/my_page/views/priority_settings_page.dart';
 import 'package:house_note/features/my_page/views/profile_settings_screen.dart';
 import 'package:house_note/features/my_page/views/user_guide_screen.dart';
-import 'package:house_note/features/onboarding/views/interactive_tutorial_screen.dart';
-import 'package:house_note/features/onboarding/views/priority_setting_screen.dart';
-import 'package:house_note/features/onboarding/views/profile_setting_screen.dart';
 import 'package:house_note/features/splash/views/splash_screen.dart';
 import 'package:house_note/providers/auth_providers.dart';
-import 'package:house_note/providers/user_providers.dart';
 import 'package:house_note/data/models/property_chart_model.dart';
+
+// 전역 Navigator Key (한 번만 생성되도록 보장)
+final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'Shell');
 
 // 앱의 라우팅 로직을 담당하는 클래스
 class AppRouter {
@@ -49,30 +47,6 @@ class AppRouter {
         path: SignupScreen.routePath,
         name: SignupScreen.routeName,
         builder: (context, state) => const SignupScreen(),
-      ),
-      // 온보딩 - 프로필 설정
-      GoRoute(
-        path: ProfileSettingScreen.routePath, // /onboarding/profile
-        name: ProfileSettingScreen.routeName,
-        builder: (context, state) => const ProfileSettingScreen(),
-      ),
-      // 온보딩 - 인터렉티브 튜토리얼
-      GoRoute(
-        path: InteractiveTutorialScreen.routePath,
-        name: InteractiveTutorialScreen.routeName,
-        builder: (context, state) => const InteractiveTutorialScreen(),
-      ),
-      // 온보딩 - 우선순위 설정
-      GoRoute(
-        path: PrioritySettingScreen.routePath, // /onboarding/priority
-        name: PrioritySettingScreen.routeName,
-        builder: (context, state) => const PrioritySettingScreen(),
-      ),
-      // 마이페이지 - 우선순위 편집
-      GoRoute(
-        path: PrioritySettingsPage.routePath,
-        name: PrioritySettingsPage.routeName,
-        builder: (context, state) => const PrioritySettingsPage(),
       ),
       // 마이페이지 - 프로필 설정
       GoRoute(
@@ -195,25 +169,20 @@ class AppRouter {
       if (state.matchedLocation == SplashScreen.routePath) return null;
 
       final isAuthenticated = _ref.read(authStateChangesProvider).value != null;
-      final userModel = _ref.read(userModelProvider).value;
-      final onboardingCompleted = userModel?.onboardingCompleted ?? false;
 
-      final isLoggingIn = state.matchedLocation == AuthScreen.routePath;
-      final isSigningUp = state.matchedLocation == SignupScreen.routePath;
       final isOnboardingFlow = state.matchedLocation.startsWith('/onboarding');
+      final isAuthFlow = state.matchedLocation == AuthScreen.routePath || 
+                        state.matchedLocation == SignupScreen.routePath;
 
       // 로그인된 사용자의 경우
       if (isAuthenticated) {
-        if (onboardingCompleted) {
-          // 온보딩 완료 시: 로그인/회원가입/온보딩 화면에 있다면 메인으로
-          if (isLoggingIn || isSigningUp || isOnboardingFlow) {
-            return CardListScreen.routePath;
-          }
-        } else {
-          // 온보딩 미완료 시: 온보딩 플로우에 있는게 아니라면 튜토리얼로
-          if (!isOnboardingFlow) {
-            return InteractiveTutorialScreen.routePath;
-          }
+        // 로그인/회원가입 화면에 있다면 카드목록으로 이동
+        if (isAuthFlow) {
+          return CardListScreen.routePath;
+        }
+        // 온보딩 화면에 있다면 메인으로
+        if (isOnboardingFlow) {
+          return CardListScreen.routePath;
         }
       }
 
@@ -227,8 +196,6 @@ class AppRouter {
     },
   );
 
-  static final _shellNavigatorKey =
-      GlobalKey<NavigatorState>(debugLabel: 'Shell');
 }
 
 // GoRouter의 상태 변화를 감지하는 클래스
@@ -236,17 +203,13 @@ class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     _authSubscription =
         ref.listen(authStateChangesProvider, (_, __) => notifyListeners());
-    _userSubscription =
-        ref.listen(userModelProvider, (_, __) => notifyListeners());
   }
 
   late final ProviderSubscription _authSubscription;
-  late final ProviderSubscription _userSubscription;
 
   @override
   void dispose() {
     _authSubscription.close();
-    _userSubscription.close();
     super.dispose();
   }
 }

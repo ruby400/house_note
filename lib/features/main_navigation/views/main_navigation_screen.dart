@@ -28,6 +28,28 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     MyPageScreen.routePath,
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // 현재 경로에 따라 하단바 상태 동기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentLocation = GoRouter.of(context).routeInformationProvider.value.uri.path;
+      int index = 0;
+      
+      if (currentLocation.startsWith(CardListScreen.routePath)) {
+        index = 0;
+      } else if (currentLocation.startsWith(ChartScreen.routePath)) {
+        index = 1;
+      } else if (currentLocation.startsWith(MapScreen.routePath)) {
+        index = 2;
+      } else if (currentLocation.startsWith(MyPageScreen.routePath)) {
+        index = 3;
+      }
+      
+      ref.read(selectedPageIndexProvider.notifier).state = index;
+    });
+  }
+
   void _onItemTapped(int index, BuildContext context, WidgetRef ref) {
     ref.read(selectedPageIndexProvider.notifier).state = index;
     context.go(_tabPaths[index]);
@@ -40,7 +62,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     return Scaffold(
       body: widget.child, // 현재 선택된 탭의 화면이 여기에 표시됨
       bottomNavigationBar: Container(
-        key: CardListScreen.bottomNavKey,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
