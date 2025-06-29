@@ -1397,7 +1397,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                                     Text(
                                       property.name.isNotEmpty
                                           ? property.name
-                                          : '부동산 ${property.order}',
+                                          : '부동산 정보',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
@@ -1445,30 +1445,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
                         ],
                       ),
                     ),
-                    if (property.order.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '순번: ${property.order}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // 순번 필드 제거됨
                   ],
                 ),
               ),
@@ -1558,60 +1535,122 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
   }
 
   String? _getColumnValueForProperty(String columnName, PropertyData property) {
-    switch (columnName) {
-      case '집 이름':
-        return property.name.isNotEmpty
-            ? property.name
-            : '부동산 ${property.order}';
-      case '보증금':
-        return property.deposit;
-      case '월세':
-        return property.rent;
-      case '재계/방향':
-        return property.direction;
-      case '집주인 환경':
-        return property.landlordEnvironment;
-      case '별점':
-        return property.rating > 0 ? property.rating.toString() : null;
-      case '주거형태':
-      case '건축물용도':
-      case '임차권 등기명령 이력여부':
-      case '수도 수납':
-      case '공광비':
-      case '재산/방화':
-      case '소음':
-      case '편의점':
-      default:
-        return _getAdditionalDataByColumnName(columnName, property);
+    final columnKey = _getColumnDataKey(columnName);
+    
+    if (columnKey['type'] == 'base') {
+      // Handle base columns directly from PropertyData fields
+      switch (columnKey['key']) {
+        case 'name':
+          return property.name.isNotEmpty ? property.name : '부동산 정보';
+        case 'deposit':
+          return property.deposit;
+        case 'rent':
+          return property.rent;
+        case 'address':
+          return property.address;
+        case 'direction':
+          return property.direction;
+        case 'landlordEnvironment':
+          return property.landlordEnvironment;
+        case 'rating':
+          return property.rating > 0 ? property.rating.toString() : null;
+        default:
+          return null;
+      }
+    } else {
+      // Handle additional columns from additionalData
+      return property.additionalData[columnKey['key']];
     }
   }
 
-  String? _getAdditionalDataByColumnName(
-      String columnName, PropertyData property) {
-    const columnIndexMap = {
-      '집 이름': 1,
-      '보증금': 2,
-      '월세': 3,
-      '주거형태': 4,
-      '건축물용도': 5,
-      '임차권 등기명령 이력여부': 6,
-      '재계/방향': 7,
-      '집주인 환경': 8,
-      '별점': 9,
-      '수도 수납': 10,
-      '공광비': 11,
-      '재산/방화': 12,
-      '소음': 13,
-      '편의점': 14,
+
+  // Column data key mapping - copied from chart screen
+  Map<String, String> _getColumnDataKey(String columnName) {
+    // Base columns map directly to PropertyData fields
+    const baseColumnKeys = {
+      '집 이름': 'name',
+      '보증금': 'deposit',
+      '월세': 'rent',
+      '주소': 'address',
+      '재계/방향': 'direction',
+      '집주인 환경': 'landlordEnvironment',
+      '별점': 'rating',
     };
 
-    final columnIndex = columnIndexMap[columnName];
-    if (columnIndex != null && columnIndex >= 7) {
-      final dataKey = 'col_$columnIndex';
-      return property.additionalData[dataKey];
-    }
+    // Standard columns stored in additionalData with fixed keys
+    const standardColumnKeys = {
+      '주거 형태': 'housing_type',
+      '건축물용도': 'building_use',
+      '임차권등기명령 이력': 'lease_registration',
+      '근저당권': 'mortgage',
+      '가압류, 압류, 경매 이력': 'seizure_history',
+      '계약 조건': 'contract_conditions',
+      '등기부등본(말소사항 포함으로)': 'property_register',
+      '입주 가능일': 'move_in_date',
+      '전입신고': 'resident_registration',
+      '관리비': 'maintenance_fee',
+      '주택보증보험': 'housing_insurance',
+      '특약': 'special_terms',
+      '특이사항': 'special_notes',
+      '평수': 'area',
+      '방개수': 'room_count',
+      '방구조': 'room_structure',
+      '창문 뷰': 'window_view',
+      '방향(나침반)': 'compass_direction',
+      '채광': 'lighting',
+      '층수': 'floor',
+      '엘리베이터': 'elevator',
+      '에어컨 방식': 'air_conditioning',
+      '난방방식': 'heating',
+      '베란다': 'veranda',
+      '발코니': 'balcony',
+      '주차장': 'parking',
+      '화장실': 'bathroom',
+      '가스': 'gas_type',
+      '지하철 거리': 'subway_distance',
+      '버스 정류장': 'bus_distance',
+      '편의점 거리': 'convenience_store',
+      '위치': 'location_type',
+      'cctv 여부': 'cctv',
+      '창문 상태': 'window_condition',
+      '문 상태': 'door_condition',
+      '집주인 성격': 'landlord_environment',
+      '집주인 거주': 'landlord_residence',
+      '집근처 술집': 'nearby_bars',
+      '저층 방범창': 'security_bars',
+      '집주변 낮분위기': 'day_atmosphere',
+      '집주변 밤분위기': 'night_atmosphere',
+      '2종 잠금장치': 'double_lock',
+      '집 근처 소음원': 'noise_source',
+      '실내소음': 'indoor_noise',
+      '이중창(소음, 외풍)': 'double_window',
+      '창문 밀폐(미세먼지)': 'window_seal',
+      '수압': 'water_pressure',
+      '누수': 'water_leak',
+      '에어컨 내부 곰팡이': 'ac_mold',
+      '에어컨 냄새': 'ac_smell',
+      '환기(공기순환)': 'ventilation',
+      '곰팡이(벽,화장실,베란다)': 'mold',
+      '냄새': 'smell',
+      '벌레(바퀴똥)': 'insects',
+      '몰딩': 'molding',
+      '창문': 'window_film',
+      '관련 링크': 'related_links',
+      '부동산 정보': 'real_estate_info',
+      '집주인 정보': 'landlord_info',
+      '집보여준자': 'agent_check',
+      '메모': 'memo',
+    };
 
-    return property.additionalData[columnName];
+    if (baseColumnKeys.containsKey(columnName)) {
+      return {'type': 'base', 'key': baseColumnKeys[columnName]!};
+    } else if (standardColumnKeys.containsKey(columnName)) {
+      return {'type': 'additional', 'key': standardColumnKeys[columnName]!};
+    } else {
+      // Custom columns use custom_ prefix
+      final safeKey = columnName.replaceAll(RegExp(r'[^a-zA-Z0-9가-힣]'), '_');
+      return {'type': 'additional', 'key': 'custom_$safeKey'};
+    }
   }
 
   String? _getPropertyValueForPriority(String priority, PropertyData property) {
@@ -2031,7 +2070,6 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
     // 새로운 부동산 데이터 생성
     final newProperty = PropertyData(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      order: '1',
       name: '',
       deposit: '',
       rent: '',
