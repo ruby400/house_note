@@ -928,32 +928,56 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        key: _addButtonKey,
-        onPressed: () {
-          // 로그인 상태 확인
-          final isAuthenticated = ref.read(authStateChangesProvider).value != null;
-          
-          if (!isAuthenticated) {
-            // 게스트 사용자는 로그인 프롬프트 표시
-            LoginPromptDialog.show(
-              context,
-              title: '카드 생성',
-              message: '현재 둘러보기 모드입니다.\n데이터를 저장하려면 로그인이 필요합니다.\n\n지금 로그인하시겠습니까?',
-              icon: Icons.add_card,
-            );
-            return;
-          }
-          
-          setState(() {
-            _hasAddedCard = true; // 튜토리얼 상태 추적
-          });
-          _showChartSelectionDialog();
-        },
-        backgroundColor: const Color(0xFFFF8A65),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          key: _addButtonKey,
+          onPressed: () {
+            // 로그인 상태 확인
+            final isAuthenticated = ref.read(authStateChangesProvider).value != null;
+            
+            if (!isAuthenticated) {
+              // 게스트 사용자는 로그인 프롬프트 표시
+              LoginPromptDialog.show(
+                context,
+                title: '카드 생성',
+                message: '현재 둘러보기 모드입니다.\n데이터를 저장하려면 로그인이 필요합니다.\n\n지금 로그인하시겠습니까?',
+                icon: Icons.add_card,
+              );
+              return;
+            }
+            
+            setState(() {
+              _hasAddedCard = true; // 튜토리얼 상태 추적
+            });
+            _showChartSelectionDialog();
+          },
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          highlightElevation: 0,
+          shape: const CircleBorder(),
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28,
+          ),
         ),
       ),
     );

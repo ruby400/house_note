@@ -25,6 +25,17 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
   final GlobalKey _editKey = GlobalKey();
   final GlobalKey _guideKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey();
+  
+  // 스크롤 컨트롤러
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _guestScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _guestScrollController.dispose();
+    super.dispose();
+  }
 
   void _showInteractiveGuide() {
     final steps = [
@@ -143,141 +154,151 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
           }
           return Stack(
             children: [
-              Column(
-                children: [
-                  // 프로필 카드
-                  Container(
-                    key: _profileKey,
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 251, 232, 226),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        // 프로필 이미지
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFF8A65),
-                              width: 3,
-                            ),
-                            color: Colors.white,
-                          ),
-                          child: user?.photoURL != null
-                              ? ClipOval(
-                                  child:
-                                      _buildProfileImageWidget(user!.photoURL!),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: Colors.grey,
-                                ),
+              Scrollbar(
+                controller: _scrollController,
+                thumbVisibility: true,
+                thickness: 6.0,
+                radius: const Radius.circular(10),
+                scrollbarOrientation: ScrollbarOrientation.right,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      // 프로필 카드
+                      Container(
+                        key: _profileKey,
+                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 251, 232, 226),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(width: 16),
-                        // 사용자 정보
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.nickname ?? user?.displayName ?? '닉네임 없음',
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                        child: Row(
+                          children: [
+                            // 프로필 이미지
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFFFF8A65),
+                                  width: 3,
                                 ),
+                                color: Colors.white,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.email ?? '이메일 정보 없음',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // 편집 버튼
-                        Container(
-                          key: _editKey,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                              child: user?.photoURL != null
+                                  ? ClipOval(
+                                      child:
+                                          _buildProfileImageWidget(user!.photoURL!),
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
+                            const SizedBox(width: 16),
+                            // 사용자 정보
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user?.nickname ?? user?.displayName ?? '닉네임 없음',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    user?.email ?? '이메일 정보 없음',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              context.push('/profile-settings');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              shape: RoundedRectangleBorder(
+                            ),
+                            // 편집 버튼
+                            Container(
+                              key: _editKey,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFF8A65), Color(0xFFFFAB91)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                                 borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push('/profile-settings');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                label: const Text(
+                                  '편집',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ),
                             ),
-                            label: const Text(
-                              '편집',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  // 메뉴 리스트
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          _buildMenuItem(
-                            key: _guideKey,
-                            icon: Icons.help_outline,
-                            title: '사용법 가이드',
-                            onTap: () {
-                              context.push('/user-guide');
-                            },
-                          ),
-                          const Divider(height: 1),
-                          _buildMenuItem(
-                            key: _logoutKey,
-                            icon: Icons.logout,
-                            title: '로그인 / 로그아웃',
-                            onTap: () async {
-                              await myPageNotifier.signOut();
-                            },
-                          ),
-                        ],
                       ),
-                    ),
+                      // 메뉴 리스트
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            _buildMenuItem(
+                              key: _guideKey,
+                              icon: Icons.help_outline,
+                              title: '사용법 가이드',
+                              onTap: () {
+                                context.push('/user-guide');
+                              },
+                            ),
+                            const Divider(height: 1),
+                            _buildMenuItem(
+                              key: _logoutKey,
+                              icon: Icons.logout,
+                              title: '로그인 / 로그아웃',
+                              onTap: () async {
+                                await myPageNotifier.signOut();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 추가 여백을 위한 SizedBox
+                      const SizedBox(height: 100),
+                    ],
                   ),
-                ],
+                ),
               ),
               if (myPageViewModel.isLoggingOut)
                 Positioned.fill(
@@ -360,11 +381,20 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
 
   // 로그인되지 않은 사용자를 위한 화면
   Widget _buildGuestUserScreen() {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+    return Stack(
+      children: [
+        Scrollbar(
+          controller: _guestScrollController,
+          thumbVisibility: true,
+          thickness: 6.0,
+          radius: const Radius.circular(10),
+          scrollbarOrientation: ScrollbarOrientation.right,
+          child: SingleChildScrollView(
+            controller: _guestScrollController,
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
           // 아이콘
           Container(
             width: 120,
@@ -500,11 +530,36 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                SizedBox(height: 12),
+                Divider(color: Colors.grey),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Color(0xFFFF8A65),
+                      size: 18,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      '아래로 스크롤해서 설명을 읽어보세요',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFFFF8A65),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

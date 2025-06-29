@@ -21,6 +21,15 @@ class AppTheme {
             fontWeight: FontWeight.bold),
         iconTheme: IconThemeData(color: Colors.white),
       ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbVisibility: WidgetStateProperty.all(true),
+        trackVisibility: WidgetStateProperty.all(true),
+        thumbColor: WidgetStateProperty.all(Colors.grey[400]),
+        trackColor: WidgetStateProperty.all(Colors.grey[200]),
+        radius: const Radius.circular(10),
+        thickness: WidgetStateProperty.all(8.0),
+        minThumbLength: 48,
+      ),
       // ... 기타 테마 설정
     );
   }
@@ -44,6 +53,15 @@ class AppTheme {
             fontSize: 20,
             fontWeight: FontWeight.bold),
         iconTheme: IconThemeData(color: Colors.white),
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbVisibility: WidgetStateProperty.all(true),
+        trackVisibility: WidgetStateProperty.all(true),
+        thumbColor: WidgetStateProperty.all(Colors.grey[400]),
+        trackColor: WidgetStateProperty.all(Colors.grey[200]),
+        radius: const Radius.circular(10),
+        thickness: WidgetStateProperty.all(8.0),
+        minThumbLength: 48,
       ),
       // ...
     );

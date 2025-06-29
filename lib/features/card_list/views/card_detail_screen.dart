@@ -1130,28 +1130,56 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             )
           : null,
       floatingActionButton: !widget.isNewProperty
-          ? FloatingActionButton(
-              key: isEditMode ? _saveButtonKey : _editButtonKey,
-              onPressed: () {
-                if (isEditMode) {
-                  _saveChanges();
-                } else {
-                  // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
-                  _nameController.text = editedValues['name'] ?? propertyData!.name;
-                  _addressController.text = editedValues['address'] ?? propertyData!.address;
-                  _depositController.text = editedValues['deposit'] ?? propertyData!.deposit;
-                  _rentController.text = editedValues['rent'] ?? propertyData!.rent;
-                }
-                if (mounted) {
-                  setState(() {
-                    isEditMode = !isEditMode;
-                  });
-                }
-              },
-              backgroundColor: _hasUnsavedChanges && isEditMode ? Colors.orange : const Color(0xFFFF8A65),
-              child: Icon(
-                isEditMode ? (_hasUnsavedChanges ? Icons.save : Icons.check) : Icons.edit,
-                color: Colors.white,
+          ? Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: _hasUnsavedChanges && isEditMode 
+                    ? [Colors.orange, Colors.deepOrange]
+                    : [const Color(0xFFFF8A65), const Color(0xFFFF7043)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_hasUnsavedChanges && isEditMode 
+                      ? Colors.orange 
+                      : const Color(0xFFFF8A65)).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                key: isEditMode ? _saveButtonKey : _editButtonKey,
+                onPressed: () {
+                  if (isEditMode) {
+                    _saveChanges();
+                  } else {
+                    // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
+                    _nameController.text = editedValues['name'] ?? propertyData!.name;
+                    _addressController.text = editedValues['address'] ?? propertyData!.address;
+                    _depositController.text = editedValues['deposit'] ?? propertyData!.deposit;
+                    _rentController.text = editedValues['rent'] ?? propertyData!.rent;
+                  }
+                  if (mounted) {
+                    setState(() {
+                      isEditMode = !isEditMode;
+                    });
+                  }
+                },
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                highlightElevation: 0,
+                shape: const CircleBorder(),
+                child: Icon(
+                  isEditMode ? (_hasUnsavedChanges ? Icons.save : Icons.check) : Icons.edit,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             )
           : null,
@@ -2417,9 +2445,21 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 변경사항이 저장되었습니다'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text(
+              '저장됨',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: const Color(0xFFFF8A65),
+            duration: const Duration(milliseconds: 1200),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

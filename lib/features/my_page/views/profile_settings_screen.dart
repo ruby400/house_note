@@ -210,7 +210,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   Widget _buildProfileImage() {
     final userAsync = ref.watch(userModelProvider);
     final user = userAsync.asData?.value;
-    
+
     return Center(
       child: GestureDetector(
         key: _profileImageKey,
@@ -304,7 +304,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           backgroundColor: const Color(0xFFFF8A65),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(25),
           ),
           elevation: 0,
         ),
@@ -486,7 +486,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    
+
                     // 탈퇴 버튼
                     Expanded(
                       child: Container(
@@ -510,8 +510,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                             // 다이얼로그를 먼저 닫고 비동기 작업을 수행합니다.
                             Navigator.of(dialogContext).pop();
 
-                            final notifier =
-                                ref.read(profileSettingsViewModelProvider.notifier);
+                            final notifier = ref.read(
+                                profileSettingsViewModelProvider.notifier);
                             final success = await notifier.deleteAccount();
 
                             if (!mounted) return;
@@ -527,8 +527,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                                 );
                               context.go('/auth');
                             } else {
-                              final error =
-                                  ref.read(profileSettingsViewModelProvider).error;
+                              final error = ref
+                                  .read(profileSettingsViewModelProvider)
+                                  .error;
                               ScaffoldMessenger.of(context)
                                 ..hideCurrentSnackBar()
                                 ..showSnackBar(
@@ -651,7 +652,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       ),
                       child: const Text(
                         '카메라로 촬영하거나 갤러리에서 사진을 선택하세요.',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
+                        style:
+                            TextStyle(fontSize: 14, color: Color(0xFF6D4C41)),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -671,7 +673,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                                  color: const Color(0xFFFF8A65)
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -689,7 +692,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                              icon: const Icon(Icons.camera_alt,
+                                  color: Colors.white, size: 20),
                               label: const Text(
                                 '카메라',
                                 style: TextStyle(
@@ -731,7 +735,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              icon: const Icon(Icons.photo_library, color: Colors.white, size: 20),
+                              icon: const Icon(Icons.photo_library,
+                                  color: Colors.white, size: 20),
                               label: const Text(
                                 '갤러리',
                                 style: TextStyle(
@@ -763,13 +768,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
                       child: const Text('취소',
                           style: TextStyle(
-                              color: Color(0xFF9E9E9E), fontWeight: FontWeight.w600)),
+                              color: Color(0xFF9E9E9E),
+                              fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
@@ -828,7 +835,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         // 현재는 로컬 파일 경로로 임시 저장
         final userRepository = ref.read(userRepositoryProvider);
         await userRepository.updateUserProfile(user.uid, photoURL: imagePath);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

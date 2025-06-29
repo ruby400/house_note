@@ -1689,12 +1689,34 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     return Positioned(
       bottom: 20,
       right: 20,
-      child: FloatingActionButton(
-        key: _addRowKey,
-        onPressed: _addNewRow,
-        backgroundColor: const Color(0xFFFF8A65),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add, size: 28),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF8A65), Color(0xFFFF7043)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          key: _addRowKey,
+          onPressed: _addNewRow,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          highlightElevation: 0,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add, size: 28),
+        ),
       ),
     );
   }

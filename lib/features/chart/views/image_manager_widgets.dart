@@ -97,12 +97,11 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                 Text('📸 ${imagePaths.length}개의 사진이 추가되었습니다'),
               ],
             ),
-            backgroundColor: const Color(0xFF66BB6A),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            backgroundColor: const Color(0xFFFF8A65),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
-            duration: const Duration(milliseconds: 1200),
+            duration: const Duration(milliseconds: 600),
           ),
         );
       }
@@ -113,7 +112,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         title: Container(
           padding: const EdgeInsets.only(bottom: 16),
           child: Row(
@@ -122,7 +121,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(32),
                 ),
                 child: const Icon(Icons.delete_outline,
                     color: Color(0xFFFF8A65), size: 24),
@@ -160,7 +159,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(32),
                     ),
                   ),
                   child: Text(
@@ -197,10 +196,10 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                         ),
                         backgroundColor: const Color(0xFFFF8A65),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(32)),
                         behavior: SnackBarBehavior.floating,
                         margin: const EdgeInsets.all(16),
-                        duration: const Duration(milliseconds: 800),
+                        duration: const Duration(milliseconds: 400),
                       ),
                     );
                   },
@@ -209,7 +208,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(32),
                     ),
                   ),
                   child: const Text(
@@ -243,6 +242,9 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -263,20 +265,28 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Colors.grey[400],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
           // 헤더
           Container(
-            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
+                    color: const Color(0xFFFF8A65).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
@@ -315,7 +325,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
 
           // 카메라/갤러리 버튼
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
             child: Column(
               children: [
                 // 첫 번째 줄: 카메라와 갤러리 단일 선택
@@ -330,7 +340,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
                               color: const Color(0xFFFF8A65)
@@ -347,7 +357,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                             foregroundColor: Colors.white,
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(32),
                             ),
                           ),
                           icon: const Icon(Icons.camera_alt, size: 20),
@@ -371,7 +381,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey.withValues(alpha: 0.3),
@@ -387,7 +397,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                             foregroundColor: Colors.white,
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(32),
                             ),
                           ),
                           icon: const Icon(Icons.photo_library, size: 20),
@@ -416,7 +426,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF66BB6A).withValues(alpha: 0.3),
@@ -432,7 +442,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                       foregroundColor: Colors.white,
                       shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(32),
                       ),
                     ),
                     icon: const Icon(Icons.photo_library_outlined, size: 20),
@@ -495,7 +505,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                           onTap: () => _viewFullScreen(index),
                           child: Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(32),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.1),
@@ -505,7 +515,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(32),
                               child: Stack(
                                 children: [
                                   Image.file(
@@ -673,7 +683,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                     foregroundColor: Colors.grey[700],
                     shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(32),
                     ),
                     side: BorderSide(
                       color: Colors.grey[300]!,
@@ -763,7 +773,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(32),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
