@@ -233,11 +233,17 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    displayUser.email ?? '이메일 정보 없음',
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      color: Colors.grey,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      displayUser.email ?? '이메일 정보 없음',
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        color: Colors.grey,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
