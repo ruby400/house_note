@@ -242,9 +242,6 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -257,7 +254,6 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // 핸들
           Container(
@@ -485,10 +481,10 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                child: GridView.builder(
+            Container(
+              height: 300,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              child: GridView.builder(
                   physics: const BouncingScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
@@ -585,7 +581,6 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                   },
                 ),
               ),
-            )
           ] else ...[
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24),
