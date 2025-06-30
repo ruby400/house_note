@@ -46,6 +46,7 @@ dependencies:
   gal: ^2.3.0 # 갤러리 저장 (더 안정적인 패키지)
   device_info_plus: ^11.4.0
   package_info_plus: ^8.0.0 # 앱 버전 정보
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_test:

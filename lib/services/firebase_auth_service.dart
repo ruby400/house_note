@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -94,6 +95,11 @@ class FirebaseAuthService {
     try {
       AppLogger.info('🍎 Apple 로그인 시도');
       
+      // 플랫폼 확인 - Apple 로그인은 iOS에서만 사용 가능
+      if (!Platform.isIOS) {
+        throw Exception('Apple 로그인은 iOS에서만 사용 가능합니다');
+      }
+      
       // Apple 로그인 요청
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -113,6 +119,12 @@ class FirebaseAuthService {
       
       AppLogger.info('✅ Apple 로그인 성공: ${result.user?.email}');
       return result;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      AppLogger.error('❌ Apple 로그인 인증 오류: ${e.code}', error: e);
+      if (e.code == AuthorizationErrorCode.canceled) {
+        return null; // 사용자가 취소한 경우
+      }
+      throw Exception('Apple 로그인 인증 오류: ${e.message}');
     } catch (e) {
       AppLogger.error('❌ Apple 로그인 오류', error: e);
       throw Exception('Apple 로그인 중 오류: $e');

@@ -54,7 +54,7 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs access to save photos to your photo library.</string>
 	
-	<!-- Google Sign-In URL Scheme -->
+	<!-- Google Sign-In and Naver Login URL Schemes -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -63,6 +63,14 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.567850827737-mkkgfnspnbk089a4c9bgv2nck0tgi864</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>naver.login</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>naverloginbEzlHiqG76_rASblp7LF</string>
 			</array>
 		</dict>
 	</array>

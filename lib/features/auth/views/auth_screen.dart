@@ -64,11 +64,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _naverSignIn() async {
-    final viewModel = ref.read(authViewModelProvider.notifier);
-    bool success = await viewModel.signInWithNaver();
-    if (success && mounted) {
-      // 네이버 로그인 성공 후 카드목록 화면으로 이동
-      context.go(CardListScreen.routePath);
+    AppLogger.d('🟢 네이버 로그인 버튼 클릭됨');
+    try {
+      final viewModel = ref.read(authViewModelProvider.notifier);
+      bool success = await viewModel.signInWithNaver();
+      AppLogger.d('🟢 네이버 로그인 결과: $success');
+      if (success && mounted) {
+        // 네이버 로그인 성공 후 카드목록 화면으로 이동
+        context.go(CardListScreen.routePath);
+      }
+    } catch (e) {
+      AppLogger.error('🟢 네이버 로그인 오류', error: e);
     }
   }
 
@@ -86,6 +92,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
     final authError = authState.error;
+    
+    // 디버깅용 로그
+    AppLogger.d('🔍 Auth 상태 - isLoading: ${authState.isLoading}, user: ${authState.user?.uid}, error: $authError');
 
     // 로그인 성공 시 GoRouter의 redirect 로직이 처리
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
@@ -295,14 +304,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                authState.isLoading
-                    ? const SizedBox.shrink() // 로딩 중에는 소셜 로그인 버튼 숨김
-                    : Row(
+                Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Google 로그인 버튼
                           GestureDetector(
-                            onTap: _googleSignIn,
+                            onTap: authState.isLoading ? null : _googleSignIn,
                             child: Container(
                               width: 60,
                               height: 60,
@@ -340,7 +347,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           const SizedBox(width: 16),
                           // Apple 로그인 버튼
                           GestureDetector(
-                            onTap: _appleSignIn,
+                            onTap: authState.isLoading ? null : _appleSignIn,
                             child: Container(
                               width: 60,
                               height: 60,
@@ -367,17 +374,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           const SizedBox(width: 16),
                           // Naver 로그인 버튼
                           GestureDetector(
-                            onTap: _naverSignIn,
+                            onTap: authState.isLoading ? null : _naverSignIn,
                             child: Container(
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF03C75A),
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF03C75A), Color(0xFF02B34A)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
+                                    color: const Color(0xFF03C75A).withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                  BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 10,
+                                    blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
@@ -387,9 +403,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   'N',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900,
                                     fontFamily: 'Arial',
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        offset: Offset(1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

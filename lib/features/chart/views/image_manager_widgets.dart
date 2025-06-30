@@ -40,22 +40,39 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
     _loadImages();
   }
 
-  void _loadImages() {
+  void _loadImages() async {
+    // 이미지 경로 검증 및 수정
+    List<String> validImages = [];
+    for (String imagePath in widget.initialImages) {
+      final fixedPath = await ImageService.fixImagePath(imagePath);
+      if (fixedPath != null) {
+        validImages.add(fixedPath);
+      }
+    }
+    
     setState(() {
-      _images = List<String>.from(widget.initialImages);
+      _images = validImages;
     });
+    AppLogger.d('🔄 Loaded ${validImages.length} valid images out of ${widget.initialImages.length}');
   }
 
   Future<void> _takePicture() async {
     AppLogger.d('📸 Camera button pressed');
-    final imagePath = await ImageService.takePicture();
-
-    if (imagePath != null) {
-      setState(() {
-        _images.add(imagePath);
-      });
-      widget.onImageAdded(imagePath);
-      AppLogger.d('✅ Image added to list: $imagePath');
+    
+    // 시뮬레이터에서는 갤러리로 대체
+    try {
+      final imagePath = await ImageService.takePicture();
+      if (imagePath != null) {
+        setState(() {
+          _images.add(imagePath);
+        });
+        widget.onImageAdded(imagePath);
+        AppLogger.d('✅ Image added to list: $imagePath');
+      }
+    } catch (e) {
+      AppLogger.warning('❌ Camera not available, trying gallery instead');
+      // 카메라를 사용할 수 없으면 갤러리로 대체
+      _pickFromGallery();
     }
   }
 
@@ -253,8 +270,10 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
           ),
         ],
       ),
-      child: Column(
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // 핸들
           Container(
             margin: const EdgeInsets.only(top: 12),
@@ -442,11 +461,14 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                       ),
                     ),
                     icon: const Icon(Icons.photo_library_outlined, size: 20),
-                    label: const Text(
-                      '갤러리에서 여러 사진 선택',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    label: const Flexible(
+                      child: Text(
+                        '갤러리에서 여러 사진 선택',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -519,6 +541,22 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
                                     width: double.infinity,
                                     height: double.infinity,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      AppLogger.warning('❌ Failed to load image: $imagePath');
+                                      return Container(
+                                        color: Colors.grey[300],
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.broken_image, 
+                                                 color: Colors.grey, size: 24),
+                                            SizedBox(height: 4),
+                                            Text('이미지 없음', 
+                                                 style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                   // 오버레이 그라데이션
                                   Container(
@@ -703,6 +741,7 @@ class _ImageManagerBottomSheetState extends State<ImageManagerBottomSheet> {
             ),
           )
         ],
+        ),
       ),
     );
   }

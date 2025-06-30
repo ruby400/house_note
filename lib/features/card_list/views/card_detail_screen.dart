@@ -5,6 +5,7 @@ import 'package:house_note/features/chart/views/image_manager_widgets.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/providers/firebase_chart_providers.dart';
+import 'package:house_note/services/image_service.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -1192,6 +1193,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildImageGallery() {
+    return FutureBuilder<List<String>>(
+      future: _getValidImagePaths(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final List<String> finalImages = snapshot.data ?? [];
+        return _buildImageGalleryContent(finalImages);
+      },
+    );
+  }
+
+  Future<List<String>> _getValidImagePaths() async {
     // 갤러리 이미지와 차트 셀 이미지들을 모두 수집
     final List<String> allImages = <String>[];
     
@@ -1225,8 +1240,21 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     
     // 중복 제거
     final Set<String> uniqueImages = Set<String>.from(allImages);
-    final List<String> finalImages = uniqueImages.toList();
+    List<String> finalImages = uniqueImages.toList();
 
+    // 이미지 경로 검증 및 수정
+    List<String> validImages = [];
+    for (String imagePath in finalImages) {
+      final fixedPath = await ImageService.fixImagePath(imagePath);
+      if (fixedPath != null) {
+        validImages.add(fixedPath);
+      }
+    }
+
+    return validImages;
+  }
+
+  Widget _buildImageGalleryContent(List<String> finalImages) {
     if (finalImages.isEmpty) {
       // 편집 모드 여부에 관계없이 3개의 네모 박스 표시
       return Row(
@@ -2592,9 +2620,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
+        initialChildSize: 0.9,
+        minChildSize: 0.6,
+        maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -2620,6 +2648,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   propertyData =
                       propertyData!.copyWith(cellImages: updatedCellImages);
                 });
+                // 변경사항 자동 저장
+                _saveChanges();
               }
             },
             onImageDeleted: (String imagePath) {
@@ -2636,6 +2666,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   propertyData =
                       propertyData!.copyWith(cellImages: updatedCellImages);
                 });
+                // 변경사항 자동 저장
+                _saveChanges();
               }
             },
           ),

@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/general_providers.dart'; // appRouterProvider 포함
 import 'firebase_options.dart';
+import 'services/naver_auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // 네이버 로그인 초기화
+  await NaverAuthService.initialize();
 
   debugPrint('🚀 앱 시작 (단순 모드)...');
   runApp(

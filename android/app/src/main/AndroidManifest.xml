@@ -16,7 +16,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     
     <application
-        android:label="house_note"
+        android:label="House Note"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -56,10 +56,10 @@
         <!-- 네이버 앱 설정 -->
         <meta-data
             android:name="com.naver.nid.CLIENT_ID"
-            android:value="YOUR_NAVER_CLIENT_ID" />
+            android:value="bEzlHiqG76_rASblp7LF" />
         <meta-data
             android:name="com.naver.nid.CLIENT_SECRET"
-            android:value="YOUR_NAVER_CLIENT_SECRET" />
+            android:value="MRgE2Hp8qL" />
         <meta-data
             android:name="com.naver.nid.CLIENT_NAME"
             android:value="HouseNote" />

@@ -55,9 +55,9 @@ class ImageService {
         }
       }
 
-      // 스토리지 권한이 없으면 요청 (Android)
-      if (!storageGranted) {
-        AppLogger.d('💾 Requesting storage permission...');
+      // 스토리지 권한이 없으면 요청 (Android만)
+      if (Platform.isAndroid && !storageGranted) {
+        AppLogger.d('💾 Requesting storage permission (Android)...');
         final result = await Permission.storage.request();
         storageGranted = result.isGranted;
         AppLogger.d('💾 Storage permission result: $result');
@@ -66,6 +66,9 @@ class ImageService {
           AppLogger.warning('❌ Storage permission permanently denied');
           return false;
         }
+      } else if (Platform.isIOS) {
+        // iOS에서는 스토리지 권한이 필요 없음
+        storageGranted = true;
       }
 
       final allGranted = cameraGranted && photosGranted && storageGranted;
@@ -98,6 +101,17 @@ class ImageService {
     try {
       AppLogger.d('📸 ImageService.takePicture() started');
 
+      // 권한 확인
+      try {
+        final hasPermissions = await checkAndRequestPermissions();
+        if (!hasPermissions) {
+          AppLogger.warning('❌ Camera permissions denied');
+          return null;
+        }
+      } catch (e) {
+        AppLogger.error('❌ Permission check failed', error: e);
+        return null;
+      }
 
       AppLogger.d('✅ Permissions OK, calling image picker...');
       final XFile? image = await _picker.pickImage(
@@ -141,6 +155,12 @@ class ImageService {
     try {
       AppLogger.d('🖼️ ImageService.pickImageFromGallery() started');
 
+      // 권한 확인 (임시 비활성화)
+      // final hasPermissions = await checkAndRequestPermissions();
+      // if (!hasPermissions) {
+      //   AppLogger.warning('❌ Gallery permissions denied');
+      //   return null;
+      // }
 
       AppLogger.d('✅ Permissions OK, calling gallery picker...');
       final XFile? image = await _picker.pickImage(
@@ -179,6 +199,13 @@ class ImageService {
   static Future<List<String>> pickMultipleImagesFromGallery() async {
     try {
       AppLogger.d('🖼️ ImageService.pickMultipleImagesFromGallery() started');
+
+      // 권한 확인 (임시 비활성화)
+      // final hasPermissions = await checkAndRequestPermissions();
+      // if (!hasPermissions) {
+      //   AppLogger.warning('❌ Gallery permissions denied');
+      //   return [];
+      // }
 
       AppLogger.d('✅ Permissions OK, calling multiple gallery picker...');
       final List<XFile> images = await _picker.pickMultiImage(
@@ -290,6 +317,36 @@ class ImageService {
     } catch (e) {
       AppLogger.error('Error checking image existence', error: e);
       return false;
+    }
+  }
+
+  // 이미지 경로 복구 (앱 재시작 시 경로가 바뀐 경우)
+  static Future<String?> fixImagePath(String oldPath) async {
+    try {
+      // 이미 존재하면 그대로 반환
+      if (await File(oldPath).exists()) {
+        return oldPath;
+      }
+
+      // 파일명만 추출
+      final fileName = oldPath.split('/').last;
+      
+      // 새로운 앱 디렉토리 경로로 재구성
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final Directory imagesDir = Directory('${appDir.path}/images');
+      final String newPath = '${imagesDir.path}/$fileName';
+      
+      // 새 경로에 파일이 존재하는지 확인
+      if (await File(newPath).exists()) {
+        AppLogger.d('Fixed image path: $oldPath -> $newPath');
+        return newPath;
+      }
+      
+      AppLogger.warning('Image not found: $fileName');
+      return null;
+    } catch (e) {
+      AppLogger.error('Error fixing image path', error: e);
+      return null;
     }
   }
 

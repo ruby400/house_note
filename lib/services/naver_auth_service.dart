@@ -6,11 +6,10 @@ import '../core/utils/logger.dart';
 
 /// 네이버 로그인 서비스
 class NaverAuthService {
-  // 네이버 개발자센터에서 발급받은 정보로 교체 필요
-  // 실제 운영시에는 네이버 개발자 센터에서 발급받은 실제 값으로 교체하세요
-  // static const String _clientId = 'TEST_CLIENT_ID'; 
-  // static const String _clientSecret = 'TEST_CLIENT_SECRET';
-  // static const String _clientName = 'HouseNote';
+  // 네이버 개발자센터에서 발급받은 실제 정보
+  static const String _clientId = 'bEzlHiqG76_rASblp7LF';
+  static const String _clientSecret = 'MRgE2Hp8qL';
+  static const String _clientName = 'HouseNote';
 
   /// 네이버 로그인 초기화
   static Future<void> initialize() async {
@@ -25,15 +24,16 @@ class NaverAuthService {
   /// 네이버 로그인 수행
   static Future<dynamic> signInWithNaver() async {
     try {
-      AppLogger.info('네이버 로그인 시작');
-      
+      AppLogger.info('🟢 네이버 로그인 시작 - FlutterNaverLogin.logIn() 호출');
+
       final NaverLoginResult result = await FlutterNaverLogin.logIn();
-      
+      AppLogger.info('🟢 네이버 로그인 결과 상태: ${result.status}');
+
       if (result.status == NaverLoginStatus.loggedIn) {
-        AppLogger.info('네이버 로그인 성공: ${result.account?.email}');
+        AppLogger.info('🟢 네이버 로그인 성공: ${result.account?.email}');
         return result.account; // NaverAccountResult 반환
       } else {
-        AppLogger.warning('네이버 로그인 실패: ${result.status}');
+        AppLogger.warning('🟢 네이버 로그인 실패: ${result.status}');
         return null;
       }
     } catch (e) {
@@ -49,39 +49,41 @@ class NaverAuthService {
       if (naverAccount == null) {
         return null;
       }
-      
+
       final email = naverAccount.email;
       final displayName = naverAccount.name;
-      
+
       // 이메일이 없는 경우 처리
       if (email == null || email.isEmpty) {
         throw '네이버 계정에서 이메일 정보를 가져올 수 없습니다.';
       }
-      
+
       // 임시 비밀번호로 Firebase 계정 생성/로그인
       // 실제 운영 환경에서는 서버에서 Custom Token을 생성하는 것이 보안상 안전합니다.
       final tempPassword = 'naver_${email.hashCode}';
-      
+
       try {
         // 기존 계정으로 로그인 시도
-        final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        final credential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email,
           password: tempPassword,
         );
-        
+
         AppLogger.info('네이버 Firebase 로그인 성공: $email');
         return credential;
       } on FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found') {
           // 계정이 없으면 새로 생성
-          final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          final credential =
+              await FirebaseAuth.instance.createUserWithEmailAndPassword(
             email: email,
             password: tempPassword,
           );
-          
+
           // 프로필 정보 업데이트
           await credential.user?.updateDisplayName(displayName);
-          
+
           AppLogger.info('네이버 Firebase 계정 생성 성공: $email');
           return credential;
         } else {
