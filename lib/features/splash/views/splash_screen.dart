@@ -311,22 +311,61 @@ class CitySilhouettePainter extends CustomPainter {
     double currentX = 0;
 
     for (int i = 0; i < buildingWidths.length && currentX < size.width; i++) {
-      final width = buildingWidths[i];
+      double width = buildingWidths[i];
       final height = size.height * buildingHeights[i];
+
+      // 마지막 건물이 화면을 벗어나면 크기 조정
+      if (currentX + width > size.width) {
+        width = size.width - currentX;
+      }
 
       // 건물 그리기
       path.lineTo(currentX, size.height - height);
       path.lineTo(currentX + width, size.height - height);
       currentX += width;
 
+      // 화면 끝에 도달하면 중단
+      if (currentX >= size.width) break;
+
       // 가끔씩 작은 틈을 넣어서 자연스럽게
-      if (i % 5 == 4) {
+      if (i % 5 == 4 && currentX + 2.0 < size.width) {
         currentX += 2.0; // 작은 간격
       }
     }
 
-    // 나머지 화면 채우기 (하단에만)
-    path.lineTo(size.width, size.height * 0.75); // 더 낮게 위치
+    // 화면 끝까지 더 많은 건물들로 채우기 (들쭉날쭉하게)
+    while (currentX < size.width) {
+      // 건물 너비를 다양하게 만들기
+      final buildingWidth = [15.0, 18.0, 25.0, 12.0, 22.0, 28.0, 16.0, 20.0]
+          [(currentX / 40).floor() % 8];
+      
+      // 진짜 들쭉날쭉한 높이 만들기 - 더 랜덤하고 불규칙하게
+      final baseVariations = [0.05, 0.08, 0.12, 0.06, 0.15, 0.09, 0.18, 0.07, 0.14, 0.11, 0.20, 0.10, 0.16, 0.13, 0.19, 0.04];
+      final randomOffset = ((currentX * 3.7) % 16).floor(); // 더 불규칙한 인덱스
+      final baseHeight = baseVariations[randomOffset];
+      
+      // 추가 변동성을 위한 미세 조정
+      final microVariation = ((currentX * 7.3) % 100) / 1000; // 0.000 ~ 0.099
+      final buildingHeight = size.height * (baseHeight + microVariation);
+      
+      // 마지막 건물인지 확인
+      if (currentX + buildingWidth + 8 >= size.width) {
+        // 마지막 건물 - 중간 정도 높이로
+        final lastHeight = size.height * 0.12;
+        path.lineTo(currentX, size.height - lastHeight);
+        path.lineTo(size.width, size.height - lastHeight);
+        break;
+      }
+      
+      // 건물 그리기 (위쪽만 분리, 아래는 완전히 연결)
+      path.lineTo(currentX, size.height - buildingHeight);
+      path.lineTo(currentX + buildingWidth, size.height - buildingHeight);
+      
+      // 다음 건물로 이동 (간격 없이 바로 붙여서)
+      currentX += buildingWidth;
+    }
+    
+    // 하단 라인 연결
     path.lineTo(size.width, size.height);
     path.close();
 
@@ -414,8 +453,13 @@ class CitySilhouettePainter extends CustomPainter {
     double currentX = 0;
 
     for (int i = 0; i < buildingWidths.length && currentX < size.width; i++) {
-      final width = buildingWidths[i];
+      double width = buildingWidths[i];
       final height = size.height * buildingHeights[i];
+
+      // 마지막 건물이 화면을 벗어나면 크기 조정
+      if (currentX + width > size.width) {
+        width = size.width - currentX;
+      }
 
       // 창문 크기 설정 (더 크게)
       final windowWidth = 5.0; // 더 크게
@@ -427,8 +471,8 @@ class CitySilhouettePainter extends CustomPainter {
         final topArea = size.height - height + 8;
         final windowArea = (height * 0.5); // 건물 높이의 상위 50%
 
-        // 더 많은 창문 배치 (추가 6개)
-        final windowCount = (width / 8).floor().clamp(4, 18); // 건물당 4~18개
+        // 더 많은 창문 배치 (조정된 너비에 맞춰)
+        final windowCount = (width / 8).floor().clamp(1, 18); // 건물당 1~18개
 
         for (int w = 0; w < windowCount; w++) {
           // 가로세로 그리드로 배치
@@ -438,8 +482,10 @@ class CitySilhouettePainter extends CustomPainter {
           final x = currentX + 6 + (col * (width - 12) / 2);
           final y = topArea + (row * 12); // 12px 간격으로 행 배치
 
-          // 창문이 건물 범위 내에 있는지 확인
-          if (x < currentX + width - 6 && y < topArea + windowArea) {
+          // 창문이 건물 범위 내에 있고 화면 범위 내에 있는지 확인
+          if (x < currentX + width - 6 && 
+              y < topArea + windowArea && 
+              x + windowWidth <= size.width) {
             // 랜덤하게 불 켜진 창문과 꺼진 창문
             final isLit = (i + w + col).toInt() % 4 == 0; // 25% 확률로 불 켜진 창문
 
@@ -452,8 +498,76 @@ class CitySilhouettePainter extends CustomPainter {
       }
 
       currentX += width;
-      if (i % 5 == 4) {
+      
+      // 화면 끝에 도달하면 중단
+      if (currentX >= size.width) break;
+      
+      if (i % 5 == 4 && currentX + 2.0 < size.width) {
         currentX += 2.0;
+      }
+    }
+
+    // 추가 건물들에 창문 그리기 (수정된 간격 반영)
+    double additionalX = currentX;
+    int additionalBuildingIndex = 0;
+    
+    while (additionalX < size.width) {
+      // 동일한 건물 크기 계산 로직
+      final buildingWidth = [15.0, 18.0, 25.0, 12.0, 22.0, 28.0, 16.0, 20.0]
+          [(additionalX / 40).floor() % 8];
+      
+      // 창문 그리기용 높이도 동일한 랜덤 로직 사용
+      final baseVariations = [0.05, 0.08, 0.12, 0.06, 0.15, 0.09, 0.18, 0.07, 0.14, 0.11, 0.20, 0.10, 0.16, 0.13, 0.19, 0.04];
+      final randomOffset = ((additionalX * 3.7) % 16).floor();
+      final baseHeight = baseVariations[randomOffset];
+      final microVariation = ((additionalX * 7.3) % 100) / 1000;
+      final buildingHeight = size.height * (baseHeight + microVariation);
+      
+      // 마지막 건물 처리
+      if (additionalX + buildingWidth + 8 >= size.width) {
+        final actualWidth = size.width - additionalX;
+        if (actualWidth > 10) {
+          _drawBuildingWindowsForAdditional(canvas, additionalX, actualWidth, buildingHeight, size, additionalBuildingIndex, windowPaint, lightWindowPaint);
+        }
+        break;
+      }
+      
+      // 창문 그리기
+      if (buildingWidth > 12) {
+        _drawBuildingWindowsForAdditional(canvas, additionalX, buildingWidth, buildingHeight, size, additionalBuildingIndex, windowPaint, lightWindowPaint);
+      }
+      
+      // 다음 건물로 이동 (간격 없이 연결)
+      additionalX += buildingWidth;
+      
+      additionalBuildingIndex++;
+    }
+  }
+
+  void _drawBuildingWindowsForAdditional(Canvas canvas, double x, double width, double height, Size size, int buildingIndex, Paint windowPaint, Paint lightWindowPaint) {
+    if (height > size.height * 0.08) {
+      final topArea = size.height - height + 6;
+      final windowArea = height * 0.6;
+      
+      final windowCount = (width / 12).floor().clamp(1, 6);
+      
+      for (int w = 0; w < windowCount; w++) {
+        final col = w % 2;
+        final row = w ~/ 2;
+        
+        final windowX = x + 4 + (col * (width - 8) / 1.5);
+        final windowY = topArea + (row * 10);
+        
+        if (windowX < x + width - 4 && 
+            windowY < topArea + windowArea && 
+            windowX + 4.0 <= size.width) {
+          final isLit = (buildingIndex + w + col) % 3 == 0;
+          
+          canvas.drawRect(
+            Rect.fromLTWH(windowX, windowY, 4.0, 5.0),
+            isLit ? lightWindowPaint : windowPaint,
+          );
+        }
       }
     }
   }
