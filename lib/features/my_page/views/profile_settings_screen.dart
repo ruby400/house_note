@@ -7,6 +7,7 @@ import 'package:house_note/features/onboarding/views/interactive_guide_overlay.d
 import 'package:house_note/providers/user_providers.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/services/image_service.dart';
+import 'package:house_note/core/utils/logger.dart';
 import 'dart:io';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
@@ -832,18 +833,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   }
 
   void _showReauthenticationDialog() {
-    print('🔍 _showReauthenticationDialog 호출됨');
+    AppLogger.d('🔍 _showReauthenticationDialog 호출됨');
     
     // Firebase Auth 상태를 직접 확인
     final authState = ref.read(authStateChangesProvider);
     final firebaseUser = authState.asData?.value;
     final userModel = ref.read(userModelProvider).value;
     
-    print('🔍 Firebase User: ${firebaseUser?.email}');
-    print('🔍 UserModel: ${userModel?.email}');
+    AppLogger.d('🔍 Firebase User: ${firebaseUser?.email}');
+    AppLogger.d('🔍 UserModel: ${userModel?.email}');
     
     if (firebaseUser == null) {
-      print('❌ Firebase User가 null임');
+      AppLogger.error('❌ Firebase User가 null임');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('로그인 상태를 확인할 수 없습니다'),
@@ -859,16 +860,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         .any((info) => info.providerId == 'google.com') ||
         userEmail?.contains('@gmail.com') == true;
 
-    print('🔍 이메일: $userEmail');
-    print('🔍 구글 계정 여부: $isGoogleAccount');
-    print('🔍 Provider 정보: ${firebaseUser.providerData.map((p) => p.providerId).toList()}');
+    AppLogger.d('🔍 이메일: $userEmail');
+    AppLogger.d('🔍 구글 계정 여부: $isGoogleAccount');
+    AppLogger.d('🔍 Provider 정보: ${firebaseUser.providerData.map((p) => p.providerId).toList()}');
 
     if (isGoogleAccount) {
-      print('✅ 구글 계정 - 즉시 탈퇴 진행');
+      AppLogger.d('✅ 구글 계정 - 즉시 탈퇴 진행');
       // 구글 계정의 경우 즉시 탈퇴 진행
       _performAccountDeletion();
     } else {
-      print('✅ 이메일 계정 - 비밀번호 확인 다이얼로그 표시');
+      AppLogger.d('✅ 이메일 계정 - 비밀번호 확인 다이얼로그 표시');
       // 이메일 계정의 경우 비밀번호 확인
       _showPasswordConfirmationDialog();
     }
@@ -1042,22 +1043,22 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   }
 
   Future<void> _performAccountDeletion({String? password}) async {
-    print('🚀 _performAccountDeletion 호출됨 - 비밀번호: ${password != null ? '있음' : '없음'}');
+    AppLogger.d('🚀 _performAccountDeletion 호출됨 - 비밀번호: ${password != null ? '있음' : '없음'}');
     
     final notifier = ref.read(profileSettingsViewModelProvider.notifier);
     
     try {
-      print('🔥 deleteAccount 호출 시작');
+      AppLogger.d('🔥 deleteAccount 호출 시작');
       final success = await notifier.deleteAccount(password: password);
-      print('🔥 deleteAccount 결과: $success');
+      AppLogger.d('🔥 deleteAccount 결과: $success');
 
       if (!mounted) {
-        print('⚠️ Widget이 unmounted됨');
+        AppLogger.warning('⚠️ Widget이 unmounted됨');
         return;
       }
 
       if (success) {
-        print('✅ 회원탈퇴 성공');
+        AppLogger.d('✅ 회원탈퇴 성공');
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -1069,7 +1070,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         context.go('/auth');
       } else {
         final error = ref.read(profileSettingsViewModelProvider).error;
-        print('❌ 회원탈퇴 실패: $error');
+        AppLogger.error('❌ 회원탈퇴 실패: $error');
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -1081,7 +1082,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           );
       }
     } catch (e) {
-      print('💥 _performAccountDeletion 예외 발생: $e');
+      AppLogger.error('💥 _performAccountDeletion 예외 발생', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

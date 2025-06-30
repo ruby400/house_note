@@ -6,10 +6,8 @@ import '../core/utils/logger.dart';
 
 /// 네이버 로그인 서비스
 class NaverAuthService {
-  // 네이버 개발자센터에서 발급받은 실제 정보
-  static const String _clientId = 'bEzlHiqG76_rASblp7LF';
-  static const String _clientSecret = 'MRgE2Hp8qL';
-  static const String _clientName = 'HouseNote';
+  // 네이버 개발자센터에서 발급받은 실제 정보 (앱 설정에서 사용됨)
+  // 이 정보들은 android/app/src/main/AndroidManifest.xml과 ios/Runner/Info.plist에서 실제로 사용됩니다.
 
   /// 네이버 로그인 초기화
   static Future<void> initialize() async {
