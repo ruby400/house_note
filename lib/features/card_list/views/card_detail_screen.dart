@@ -598,10 +598,14 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       }
 
       if (columnName != null) {
-        chartColumns.add({
-          'key': key,
-          'label': columnName,
-        });
+        // 차트의 컬럼 가시성 설정을 확인하여 표시할지 결정
+        final isVisible = chart.columnVisibility?[columnName] ?? true;
+        if (isVisible) {
+          chartColumns.add({
+            'key': key,
+            'label': columnName,
+          });
+        }
       }
     }
 

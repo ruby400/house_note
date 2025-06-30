@@ -278,10 +278,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         Icons.celebration,
         const Color(0xFFFF8A65),
       );
-      // 잠시 후 로그인 화면으로 이동
-      Future.delayed(const Duration(seconds: 2), () {
+      
+      // 인증 상태가 완전히 로그아웃될 때까지 기다린 후 로그인 화면으로 이동
+      Future.delayed(const Duration(seconds: 2), () async {
         if (mounted) {
-          context.go('/auth'); // 로그인 화면으로 이동
+          // 인증 상태가 로그아웃되었는지 확인
+          final authState = ref.read(authStateChangesProvider);
+          final isLoggedOut = authState.value == null;
+          
+          if (isLoggedOut) {
+            context.go('/auth'); // 로그인 화면으로 이동
+          } else {
+            // 아직 로그아웃이 완료되지 않았다면 잠시 더 기다림
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              context.go('/auth');
+            }
+          }
         }
       });
     }

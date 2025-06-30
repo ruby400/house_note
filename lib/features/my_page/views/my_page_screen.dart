@@ -6,7 +6,10 @@ import 'package:house_note/features/auth/views/auth_screen.dart';
 import 'package:house_note/features/auth/views/signup_screen.dart';
 import 'package:house_note/features/my_page/viewmodels/my_page_viewmodel.dart';
 import 'package:house_note/providers/user_providers.dart'; // userModelProvider
+import 'package:house_note/providers/auth_providers.dart'; // authStateChangesProvider
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
+import 'package:house_note/data/models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'dart:io';
 
 class MyPageScreen extends ConsumerStatefulWidget {
@@ -35,6 +38,18 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     _scrollController.dispose();
     _guestScrollController.dispose();
     super.dispose();
+  }
+
+  // Firebase Auth 사용자 정보로 임시 UserModel 생성
+  UserModel _createFallbackUser(firebase_auth.User? authUser) {
+    return UserModel(
+      uid: authUser?.uid ?? '',
+      email: authUser?.email,
+      displayName: authUser?.displayName ?? authUser?.email?.split('@')[0] ?? '사용자',
+      photoURL: authUser?.photoURL,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
   }
 
   void _showInteractiveGuide() {
@@ -93,6 +108,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
   @override
   Widget build(BuildContext context) {
     final userModelAsyncValue = ref.watch(userModelProvider);
+    final authStateAsyncValue = ref.watch(authStateChangesProvider);
     final myPageViewModel = ref.watch(myPageViewModelProvider);
     final myPageNotifier = ref.read(myPageViewModelProvider.notifier);
 
@@ -148,10 +164,14 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
       ),
       body: userModelAsyncValue.when(
         data: (user) {
-          // 로그인되지 않은 사용자를 위한 화면
-          if (user == null && !myPageViewModel.isLoggingOut) {
+          // Firebase Auth 상태도 확인해서 정말 로그인이 안 된 경우만 게스트 화면 표시
+          final authUser = authStateAsyncValue.asData?.value;
+          if (user == null && authUser == null && !myPageViewModel.isLoggingOut) {
             return _buildGuestUserScreen();
           }
+          
+          // UserModel이 null이지만 Firebase Auth는 로그인된 경우, 기본 사용자 정보 사용
+          final displayUser = user ?? _createFallbackUser(authUser);
           return Stack(
             children: [
               Scrollbar(
@@ -187,10 +207,10 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                                 ),
                                 color: Colors.white,
                               ),
-                              child: user?.photoURL != null
+                              child: displayUser.photoURL != null
                                   ? ClipOval(
                                       child:
-                                          _buildProfileImageWidget(user!.photoURL!),
+                                          _buildProfileImageWidget(displayUser.photoURL!),
                                     )
                                   : const Icon(
                                       Icons.person,
@@ -205,7 +225,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    user?.nickname ?? user?.displayName ?? '닉네임 없음',
+                                    displayUser.nickname ?? displayUser.displayName ?? '닉네임 없음',
                                     style: const TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
@@ -214,7 +234,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    user?.email ?? '이메일 정보 없음',
+                                    displayUser.email ?? '이메일 정보 없음',
                                     style: const TextStyle(
                                       fontSize: 17,
                                       color: Colors.grey,

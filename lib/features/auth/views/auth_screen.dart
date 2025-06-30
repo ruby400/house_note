@@ -72,6 +72,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _appleSignIn() async {
+    final viewModel = ref.read(authViewModelProvider.notifier);
+    bool success = await viewModel.signInWithApple();
+    if (success && mounted) {
+      // Apple 로그인 성공 후 카드목록 화면으로 이동
+      context.go(CardListScreen.routePath);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +337,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: 16),
+                          // Apple 로그인 버튼
+                          GestureDetector(
+                            onTap: _appleSignIn,
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.apple,
+                                  size: 30,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
                           // Naver 로그인 버튼
                           GestureDetector(
                             onTap: _naverSignIn,

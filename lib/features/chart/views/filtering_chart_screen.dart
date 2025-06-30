@@ -58,25 +58,39 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
   // 바텀시트 상태 추적 (충돌 회피용)
   bool _isBottomSheetVisible = false;
 
-  // 각 컬럼별 기본 메뉴 옵션 정의
+  // 각 컬럼별 기본 메뉴 옵션 정의 (카드 상세페이지와 동일하게 수정)
   final Map<String, List<String>> _columnDefaultOptions = {
     '주거 형태': ['빌라', '오피스텔', '아파트', '근린생활시설'],
+    '건축물용도': ['주거용', '상업용', '혼용'],
     '임차권등기명령 이력': ['있음', '없음'],
     '근저당권': ['있음', '없음'],
     '가압류, 압류, 경매 이력': ['있음', '없음'],
+    '계약 조건': ['월세', '전세', '반전세'],
+    '등기부등본(말소사항 포함으로)': ['확인완료', '미확인'],
+    '입주 가능일': ['즉시', '협의', '1주일후', '2주일후', '1개월후'],
     '전입신고': ['가능', '불가능'],
+    '관리비': ['없음', '3만원', '5만원', '7만원', '10만원', '15만원', '20만원'],
     '주택보증보험': ['가능', '불가능'],
+    '특약': ['있음', '없음'],
+    '특이사항': ['없음', '있음'],
+    '평수': ['10평대', '15평대', '20평대', '25평대', '30평대 이상'],
+    '방개수': ['원룸', '1개', '2개', '3개', '4개 이상'],
     '방구조': ['원룸', '1.5룸', '다각형방', '복도형'],
     '창문 뷰': ['뻥뷰', '막힘', '옆건물 가까움', '마주보는 건물', '벽뷰'],
     '방향(나침반)': ['정남', '정동', '정서', '정북', '남서', '남동', '동남', '동북', '북동', '북서'],
+    '채광': ['매우좋음', '좋음', '보통', '어두움', '매우어두움'],
+    '층수': ['지하', '반지하', '1층', '2층', '3층', '4층', '5층이상'],
     '엘리베이터': ['있음', '없음'],
     '에어컨 방식': ['천장형', '벽걸이', '중앙냉방'],
-    '난방방식': ['보일러', '심야전기', '중앙난중'],
+    '난방방식': ['보일러', '심야전기', '중앙난방'],
     '베란다': ['있음', '없음'],
     '발코니': ['있음', '없음'],
-    '주차장': ['기계식', '지하주차장', '지상주차장'],
-    '화장실': ['있음', '없음'],
+    '주차장': ['기계식', '지하주차장', '지상주차장', '노상주차'],
+    '화장실': ['독립', '공용'],
     '가스': ['도시가스', 'lpg가스'],
+    '지하철 거리': ['5분거리', '10분거리', '15분거리', '20분거리'],
+    '버스 정류장': ['5분거리', '10분거리', '15분거리', '20분거리'],
+    '편의점 거리': ['5분거리', '10분거리', '15분거리', '20분거리'],
     '위치': ['차도', '대로변', '골목길'],
     'cctv 여부': ['1층만', '각층', '없음'],
     '창문 상태': ['철제창', '나무창'],
@@ -89,7 +103,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '집주변 밤분위기': ['을씨년스러움', '무서움', '스산함', '평범함', '사람들 많이다님', '사람들 안다님'],
     '2종 잠금장치': ['있음', '없음', '설치해준다함'],
     '집 근처 소음원': ['공장', '공사장', '폐기장', '고물상', '큰 도로', '없음'],
-    '실내소음': ['가벽'],
+    '실내소음': ['있음', '없음', '가벽'],
     '이중창(소음, 외풍)': ['있음', '없음'],
     '창문 밀폐(미세먼지)': ['있음', '없음'],
     '수압': ['약함', '보통', '강함'],
@@ -98,16 +112,18 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '에어컨 냄새': ['있음', '없음'],
     '환기(공기순환)': ['됨', '안됨'],
     '곰팡이(벽,화장실,베란다)': ['있음', '없음'],
-    '냄새': ['이상함', '퀘퀘함', '담배냄새'],
-    '벌레(바퀴똥)': ['서랍', '씽크대 하부장 모서리', '씽크대 상부장'],
-    '지하철 거리': ['5분거리', '10분거리', '15분거리', '20분거리'],
-    '버스 정류장': ['5분거리', '10분거리', '15분거리', '20분거리'],
-    '편의점 거리': ['5분거리', '10분거리', '15분거리', '20분거리'],
+    '냄새': ['이상함', '퀘퀘함', '담배냄새', '없음'],
+    '벌레(바퀴똥)': ['서랍', '씽크대 하부장 모서리', '씽크대 상부장', '없음'],
     '몰딩': ['체리몰딩', '화이트몰딩', '없음', '나무'],
     '창문': ['난초그림시트', '격자무늬 시트지', '네모패턴시트지', '없음'],
+    '관련 링크': ['있음', '없음'],
+    '부동산 정보': ['확인완료', '미확인'],
+    '집주인 정보': ['확인완료', '미확인'],
+    '집보여준자': ['중개사', '중개보조인', '미확인'],
+    '메모': ['없음', '있음'],
   };
 
-  // 확장된 컬럼 정의 (사용자 요구사항 기반) - 제목은 고정 컬럼이므로 제외
+  // 확장된 컬럼 정의 (카드 상세페이지와 완전히 동일하게) - 제목은 고정 컬럼이므로 제외
   List<String> _columns = [
     '집 이름',
     '보증금',
@@ -141,6 +157,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '주차장',
     '화장실',
     '가스',
+    '지하철 거리',
+    '버스 정류장',
+    '편의점 거리',
     '위치',
     'cctv 여부',
     '창문 상태',
@@ -164,9 +183,6 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '곰팡이(벽,화장실,베란다)',
     '냄새',
     '벌레(바퀴똥)',
-    '지하철 거리',
-    '버스 정류장',
-    '편의점 거리',
     '몰딩',
     '창문',
     '관련 링크',
@@ -281,9 +297,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 카테고리 헤더 스크롤 컨트롤러
 
-  // 카테고리 정의 (순서대로 정렬)
+  // 카테고리 정의 (카드 상세페이지와 완전히 동일하게 수정)
   final Map<String, List<String>> _categoryGroups = {
-    '필수정보': [
+    '💰 필수정보': [
       '집 이름',
       '보증금',
       '월세',
@@ -302,7 +318,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '특약',
       '특이사항'
     ],
-    '기본정보': [
+    '🏠 부동산 상세 정보': [
       '평수',
       '방개수',
       '방구조',
@@ -319,7 +335,12 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '화장실',
       '가스'
     ],
-    '치안': [
+    '🚇 교통 및 편의시설': [
+      '지하철 거리',
+      '버스 정류장',
+      '편의점 거리'
+    ],
+    '🔒 치안 관련': [
       '위치',
       'cctv 여부',
       '창문 상태',
@@ -332,8 +353,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '집주변 밤분위기',
       '2종 잠금장치'
     ],
-    '소음•외풍•미세먼지': ['집 근처 소음원', '실내소음', '이중창(소음, 외풍)', '창문 밀폐(미세먼지)'],
-    '청결': [
+    '🧽 환경 및 청결': [
+      '집 근처 소음원',
+      '실내소음',
+      '이중창(소음, 외풍)',
+      '창문 밀폐(미세먼지)',
       '수압',
       '누수',
       '에어컨 내부 곰팡이',
@@ -343,21 +367,26 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '냄새',
       '벌레(바퀴똥)'
     ],
-    '교통, 편의시설': ['지하철 거리', '버스 정류장', '편의점 거리'],
-    '미관': ['몰딩', '창문'],
-    '기타사항': ['관련 링크', '부동산 정보', '집주인 정보', '집보여준자', '별점', '메모'],
+    '🎨 미관 및 기타': [
+      '몰딩',
+      '창문',
+      '관련 링크',
+      '부동산 정보',
+      '집주인 정보',
+      '집보여준자',
+      '별점',
+      '메모'
+    ],
   };
 
   // 카테고리별 토글 상태 (기본적으로 모두 펼쳐짐)
   final Map<String, bool> _categoryExpanded = {
-    '필수정보': true,
-    '기본정보': true,
-    '치안': true,
-    '소음•외풍•미세먼지': true,
-    '청결': true,
-    '교통, 편의시설': true,
-    '미관': true,
-    '기타사항': true,
+    '💰 필수정보': true,
+    '🏠 부동산 상세 정보': true,
+    '🚇 교통 및 편의시설': true,
+    '🔒 치안 관련': true,
+    '🧽 환경 및 청결': true,
+    '🎨 미관 및 기타': true,
   };
 
   // 컬럼 가시성 상태 관리
@@ -536,10 +565,45 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   void _toggleCategory(String categoryName) {
     setState(() {
-      _categoryExpanded[categoryName] =
-          !(_categoryExpanded[categoryName] ?? true);
+      final isExpanded = _categoryExpanded[categoryName] ?? true;
+      _categoryExpanded[categoryName] = !isExpanded;
+      
+      // 카테고리가 접혔을 때는 해당 카테고리의 컬럼들을 숨기고,
+      // 펼쳐졌을 때는 다시 표시
+      if (_categoryGroups.containsKey(categoryName)) {
+        final categoryColumns = _categoryGroups[categoryName]!;
+        for (final column in categoryColumns) {
+          if (!isExpanded) {
+            // 카테고리를 펼칠 때: 기본적으로 중요한 컬럼들만 표시
+            _columnVisibility[column] = _isRequiredColumn(column);
+          } else {
+            // 카테고리를 접을 때: 해당 카테고리의 모든 컬럼 숨김
+            _columnVisibility[column] = false;
+          }
+        }
+        
+        // 차트 업데이트
+        if (_currentChart != null) {
+          final updatedChart = _currentChart!.copyWith(
+            columnVisibility: Map<String, bool>.from(_columnVisibility),
+          );
+          _currentChart = updatedChart;
+          
+          // 서버에 저장
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              final integratedService = ref.read(integratedChartServiceProvider);
+              await integratedService.saveChart(updatedChart);
+              ref.read(currentChartProvider.notifier).setChart(updatedChart);
+            }
+          });
+        }
+      }
     });
   }
+
+
+
 
 
   void _loadChart() {
@@ -636,6 +700,90 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
           } else {
             // AppLogger.d('⚠️ 저장된 컬럼 순서가 없음, 기본 순서 유지: $_columns');
           }
+
+          // 기존 차트를 새로운 구조로 완전히 재구성
+          _columnVisibility.clear();
+          
+          // 컬럼 가시성을 새로운 기준으로 초기화
+          for (String column in _columns) {
+            _columnVisibility[column] = _isRequiredColumn(column);
+          }
+          
+          // 진짜 예시차트인지 확인 (구식 구조이면서 오래된 차트)
+          bool isLegacyExampleChart = false;
+          
+          // 예시차트 판단 조건: 
+          // 1. 컬럼 가시성이 없거나 너무 적음 (구식 구조)
+          // 2. 차트가 충분히 오래됨 (새로 만든 차트가 아님)
+          // 3. 제목이 기본 제목이거나 비어있음
+          final isOldStructure = chartToUse.columnVisibility == null || 
+                                chartToUse.columnVisibility!.length < 30;
+          final isOldChart = DateTime.now().difference(chartToUse.date).inDays > 1;
+          final hasDefaultTitle = chartToUse.title.isEmpty || 
+                                 chartToUse.title == '새 차트' || 
+                                 chartToUse.title == '새 부동산 차트' ||
+                                 chartToUse.title.contains('부동산') ||
+                                 chartToUse.title.contains('예시') ||
+                                 chartToUse.title.contains('비교');
+          
+          if (isOldStructure && (isOldChart || hasDefaultTitle)) {
+            isLegacyExampleChart = true;
+            AppLogger.d('🏠 예시차트로 판단되어 예시 데이터와 함께 재구성합니다');
+          }
+          
+          if (isLegacyExampleChart) {
+            // 예시차트에만 예시 집 3개 데이터 생성
+            final properties = _createSampleProperties();
+            AppLogger.d('✨ 예시차트를 예시 데이터 3개와 함께 완전히 재구성합니다');
+            
+            final rebuiltChart = PropertyChartModel(
+              id: chartToUse.id,
+              title: chartToUse.title.isNotEmpty ? chartToUse.title : '부동산 비교 차트',
+              date: chartToUse.date,
+              properties: properties,
+              columnOptions: _columnOptions,
+              columnVisibility: Map<String, bool>.from(_columnVisibility),
+              columnOrder: _columns,
+            );
+            
+            _currentChart = rebuiltChart;
+            
+            // 재구성된 차트 저장
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (mounted) {
+                final integratedService = ref.read(integratedChartServiceProvider);
+                await integratedService.saveChart(rebuiltChart);
+              }
+            });
+          } else {
+            // 예시차트가 아닌 일반 차트 처리
+            if (chartToUse.columnVisibility != null) {
+              _columnVisibility.addAll(chartToUse.columnVisibility!);
+              
+              // 컬럼 구조가 구식이면 컬럼만 업데이트 (데이터는 유지)
+              if (chartToUse.columnVisibility!.length < 30) {
+                AppLogger.d('🔄 일반 차트의 컬럼 구조를 업데이트합니다 (데이터 유지)');
+                final updatedChart = chartToUse.copyWith(
+                  columnVisibility: Map<String, bool>.from(_columnVisibility),
+                  columnOrder: _columns,
+                );
+                _currentChart = updatedChart;
+                
+                // 업데이트된 차트 저장
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  if (mounted) {
+                    final integratedService = ref.read(integratedChartServiceProvider);
+                    await integratedService.saveChart(updatedChart);
+                  }
+                });
+              }
+            } else {
+              // 컬럼 가시성 정보가 아예 없으면 기본값으로 초기화
+              for (String column in _columns) {
+                _columnVisibility[column] = _isRequiredColumn(column);
+              }
+            }
+          }
         });
 
         // 프로바이더 상태 동기화
@@ -697,6 +845,9 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
       setState(() {
         _currentChart = defaultChart;
+        // _columnVisibility도 함께 초기화
+        _columnVisibility.clear();
+        _columnVisibility.addAll(defaultColumnVisibility);
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -1428,15 +1579,19 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
                   hintText: '상세 주소를 입력하세요',
                   hintStyle: const TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(color: Color(0xFFFF8A65)),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 1.5),
+                  ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2.5),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 12),
+                      horizontal: 16, vertical: 14),
                 ),
                 maxLines: 3,
                 textInputAction: TextInputAction.done,
@@ -3773,25 +3928,24 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 카테고리별 배경색 반환
   Color _getCategoryBackgroundColor(String categoryName) {
+    // 카드 상세페이지와 동일한 색상 체계 적용
     switch (categoryName) {
-      case '필수정보':
-        return const Color(0xFFFFE4E6); // 따뜻한 핑크
-      case '기본정보':
-        return const Color(0xFFE8F4FD); // 부드러운 블루
-      case '기타사항':
-        return const Color(0xFFFFF3E0); // 따뜻한 오렌지
-      case '치안':
-        return const Color(0xFFE8F5E8); // 부드러운 그린
+      case '💰 필수정보':
+        return const Color(0xFFFFE4E6); // 따뜻한 핑크 (카드: 필수 정보)
+      case '🏠 부동산 상세 정보':
+        return const Color(0xFFFFF8E1); // 밝은 엠버 (카드: 부동산 상세 정보)
+      case '🚇 교통 및 편의시설':
+        return const Color(0xFFF3E5F5); // 연한 퍼플 (카드: 교통 및 편의시설)
+      case '🔒 치안 관련':
+        return const Color(0xFFE8F5E8); // 부드러운 그린 (카드: 치안 관련)
+      case '🧽 환경 및 청결':
+        return const Color(0xFFE0F2F1); // 민트 그린 (카드: 환경 및 청결)
+      case '🎨 미관 및 기타':
+        return const Color(0xFFFFF3E0); // 따뜻한 오렌지 (카드: 미관 및 기타)
       case '소음•외풍•미세먼지':
-        return const Color(0xFFE0F2F1); // 민트 그린
-      case '청결':
-        return const Color(0xFFFFF8E1); // 밝은 엠버
-      case '교통/편의시설':
-        return const Color(0xFFF3E5F5); // 연한 퍼플
-      case '미관':
-        return const Color(0xFFF8F9FA); // 중성 그레이
+        return const Color(0xFFE0F2F1); // 민트 그린 (환경 및 청결과 동일)
       default:
-        return const Color(0xFFF8F9FA); // 중성 그레이
+        return const Color(0xFFF8F9FA); // 중성 그레이 (카드와 동일)
     }
   }
 
@@ -4268,7 +4422,11 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
 
   // 필수 컬럼인지 확인하는 헬퍼 메소드
   bool _isRequiredColumn(String columnName) {
-    return columnName == '집 이름' || columnName == '월세' || columnName == '보증금';
+    // 기본적으로 표시할 필수 컬럼들만 (최소한의 기본 정보)
+    const defaultVisibleColumns = {
+      '집 이름', '보증금', '월세'
+    };
+    return defaultVisibleColumns.contains(columnName);
   }
 
   Widget _buildLoadingState() {
@@ -4739,6 +4897,237 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       },
     );
   }
+
+  // 예시 집 3개 데이터 생성
+  List<PropertyData> _createSampleProperties() {
+    return [
+      PropertyData(
+        id: '1',
+        name: '강남구 역삼동 빌라',
+        deposit: '1000',
+        rent: '60',
+        address: '서울특별시 강남구 역삼동 123-45',
+        direction: '남동향',
+        landlordEnvironment: '친절함',
+        rating: 4,
+        createdAt: DateTime.now().subtract(Duration(days: 1)),
+        cellImages: {},
+        additionalData: {
+          'housing_type': '빌라',
+          'building_use': '주거용',
+          'lease_registration': '없음',
+          'mortgage': '없음',
+          'seizure_history': '없음',
+          'contract_conditions': '월세',
+          'property_register': '확인완료',
+          'move_in_date': '즉시',
+          'resident_registration': '가능',
+          'maintenance_fee': '5만원',
+          'housing_insurance': '가능',
+          'special_terms': '없음',
+          'special_notes': '없음',
+          'area': '20평대',
+          'room_count': '2개',
+          'room_structure': '복도형',
+          'window_view': '뻥뷰',
+          'direction_compass': '남동',
+          'lighting': '좋음',
+          'floor': '3층',
+          'elevator': '없음',
+          'ac_type': '벽걸이',
+          'heating': '보일러',
+          'veranda': '있음',
+          'balcony': '있음',
+          'parking': '지상주차장',
+          'bathroom': '독립',
+          'gas': '도시가스',
+          'subway_distance': '10분거리',
+          'bus_stop': '5분거리',
+          'convenience_store': '5분거리',
+          'location': '골목길',
+          'cctv': '각층',
+          'window_condition': '나무창',
+          'door_condition': '잘닫침',
+          'landlord_personality': '좋은것같음',
+          'landlord_residence': '없음',
+          'nearby_bar': '없음',
+          'security_window': '있음',
+          'day_atmosphere': '평범함',
+          'night_atmosphere': '평범함',
+          'double_lock': '있음',
+          'noise_source': '없음',
+          'indoor_noise': '없음',
+          'double_window': '있음',
+          'window_seal': '있음',
+          'water_pressure': '강함',
+          'leak': '없음',
+          'ac_mold': '없음',
+          'ac_smell': '없음',
+          'ventilation': '됨',
+          'mold': '없음',
+          'smell': '없음',
+          'bugs': '없음',
+          'molding': '화이트몰딩',
+          'window_sheet': '없음',
+          'related_link': '없음',
+          'property_info': '확인완료',
+          'landlord_info': '확인완료',
+          'guide_person': '중개사',
+          'memo': '교통 편리, 조용한 동네'
+        },
+      ),
+      PropertyData(
+        id: '2',
+        name: '홍대입구 오피스텔',
+        deposit: '500',
+        rent: '80',
+        address: '서울특별시 마포구 홍익동 987-12',
+        direction: '정남향',
+        landlordEnvironment: '보통',
+        rating: 3,
+        createdAt: DateTime.now().subtract(Duration(days: 2)),
+        cellImages: {},
+        additionalData: {
+          'housing_type': '오피스텔',
+          'building_use': '주거용',
+          'lease_registration': '없음',
+          'mortgage': '있음',
+          'seizure_history': '없음',
+          'contract_conditions': '월세',
+          'property_register': '확인완료',
+          'move_in_date': '1주일후',
+          'resident_registration': '가능',
+          'maintenance_fee': '10만원',
+          'housing_insurance': '가능',
+          'special_terms': '없음',
+          'special_notes': '소음 있음',
+          'area': '15평대',
+          'room_count': '원룸',
+          'room_structure': '원룸',
+          'window_view': '마주보는 건물',
+          'direction_compass': '정남',
+          'lighting': '매우좋음',
+          'floor': '7층',
+          'elevator': '있음',
+          'ac_type': '중앙냉방',
+          'heating': '중앙난방',
+          'veranda': '없음',
+          'balcony': '있음',
+          'parking': '지하주차장',
+          'bathroom': '독립',
+          'gas': '도시가스',
+          'subway_distance': '5분거리',
+          'bus_stop': '5분거리',
+          'convenience_store': '5분거리',
+          'location': '대로변',
+          'cctv': '각층',
+          'window_condition': '철제창',
+          'door_condition': '잘닫침',
+          'landlord_personality': '별로',
+          'landlord_residence': '없음',
+          'nearby_bar': '있음',
+          'security_window': '없음',
+          'day_atmosphere': '사람들 많이다님',
+          'night_atmosphere': '사람들 많이다님',
+          'double_lock': '있음',
+          'noise_source': '큰 도로',
+          'indoor_noise': '있음',
+          'double_window': '있음',
+          'window_seal': '있음',
+          'water_pressure': '보통',
+          'leak': '없음',
+          'ac_mold': '없음',
+          'ac_smell': '없음',
+          'ventilation': '됨',
+          'mold': '없음',
+          'smell': '없음',
+          'bugs': '없음',
+          'molding': '체리몰딩',
+          'window_sheet': '격자무늬 시트지',
+          'related_link': '있음',
+          'property_info': '확인완료',
+          'landlord_info': '확인완료',
+          'guide_person': '중개사',
+          'memo': '번화가 근처, 소음 주의'
+        },
+      ),
+      PropertyData(
+        id: '3',
+        name: '신촌 아파트',
+        deposit: '2000',
+        rent: '40',
+        address: '서울특별시 서대문구 신촌동 456-78',
+        direction: '서향',
+        landlordEnvironment: '매우 친절',
+        rating: 5,
+        createdAt: DateTime.now().subtract(Duration(days: 3)),
+        cellImages: {},
+        additionalData: {
+          'housing_type': '아파트',
+          'building_use': '주거용',
+          'lease_registration': '없음',
+          'mortgage': '없음',
+          'seizure_history': '없음',
+          'contract_conditions': '전세',
+          'property_register': '확인완료',
+          'move_in_date': '협의',
+          'resident_registration': '가능',
+          'maintenance_fee': '7만원',
+          'housing_insurance': '가능',
+          'special_terms': '없음',
+          'special_notes': '없음',
+          'area': '25평대',
+          'room_count': '3개',
+          'room_structure': '복도형',
+          'window_view': '뻥뷰',
+          'direction_compass': '정서',
+          'lighting': '보통',
+          'floor': '5층이상',
+          'elevator': '있음',
+          'ac_type': '천장형',
+          'heating': '중앙난방',
+          'veranda': '있음',
+          'balcony': '있음',
+          'parking': '지하주차장',
+          'bathroom': '독립',
+          'gas': '도시가스',
+          'subway_distance': '15분거리',
+          'bus_stop': '10분거리',
+          'convenience_store': '10분거리',
+          'location': '차도',
+          'cctv': '각층',
+          'window_condition': '나무창',
+          'door_condition': '잘닫침',
+          'landlord_personality': '좋은것같음',
+          'landlord_residence': '있음',
+          'nearby_bar': '없음',
+          'security_window': '있음',
+          'day_atmosphere': '분위기 좋음',
+          'night_atmosphere': '평범함',
+          'double_lock': '있음',
+          'noise_source': '없음',
+          'indoor_noise': '없음',
+          'double_window': '있음',
+          'window_seal': '있음',
+          'water_pressure': '강함',
+          'leak': '없음',
+          'ac_mold': '없음',
+          'ac_smell': '없음',
+          'ventilation': '됨',
+          'mold': '없음',
+          'smell': '없음',
+          'bugs': '없음',
+          'molding': '화이트몰딩',
+          'window_sheet': '없음',
+          'related_link': '없음',
+          'property_info': '확인완료',
+          'landlord_info': '확인완료',
+          'guide_person': '중개사',
+          'memo': '조용하고 안전한 아파트 단지'
+        },
+      ),
+    ];
+  }
 }
 
 // 편집 바텀시트 위젯들
@@ -5110,4 +5499,5 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
       ),
     );
   }
+
 }

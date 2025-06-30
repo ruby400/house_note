@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/repositories/auth_repository.dart';
 import 'package:house_note/data/repositories/user_repository.dart';
 import 'package:house_note/providers/user_providers.dart';
+import 'package:house_note/providers/property_chart_providers.dart';
+import 'package:house_note/services/firestore_service.dart';
 
 class ProfileSettingsState {
   final bool isLoading;
@@ -26,8 +28,10 @@ class ProfileSettingsState {
 class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
+  final FirestoreService _firestoreService;
+  final Ref _ref;
 
-  ProfileSettingsViewModel(this._authRepository, this._userRepository)
+  ProfileSettingsViewModel(this._authRepository, this._userRepository, this._firestoreService, this._ref)
       : super(ProfileSettingsState());
 
   Future<bool> updateProfile({
@@ -73,7 +77,7 @@ class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
     }
   }
 
-  Future<bool> deleteAccount() async {
+  Future<bool> deleteAccount({String? password}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -83,8 +87,29 @@ class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
         return false;
       }
 
-      // Firestore에서 사용자 데이터 삭제
-      await _userRepository.deleteUser(currentUser.uid);
+      // 구글 계정인지 확인
+      final isGoogleAccount = currentUser.providerData
+          .any((info) => info.providerId == 'google.com');
+
+      // 재인증 수행
+      if (isGoogleAccount) {
+        await _authRepository.reauthenticateWithGoogle();
+      } else {
+        if (password == null || password.isEmpty) {
+          state = state.copyWith(isLoading: false, error: '비밀번호가 필요합니다');
+          return false;
+        }
+        await _authRepository.reauthenticateWithPassword(password);
+      }
+
+      // 사용자 ID 저장 (삭제 전에)
+      final userId = currentUser.uid;
+
+      // 모든 사용자 데이터 삭제 (차트, 프로필 등 포함)
+      await _firestoreService.deleteAllUserData(userId);
+
+      // 로컬 차트 데이터도 삭제
+      await _ref.read(propertyChartListProvider.notifier).clearUserData(userId);
 
       // Firebase Auth에서 계정 삭제
       await _authRepository.deleteAccount();
@@ -105,5 +130,6 @@ class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
 final profileSettingsViewModelProvider = StateNotifierProvider<ProfileSettingsViewModel, ProfileSettingsState>((ref) {
   final authRepository = ref.read(authRepositoryProvider);
   final userRepository = ref.read(userRepositoryProvider);
-  return ProfileSettingsViewModel(authRepository, userRepository);
+  final firestoreService = ref.read(firestoreServiceProvider);
+  return ProfileSettingsViewModel(authRepository, userRepository, firestoreService, ref);
 });

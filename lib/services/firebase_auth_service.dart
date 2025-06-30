@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/services/naver_auth_service.dart';
 
@@ -88,6 +89,36 @@ class FirebaseAuthService {
     }
   }
 
+  // Apple 로그인
+  Future<UserCredential?> signInWithApple() async {
+    try {
+      AppLogger.info('🍎 Apple 로그인 시도');
+      
+      // Apple 로그인 요청
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Apple 자격 증명을 Firebase 자격 증명으로 변환
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // Firebase에 로그인
+      final result = await _firebaseAuth.signInWithCredential(oauthCredential);
+      
+      AppLogger.info('✅ Apple 로그인 성공: ${result.user?.email}');
+      return result;
+    } catch (e) {
+      AppLogger.error('❌ Apple 로그인 오류', error: e);
+      throw Exception('Apple 로그인 중 오류: $e');
+    }
+  }
+
   Future<void> signOut() async {
     try {
       AppLogger.info('🚪 로그아웃 시도');
@@ -162,6 +193,54 @@ class FirebaseAuthService {
     }
   }
 
+  // 재인증 (이메일/비밀번호)
+  Future<void> reauthenticateWithPassword(String password) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('로그인이 필요합니다');
+      }
+      
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      
+      await user.reauthenticateWithCredential(credential);
+      AppLogger.info('✅ 재인증 성공');
+    } on FirebaseAuthException catch (e) {
+      AppLogger.error('❌ 재인증 실패: ${e.code}', error: e);
+      throw Exception(e.message);
+    }
+  }
+
+  // 재인증 (구글)
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('로그인이 필요합니다');
+      }
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        throw Exception('구글 로그인이 취소되었습니다');
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      AppLogger.info('✅ 구글 재인증 성공');
+    } on FirebaseAuthException catch (e) {
+      AppLogger.error('❌ 구글 재인증 실패: ${e.code}', error: e);
+      throw Exception(e.message);
+    }
+  }
+
   // 계정 삭제
   Future<void> deleteAccount() async {
     try {
@@ -171,6 +250,9 @@ class FirebaseAuthService {
       }
       await user.delete();
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw Exception('보안을 위해 재로그인이 필요합니다. 다시 로그인 후 시도해주세요.');
+      }
       throw Exception(e.message);
     }
   }

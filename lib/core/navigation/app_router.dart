@@ -171,13 +171,15 @@ class AppRouter {
       final isAuthenticated = _ref.read(authStateChangesProvider).value != null;
 
       final isOnboardingFlow = state.matchedLocation.startsWith('/onboarding');
-      final isAuthFlow = state.matchedLocation == AuthScreen.routePath || 
-                        state.matchedLocation == SignupScreen.routePath;
 
       // 로그인된 사용자의 경우
       if (isAuthenticated) {
-        // 로그인/회원가입 화면에 있다면 카드목록으로 이동
-        if (isAuthFlow) {
+        // 회원가입 화면에서는 리다이렉트하지 않음 (회원가입 후 로그아웃 처리를 위해)
+        if (state.matchedLocation == SignupScreen.routePath) {
+          return null;
+        }
+        // 로그인 화면에 있다면 카드목록으로 이동
+        if (state.matchedLocation == AuthScreen.routePath) {
           return CardListScreen.routePath;
         }
         // 온보딩 화면에 있다면 메인으로

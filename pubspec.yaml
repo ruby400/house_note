@@ -17,6 +17,7 @@ dependencies:
   cloud_firestore: ^5.0.1
   google_sign_in: ^6.2.1 # 구글 로그인
   flutter_naver_login: ^2.1.1 # 네이버 로그인 최신 버전 시도
+  sign_in_with_apple: ^6.1.0 # 애플 로그인
 
   # State Management (Riverpod)
   flutter_riverpod: ^2.5.1

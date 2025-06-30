@@ -406,11 +406,10 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
                   ),
                   child: Column(
                     children: [
-                      // 제목과 아이콘 배치 (아이콘이 제목 바로 앞에 위치, 살짝 왼쪽으로 치우침)
+                      // 제목과 아이콘 배치 (아이콘이 제목 바로 앞에 위치, 중앙 정렬)
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(width: 50), // 왼쪽 여백으로 살짝 치우치게
                           Container(
                             width: 40,
                             height: 40,

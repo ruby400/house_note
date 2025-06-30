@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_note/data/repositories/user_repository.dart';
 import 'package:house_note/services/firebase_auth_service.dart';
 import 'package:house_note/providers/firebase_chart_providers.dart';
+import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/features/main_navigation/views/main_navigation_screen.dart';
 import 'package:house_note/core/utils/logger.dart';
 
@@ -40,6 +41,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
     _authService.authStateChanges.listen((user) {
       debugPrint('🔄 Auth state changed: ${user?.uid}, isSigningUp: $_isSigningUp');
       state = state.copyWith(user: user, isLoading: false);
+      
+      // 사용자 변경 시 로컬 차트 데이터 다시 로드
+      _ref.read(propertyChartListProvider.notifier).reloadChartsForCurrentUser();
+      
       // 로그인 시 데이터 동기화 및 하단바 상태 초기화 (회원가입 중이 아닐 때만)
       if (user != null && !_isSigningUp) {
         debugPrint('🔄 Syncing data after login');
@@ -126,6 +131,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   Future<bool> signUpWithEmail(String email, String password, {String? nickname}) async {
+    debugPrint('📝 회원가입 시작: $email');
     state = state.copyWith(isLoading: true, clearError: true);
     _isSigningUp = true; // 회원가입 과정 시작
     
@@ -134,13 +140,23 @@ class AuthViewModel extends StateNotifier<AuthState> {
           await _authService.createUserWithEmailAndPassword(email, password);
       
       if (userCredential != null && userCredential.user != null) {
+        debugPrint('📝 Firebase 계정 생성 완료: ${userCredential.user!.uid}');
+        
         // Firestore에 사용자 프로필 생성 (닉네임 포함)
         await _userRepository.createUserProfile(userCredential.user!, nickname: nickname);
+        debugPrint('📝 Firestore 프로필 생성 완료');
         
         // 회원가입 후 자동 로그인하지 않고 로그아웃 처리
+        debugPrint('📝 회원가입 후 자동 로그아웃 처리');
         await _authService.signOut();
-        state = state.copyWith(isLoading: false, user: null);
+        
+        // 로그아웃이 완전히 처리될 때까지 잠시 기다림
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        // 상태를 명시적으로 초기화 (로그아웃 상태로)
+        state = AuthState(isLoading: false, user: null);
         _isSigningUp = false; // 회원가입 과정 완료
+        debugPrint('📝 회원가입 과정 완료 - 로그아웃 상태로 설정');
         return true;
       }
       
@@ -187,6 +203,32 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final userCredential = await _authService.signInWithNaver();
       if (userCredential == null) {
         // 사용자가 네이버 로그인 취소
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+      
+      // 신규 유저인지 확인
+      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      if (isNewUser && userCredential.user != null) {
+        // 신규 유저면 Firestore에 프로필 생성
+        await _userRepository.createUserProfile(userCredential.user!);
+      }
+      
+      state = state.copyWith(isLoading: false, user: userCredential.user);
+      return true;
+    } catch (e) {
+      final errorMessage = _getKoreanErrorMessage(e.toString());
+      state = state.copyWith(isLoading: false, error: errorMessage);
+      return false;
+    }
+  }
+
+  Future<bool> signInWithApple() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final userCredential = await _authService.signInWithApple();
+      if (userCredential == null) {
+        // 사용자가 Apple 로그인 취소
         state = state.copyWith(isLoading: false);
         return false;
       }

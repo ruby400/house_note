@@ -59,6 +59,16 @@ class AuthRepository {
     return _authService.updatePassword(password);
   }
 
+  // 재인증 (이메일/비밀번호)
+  Future<void> reauthenticateWithPassword(String password) {
+    return _authService.reauthenticateWithPassword(password);
+  }
+
+  // 재인증 (구글)
+  Future<void> reauthenticateWithGoogle() {
+    return _authService.reauthenticateWithGoogle();
+  }
+
   // 계정 삭제
   Future<void> deleteAccount() {
     return _authService.deleteAccount();
