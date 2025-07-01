@@ -63,20 +63,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
-  Future<void> _naverSignIn() async {
-    AppLogger.d('🟢 네이버 로그인 버튼 클릭됨');
-    try {
-      final viewModel = ref.read(authViewModelProvider.notifier);
-      bool success = await viewModel.signInWithNaver();
-      AppLogger.d('🟢 네이버 로그인 결과: $success');
-      if (success && mounted) {
-        // 네이버 로그인 성공 후 카드목록 화면으로 이동
-        context.go(CardListScreen.routePath);
-      }
-    } catch (e) {
-      AppLogger.error('🟢 네이버 로그인 오류', error: e);
-    }
-  }
 
   Future<void> _appleSignIn() async {
     final viewModel = ref.read(authViewModelProvider.notifier);
@@ -367,53 +353,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   Icons.apple,
                                   size: 30,
                                   color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Naver 로그인 버튼
-                          GestureDetector(
-                            onTap: authState.isLoading ? null : _naverSignIn,
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF03C75A), Color(0xFF02B34A)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF03C75A).withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'N',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    fontFamily: 'Arial',
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        offset: Offset(1, 1),
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               ),
                             ),
