@@ -101,6 +101,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return '다른 로그인 방법으로 이미 가입된 계정입니다.';
     } else if (errorMessage.contains('popup-closed-by-user')) {
       return '로그인이 취소되었습니다.';
+    } else if (errorMessage.contains('Apple 로그인 인증 오류') && errorMessage.contains('canceled')) {
+      return ''; // Apple 로그인 취소는 오류로 처리하지 않음 (빈 문자열 반환)
+    } else if (errorMessage.contains('Authorization was canceled') || errorMessage.contains('canceled')) {
+      return ''; // 사용자가 취소한 경우는 오류로 처리하지 않음 (빈 문자열 반환)
     } else if (errorMessage.contains('user-not-found')) {
       return '등록되지 않은 이메일입니다.';
     } else if (errorMessage.contains('invalid-email')) {
@@ -244,7 +248,12 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return true;
     } catch (e) {
       final errorMessage = _getKoreanErrorMessage(e.toString());
-      state = state.copyWith(isLoading: false, error: errorMessage);
+      // 취소된 경우(빈 문자열)는 오류로 처리하지 않음
+      if (errorMessage.isNotEmpty) {
+        state = state.copyWith(isLoading: false, error: errorMessage);
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
       return false;
     }
   }
