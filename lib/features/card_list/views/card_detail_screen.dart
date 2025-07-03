@@ -6,6 +6,7 @@ import 'package:house_note/features/onboarding/views/interactive_guide_overlay.d
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/providers/firebase_chart_providers.dart';
 import 'package:house_note/services/image_service.dart';
+import 'package:house_note/core/utils/logger.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -216,7 +217,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           _scrollController.jumpTo(scrollOffset);
         } catch (e) {
           // 최종 실패 - 로그만 출력
-          print('스크롤 위치 복원 실패: $e');
+          AppLogger.error('스크롤 위치 복원 실패: $e');
         }
       }
     });
@@ -404,7 +405,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       });
       
     } catch (e) {
-      print('Auto-save failed: $e');
+      AppLogger.error('Auto-save failed: $e');
       // 자동저장 실패 시에는 스낵바를 표시하지 않음 (사용자 경험 방해하지 않기 위해)
     }
   }
@@ -727,10 +728,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
     
     // 디버그: 차트 상태 로깅
-    print('DEBUG: Chart ID: ${chart.id}, Title: ${chart.title}');
-    print('DEBUG: Properties count: ${chart.properties.length}');
-    print('DEBUG: Used keys: $usedKeys');
-    print('DEBUG: Column options: ${chart.columnOptions.keys.toList()}');
+    AppLogger.d('Chart ID: ${chart.id}, Title: ${chart.title}');
+    AppLogger.d('Properties count: ${chart.properties.length}');
+    AppLogger.d('Used keys: $usedKeys');
+    AppLogger.d('Column options: ${chart.columnOptions.keys.toList()}');
     
     // 모든 잘못된 데이터를 정리
     bool needsCleaning = false;
@@ -739,7 +740,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // "추가항목" 키 완전 제거
     if (cleanedColumnOptions.containsKey('추가항목')) {
       final duplicateCount = cleanedColumnOptions['추가항목']!.length;
-      print('DEBUG: Found ${duplicateCount} duplicate "추가항목" entries - removing completely');
+      AppLogger.d('Found $duplicateCount duplicate "추가항목" entries - removing completely');
       cleanedColumnOptions.remove('추가항목');
       needsCleaning = true;
     }
@@ -754,7 +755,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
     
     for (final key in keysToRemove) {
-      print('DEBUG: Removing problematic key: $key');
+      AppLogger.d('Removing problematic key: $key');
       cleanedColumnOptions.remove(key);
     }
     
@@ -771,9 +772,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           final integratedService = ref.read(integratedChartServiceProvider);
           await integratedService.saveChart(cleanedChart);
           ref.invalidate(integratedChartsProvider);
-          print('DEBUG: Successfully cleaned chart data');
+          AppLogger.d('Successfully cleaned chart data');
         } catch (e) {
-          print('DEBUG: Failed to clean chart: $e');
+          AppLogger.error('Failed to clean chart: $e');
         }
       });
     }
@@ -1937,10 +1938,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     if (shouldShowTextField) {
       // 직접입력용 컨트롤러 가져오기 또는 생성
       if (!_directInputControllers.containsKey(key)) {
-        _directInputControllers[key!] = TextEditingController(text: editedValues[key] ?? value);
+        _directInputControllers[key] = TextEditingController(text: editedValues[key] ?? value);
       } else {
         // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
-        final controller = _directInputControllers[key!]!;
+        final controller = _directInputControllers[key]!;
         final currentText = editedValues[key] ?? value;
         if (controller.text != currentText) {
           final selection = controller.selection;
@@ -1956,7 +1957,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       return Container(
         constraints: const BoxConstraints(minHeight: 40),
         child: TextField(
-          controller: _directInputControllers[key!]!,
+          controller: _directInputControllers[key]!,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.black87,
