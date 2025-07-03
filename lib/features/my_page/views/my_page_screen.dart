@@ -429,10 +429,13 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
               color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.person_outline,
-              size: 60,
-              color: Color(0xFFFF8A65),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const SizedBox(height: 32),

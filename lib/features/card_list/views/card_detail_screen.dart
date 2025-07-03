@@ -38,7 +38,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Map<String, List<String>> dropdownOptions = {};
   Map<String, bool> showPlaceholder = {};
   String? activeDropdownKey; // 현재 활성된 드롭다운의 키
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController(keepScrollOffset: true);
   late TextEditingController _nameController;
   late TextEditingController _depositController;
   late TextEditingController _rentController;
@@ -169,6 +169,56 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         _hasUnsavedChanges = hasChanges;
       });
     }
+  }
+  
+  // 스크롤 위치를 보존하면서 상태 업데이트
+  void _setStateWithScrollPreservation(VoidCallback fn) {
+    if (!_scrollController.hasClients) {
+      setState(fn);
+      return;
+    }
+    
+    final double scrollOffset = _scrollController.offset;
+    
+    // 상태 업데이트 전에 스크롤 위치 저장
+    setState(fn);
+    
+    // 여러 단계로 스크롤 위치 복원 시도
+    _restoreScrollPosition(scrollOffset);
+  }
+  
+  void _restoreScrollPosition(double scrollOffset) {
+    // 1단계: 즉시 복원
+    if (_scrollController.hasClients && mounted) {
+      try {
+        _scrollController.jumpTo(scrollOffset);
+      } catch (e) {
+        // 스크롤 복원 실패 시 다음 단계로
+      }
+    }
+    
+    // 2단계: 다음 프레임에서 복원
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && mounted) {
+        try {
+          _scrollController.jumpTo(scrollOffset);
+        } catch (e) {
+          // 스크롤 복원 실패 시 다음 단계로
+        }
+      }
+    });
+    
+    // 3단계: 약간의 지연 후 복원
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (_scrollController.hasClients && mounted) {
+        try {
+          _scrollController.jumpTo(scrollOffset);
+        } catch (e) {
+          // 최종 실패 - 로그만 출력
+          print('스크롤 위치 복원 실패: $e');
+        }
+      }
+    });
   }
   
   bool _checkForChanges() {
@@ -878,7 +928,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         ),
       ),
       body: SingleChildScrollView(
+        key: const PageStorageKey('card_detail_scroll'),
         controller: _scrollController,
+        physics: const ClampingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -911,22 +963,42 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 children: [
                   // 이름 편집
                   isEditMode
-                      ? TextField(
-                          key: _nameFieldKey,
-                          controller: _nameController,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            hintText: '집 이름',
-                          ),
-                          onChanged: (value) {
-                            editedValues['name'] = value;
-                            _onFieldChanged();
-                          },
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                key: _nameFieldKey,
+                                controller: _nameController,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: _nameController.text.isEmpty || _nameController.text == '집 이름'
+                                      ? Colors.grey
+                                      : Colors.black87,
+                                ),
+                                decoration: const InputDecoration(
+                                  border: UnderlineInputBorder(),
+                                  hintText: '집 이름',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  _setStateWithScrollPreservation(() {
+                                    editedValues['name'] = value;
+                                  });
+                                  _onFieldChanged();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.edit,
+                              color: Color(0xFFFF8A65),
+                              size: 20,
+                            ),
+                          ],
                         )
                       : Text(
                           propertyData!.name.isNotEmpty
@@ -951,7 +1023,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                                     propertyData!.rating;
                                 return GestureDetector(
                                   onTap: () {
-                                    setState(() {
+                                    _setStateWithScrollPreservation(() {
                                       editedValues['rating'] =
                                           (index + 1).toString();
                                     });
@@ -1170,7 +1242,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     _rentController.text = editedValues['rent'] ?? propertyData!.rent;
                   }
                   if (mounted) {
-                    setState(() {
+                    _setStateWithScrollPreservation(() {
                       isEditMode = !isEditMode;
                     });
                   }
@@ -1609,72 +1681,49 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, [String? key]) {
-    Widget child = Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-              color: activeDropdownKey == key
-                  ? const Color(0xFFFF8A65)
-                  : Colors.grey[200]!,
-              width: activeDropdownKey == key ? 2 : 1),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // 레이블 섹션
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFFF8A65),
-                    fontWeight: FontWeight.w600,
+    Widget child = Column(
+      crossAxisAlignment: CrossAxisAlignment.start, 
+      children: [
+        // 레이블 섹션
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFFFF8A65),
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isEditMode && key != null)
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(
+                    color: const Color(0xFFBDBDBD),
+                    width: 1,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                child: const Icon(
+                  Icons.arrow_drop_down,
+                  color: Color(0xFF757575),
+                  size: 12,
                 ),
               ),
-              if (isEditMode && key != null)
-                Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0E0E0),
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(
-                      color: const Color(0xFFBDBDBD),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color(0xFF757575),
-                    size: 12,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // 값 섹션
-          SizedBox(
-            height: 24,
-            child: isEditMode
-                ? _buildEditableField(key, editedValues[key] ?? value)
-                : (editedValues[key] ?? value).isNotEmpty
-                    ? Text(
-                        editedValues[key] ?? value,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: null,
-                      )
-                    : Container(),
-          ),
-        ]));
+          ],
+        ),
+        const SizedBox(height: 8),
+        // 값 섹션
+        _buildValueSection(key, value),
+      ]
+    );
 
     // 편집 모드이고 키가 있을 때만 Builder와 GestureDetector로 감싸기
     if (isEditMode && key != null) {
@@ -1683,7 +1732,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           return GestureDetector(
             onTap: () {
               // 활성 상태 설정
-              setState(() {
+              _setStateWithScrollPreservation(() {
                 activeDropdownKey = key;
               });
 
@@ -1696,6 +1745,80 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
 
     return child;
+  }
+
+  // 값 섹션 빌드 메서드
+  Widget _buildValueSection(String? key, String value) {
+    final bool shouldShowTextField = key != null && (showPlaceholder[key] ?? false);
+    
+    if (shouldShowTextField) {
+      // 직접입력 모드일 때 텍스트 필드 표시
+      return Container(
+        constraints: const BoxConstraints(minHeight: 40),
+        child: TextField(
+          controller: TextEditingController(text: editedValues[key] ?? value),
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            hintText: '값을 입력하세요',
+            hintStyle: const TextStyle(color: Colors.grey),
+          ),
+          maxLines: null,
+          minLines: 1,
+          autofocus: true,
+          onChanged: (newValue) {
+            _setStateWithScrollPreservation(() {
+              editedValues[key] = newValue;
+            });
+            _onFieldChanged();
+          },
+          onSubmitted: (newValue) {
+            // 엔터를 누르면 텍스트 필드를 닫고 값을 저장
+            _setStateWithScrollPreservation(() {
+              showPlaceholder[key] = false;
+              editedValues[key] = newValue;
+            });
+            _onFieldChanged();
+          },
+          onTapOutside: (event) {
+            // 외부를 클릭하면 텍스트 필드를 닫고 값을 저장
+            _setStateWithScrollPreservation(() {
+              showPlaceholder[key] = false;
+            });
+            _onFieldChanged();
+          },
+        ),
+      );
+    } else {
+      // 일반 모드일 때 텍스트만 표시
+      return (editedValues[key] ?? value).isNotEmpty
+          ? Text(
+              editedValues[key] ?? value,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: null,
+            )
+          : const SizedBox(height: 24);
+    }
   }
 
   // 커스텀 드롭다운 표시 메서드
@@ -1769,27 +1892,41 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
     // 드롭다운 위치 계산
     final screenWidth = MediaQuery.of(context).size.width;
+    final safeAreaTop = MediaQuery.of(context).padding.top;
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
 
     final buttonBottom = position.dy + buttonSize.height;
-    final spaceBelow = screenHeight - buttonBottom - safeAreaBottom - 10;
+    final buttonTop = position.dy;
+    final spaceBelow = screenHeight - buttonBottom - safeAreaBottom - 20; // 여유 공간 확보
+    final spaceAbove = buttonTop - safeAreaTop - 20; // 여유 공간 확보
 
     late RelativeRect relativePosition;
 
-    // 더 간단한 방식으로 RelativeRect 계산
+    // 아래쪽에 공간이 충분한지 확인
     if (spaceBelow >= estimatedHeight) {
-      // 아래에 충분한 공간이 있으면 네모칸 바로 아래에 표시
-      relativePosition = RelativeRect.fromRect(
-        Rect.fromLTWH(
-            position.dx, buttonBottom, dropdownWidth, estimatedHeight),
-        Rect.fromLTWH(0, 0, screenWidth, screenHeight),
+      // 버튼 바로 아래에 붙여서 표시
+      relativePosition = RelativeRect.fromLTRB(
+        position.dx, // left
+        buttonBottom, // top (버튼 바로 아래)
+        screenWidth - position.dx - dropdownWidth, // right
+        screenHeight - buttonBottom - estimatedHeight, // bottom
+      );
+    } else if (spaceAbove >= estimatedHeight) {
+      // 버튼 바로 위에 붙여서 표시
+      relativePosition = RelativeRect.fromLTRB(
+        position.dx, // left
+        buttonTop - estimatedHeight, // top (버튼 바로 위)
+        screenWidth - position.dx - dropdownWidth, // right
+        screenHeight - buttonTop, // bottom
       );
     } else {
-      // 위에 표시
-      final topPosition = position.dy - estimatedHeight;
-      relativePosition = RelativeRect.fromRect(
-        Rect.fromLTWH(position.dx, topPosition, dropdownWidth, estimatedHeight),
-        Rect.fromLTWH(0, 0, screenWidth, screenHeight),
+      // 공간이 부족하면 아래쪽에 표시하되 높이 조정
+      final adjustedHeight = spaceBelow.clamp(200.0, estimatedHeight);
+      relativePosition = RelativeRect.fromLTRB(
+        position.dx, // left
+        buttonBottom, // top (버튼 바로 아래)
+        screenWidth - position.dx - dropdownWidth, // right
+        screenHeight - buttonBottom - adjustedHeight, // bottom
       );
     }
 
@@ -1807,7 +1944,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           dropdownWidth, estimatedHeight),
     ).then((String? value) async {
       // 드롭다운 닫힐 때 활성 상태 초기화
-      setState(() {
+      _setStateWithScrollPreservation(() {
         activeDropdownKey = null;
       });
 
@@ -1938,34 +2075,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   ),
                 ],
 
-                // 사용자 정의 옵션들
-                if (options.isNotEmpty) ...[
-                  ...options.map((option) => GestureDetector(
-                        onTap: () => Navigator.pop(context, option),
-                        child: Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border:
-                                Border.all(color: Colors.grey[300]!, width: 1),
-                          ),
-                          child: Text(
-                            option,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF2D3748),
-                            ),
-                          ),
-                        ),
-                      )),
-                ],
-
                 // 새 옵션 추가 버튼
                 GestureDetector(
                   onTap: () => Navigator.pop(context, 'add_new'),
@@ -2023,7 +2132,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Future<void> _handleDropdownSelection(String value, String key, String label) async {
     if (value == 'direct_input') {
       if (mounted) {
-        setState(() {
+        _setStateWithScrollPreservation(() {
           showPlaceholder[key] = true;
         });
       }
@@ -2031,7 +2140,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       _showAddOptionDialog(key);
     } else {
       if (mounted) {
-        setState(() {
+        _setStateWithScrollPreservation(() {
           editedValues[key] = value;
           showPlaceholder[key] = false;
 
@@ -2118,43 +2227,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
   }
 
-  Widget _buildEditableField(String? key, String value) {
-    final bool shouldShowPlaceholder =
-        key != null && (showPlaceholder[key] ?? false);
-
-    // 직접입력 버튼을 눌렀을 때만 TextField 표시
-    if (shouldShowPlaceholder) {
-      return TextField(
-        controller: TextEditingController(text: value),
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
-        ),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-        maxLines: null,
-        minLines: 1,
-        autofocus: true,
-        onChanged: (newValue) {
-          editedValues[key] = newValue;
-          _onFieldChanged();
-        },
-      );
-    } else {
-      // 기본 상태에서는 텍스트만 표시
-      return Text(
-        value.isEmpty ? '' : value,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
-          fontWeight: FontWeight.w500,
-        ),
-      );
-    }
-  }
 
   void _showAddOptionDialog(String key) {
     final TextEditingController controller = TextEditingController();
@@ -2282,7 +2354,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 onPressed: () async {
                   if (controller.text.isNotEmpty) {
                     if (mounted) {
-                      setState(() {
+                      _setStateWithScrollPreservation(() {
                         if (!dropdownOptions.containsKey(key)) {
                           dropdownOptions[key] = [];
                         }
@@ -2636,7 +2708,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             initialImages: currentImages,
             onImageAdded: (String imagePath) {
               if (mounted) {
-                setState(() {
+                _setStateWithScrollPreservation(() {
                   final currentImages = propertyData?.cellImages[cellKey] ?? [];
                   final updatedImages = List<String>.from(currentImages);
                   updatedImages.add(imagePath);
@@ -2654,7 +2726,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             },
             onImageDeleted: (String imagePath) {
               if (mounted) {
-                setState(() {
+                _setStateWithScrollPreservation(() {
                   final currentImages = propertyData?.cellImages[cellKey] ?? [];
                   final updatedImages = List<String>.from(currentImages);
                   updatedImages.remove(imagePath);
@@ -2715,7 +2787,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           onStepEnter: () {
             // 편집 모드로 자동 전환
             if (!isEditMode) {
-              setState(() {
+              _setStateWithScrollPreservation(() {
                 isEditMode = true;
               });
             }

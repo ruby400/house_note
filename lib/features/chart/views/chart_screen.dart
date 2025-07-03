@@ -1158,6 +1158,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           color: isSelected ? const Color(0xFFFF8A65) : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
         ),
+        alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
