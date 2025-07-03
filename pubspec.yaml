@@ -15,6 +15,7 @@ dependencies:
   firebase_core: ^3.1.0 # 버전은 최신으로 확인
   firebase_auth: ^5.1.0
   cloud_firestore: ^5.0.1
+  firebase_storage: ^12.1.0 # Firebase Storage 추가
   google_sign_in: ^6.2.1 # 구글 로그인
   flutter_naver_login: ^2.1.1 # 네이버 로그인 최신 버전 시도
   sign_in_with_apple: ^6.1.0 # 애플 로그인
