@@ -44,7 +44,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     final user = ref.read(userModelProvider).value;
     if (user != null) {
       _nameController.text = user.displayName ?? '';
-      _nicknameController.text = user.displayName ?? '';
+      _nicknameController.text = user.nickname ?? '';
       _emailController.text = user.email ?? '';
     }
   }
@@ -339,6 +339,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
 
       final success = await notifier.updateProfile(
         displayName: _nameController.text,
+        nickname: _nicknameController.text,
         email: _emailController.text,
         password: _passwordController.text.isNotEmpty
             ? _passwordController.text

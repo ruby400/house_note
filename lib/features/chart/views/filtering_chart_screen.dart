@@ -5451,6 +5451,8 @@ class _EditBottomSheetState extends State<_EditBottomSheet> {
             TextField(
               controller: _controller,
               cursorColor: Colors.grey[600],
+              maxLines: null, // 자동으로 줄 늘어남
+              minLines: 1,    // 최소 1줄
               decoration: InputDecoration(
                 labelText: '직접 입력',
                 labelStyle: TextStyle(color: Colors.grey[600]),

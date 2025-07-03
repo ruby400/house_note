@@ -37,6 +37,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Map<String, String> editedValues = {};
   Map<String, List<String>> dropdownOptions = {};
   Map<String, bool> showPlaceholder = {};
+  Map<String, TextEditingController> _directInputControllers = {}; // 직접입력용 컨트롤러들
   String? activeDropdownKey; // 현재 활성된 드롭다운의 키
   final ScrollController _scrollController = ScrollController(keepScrollOffset: true);
   late TextEditingController _nameController;
@@ -276,7 +277,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       editedValues['deposit'] = _depositController.text;
       editedValues['rent'] = _rentController.text;
       
-      await _saveChanges();
+      // 새 카드인지 기존 카드인지 구분해서 저장
+      if (widget.isNewProperty) {
+        await _autoSaveNewProperty();
+      } else {
+        await _saveChanges();
+      }
       
       // 자동 저장 알림 (조용히)
       if (mounted) {
@@ -301,6 +307,108 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
   }
   
+  // 새 카드 자동 저장 (페이지 이동 없음)
+  Future<void> _autoSaveNewProperty() async {
+    if (propertyData == null || widget.chartId == null) return;
+
+    try {
+      // Apply edited values to propertyData
+      Map<String, String> additionalDataUpdate =
+          Map.from(propertyData!.additionalData);
+
+      for (String key in editedValues.keys) {
+        switch (key) {
+          case 'order':
+            // order field removed - skip
+            break;
+          case 'name':
+            propertyData = propertyData!.copyWith(name: editedValues[key]!);
+            break;
+          case 'deposit':
+            propertyData = propertyData!.copyWith(deposit: editedValues[key]!);
+            break;
+          case 'rent':
+            propertyData = propertyData!.copyWith(rent: editedValues[key]!);
+            break;
+          case 'address':
+            propertyData = propertyData!.copyWith(address: editedValues[key]!);
+            break;
+          case 'direction':
+            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            break;
+          case 'landlord_environment':
+            propertyData =
+                propertyData!.copyWith(landlordEnvironment: editedValues[key]!);
+            break;
+          case 'rating':
+            propertyData = propertyData!
+                .copyWith(rating: int.tryParse(editedValues[key]!) ?? 0);
+            break;
+          case 'memo':
+            propertyData = propertyData!.copyWith(memo: editedValues[key]!);
+            break;
+          default:
+            additionalDataUpdate[key] = editedValues[key]!;
+        }
+      }
+
+      // Update additionalData if needed
+      if (additionalDataUpdate != propertyData!.additionalData) {
+        propertyData =
+            propertyData!.copyWith(additionalData: additionalDataUpdate);
+      }
+
+      // Firebase 통합 차트 서비스를 사용하여 저장
+      final integratedService = ref.read(integratedChartServiceProvider);
+      
+      // Get target chart from integrated charts
+      final integratedCharts = ref.read(integratedChartsProvider);
+      final targetChart = integratedCharts.firstWhere(
+        (chart) => chart.id == widget.chartId,
+        orElse: () => PropertyChartModel(
+          id: widget.chartId!,
+          title: '새 차트',
+          date: DateTime.now(),
+          properties: [],
+        ),
+      );
+
+      // 중복 방지: 이미 존재하는 카드인지 확인
+      final updatedProperties = List<PropertyData>.from(targetChart.properties);
+      final existingIndex = updatedProperties.indexWhere((p) => p.id == propertyData!.id);
+      
+      if (existingIndex != -1) {
+        // 기존 카드 업데이트
+        updatedProperties[existingIndex] = propertyData!;
+      } else {
+        // 새 카드 추가
+        updatedProperties.add(propertyData!);
+      }
+      
+      final updatedChart = targetChart.copyWith(properties: updatedProperties);
+      
+      // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
+      await integratedService.saveChart(updatedChart);
+      
+      // 로컬 provider들도 업데이트 (UI 즉시 반영)
+      ref.read(currentChartProvider.notifier).setChart(updatedChart);
+      ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
+      
+      // 통합 차트 provider도 무효화하여 새로고침
+      ref.invalidate(integratedChartsProvider);
+
+      // 자동저장 후 상태 변경 (새 카드가 아니라 기존 카드로 전환)
+      setState(() {
+        _hasUnsavedChanges = false;
+        editedValues.clear();
+      });
+      
+    } catch (e) {
+      print('Auto-save failed: $e');
+      // 자동저장 실패 시에는 스낵바를 표시하지 않음 (사용자 경험 방해하지 않기 위해)
+    }
+  }
+  
   // 페이지 나가기 전 확인 및 자동 저장
   Future<bool> _onWillPop() async {
     if (_hasUnsavedChanges) {
@@ -322,6 +430,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     _depositController.dispose();
     _rentController.dispose();
     _addressController.dispose();
+    // 직접입력 컨트롤러들 정리
+    for (final controller in _directInputControllers.values) {
+      controller.dispose();
+    }
+    _directInputControllers.clear();
     super.dispose();
   }
 
@@ -588,7 +701,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       return _getDefaultCategories();
     }
 
-    final chartList = ref.read(propertyChartListProvider);
+    final chartList = ref.read(integratedChartsProvider);
     final chart = chartList.firstWhere(
       (chart) => chart.id == widget.chartId,
       orElse: () => PropertyChartModel(
@@ -596,6 +709,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         title: '새 차트',
         date: DateTime.now(),
         properties: [],
+        columnOptions: {}, // 빈 컬럼 옵션
+        columnVisibility: {}, // 빈 컬럼 가시성
       ),
     );
 
@@ -609,6 +724,58 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final usedKeys = <String>{};
     for (final property in chart.properties) {
       usedKeys.addAll(property.additionalData.keys);
+    }
+    
+    // 디버그: 차트 상태 로깅
+    print('DEBUG: Chart ID: ${chart.id}, Title: ${chart.title}');
+    print('DEBUG: Properties count: ${chart.properties.length}');
+    print('DEBUG: Used keys: $usedKeys');
+    print('DEBUG: Column options: ${chart.columnOptions.keys.toList()}');
+    
+    // 모든 잘못된 데이터를 정리
+    bool needsCleaning = false;
+    final cleanedColumnOptions = Map<String, List<String>>.from(chart.columnOptions);
+    
+    // "추가항목" 키 완전 제거
+    if (cleanedColumnOptions.containsKey('추가항목')) {
+      final duplicateCount = cleanedColumnOptions['추가항목']!.length;
+      print('DEBUG: Found ${duplicateCount} duplicate "추가항목" entries - removing completely');
+      cleanedColumnOptions.remove('추가항목');
+      needsCleaning = true;
+    }
+    
+    // "추가 항목" 같은 비슷한 키들도 제거
+    final keysToRemove = <String>[];
+    for (final key in cleanedColumnOptions.keys) {
+      if (key.contains('추가') && key.contains('항목')) {
+        keysToRemove.add(key);
+        needsCleaning = true;
+      }
+    }
+    
+    for (final key in keysToRemove) {
+      print('DEBUG: Removing problematic key: $key');
+      cleanedColumnOptions.remove(key);
+    }
+    
+    // 데이터 정리가 필요한 경우 저장
+    if (needsCleaning) {
+      final cleanedChart = chart.copyWith(
+        columnOptions: cleanedColumnOptions,
+        properties: [], // 프로퍼티도 비워서 완전히 정리
+      );
+      
+      // Firebase에 저장
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final integratedService = ref.read(integratedChartServiceProvider);
+          await integratedService.saveChart(cleanedChart);
+          ref.invalidate(integratedChartsProvider);
+          print('DEBUG: Successfully cleaned chart data');
+        } catch (e) {
+          print('DEBUG: Failed to clean chart: $e');
+        }
+      });
     }
 
     // 모든 형태의 키들을 실제 컬럼명으로 변환
@@ -816,8 +983,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     if (propertyData == null) {
       return PopScope(
         onPopInvokedWithResult: (didPop, result) async {
-          if (!didPop) await _onWillPop();
+          if (!didPop && _hasUnsavedChanges) {
+            // 뒤로가기 전에 자동 저장 실행
+            await _autoSave();
+            // 저장 완료 후 뒤로가기
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          }
         },
+        canPop: !_hasUnsavedChanges, // 변경사항이 있으면 팝 방지
         child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.transparent,
@@ -878,8 +1053,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) await _onWillPop();
+        if (!didPop && _hasUnsavedChanges) {
+          // 뒤로가기 전에 자동 저장 실행
+          await _autoSave();
+          // 저장 완료 후 뒤로가기
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        }
       },
+      canPop: !_hasUnsavedChanges, // 변경사항이 있으면 팝 방지
       child: Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -1752,11 +1935,28 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final bool shouldShowTextField = key != null && (showPlaceholder[key] ?? false);
     
     if (shouldShowTextField) {
+      // 직접입력용 컨트롤러 가져오기 또는 생성
+      if (!_directInputControllers.containsKey(key)) {
+        _directInputControllers[key!] = TextEditingController(text: editedValues[key] ?? value);
+      } else {
+        // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
+        final controller = _directInputControllers[key!]!;
+        final currentText = editedValues[key] ?? value;
+        if (controller.text != currentText) {
+          final selection = controller.selection;
+          controller.text = currentText;
+          // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
+          if (selection.start <= currentText.length) {
+            controller.selection = selection;
+          }
+        }
+      }
+      
       // 직접입력 모드일 때 텍스트 필드 표시
       return Container(
         constraints: const BoxConstraints(minHeight: 40),
         child: TextField(
-          controller: TextEditingController(text: editedValues[key] ?? value),
+          controller: _directInputControllers[key!]!,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.black87,

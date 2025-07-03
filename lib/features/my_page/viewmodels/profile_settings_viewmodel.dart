@@ -36,6 +36,7 @@ class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
 
   Future<bool> updateProfile({
     required String displayName,
+    required String nickname,
     required String email,
     String? password,
   }) async {
@@ -65,6 +66,7 @@ class ProfileSettingsViewModel extends StateNotifier<ProfileSettingsState> {
       // Firestore 사용자 정보 업데이트
       await _userRepository.updateUser(currentUser.uid, {
         'displayName': displayName,
+        'nickname': nickname,
         'email': email,
         'updatedAt': DateTime.now(),
       });
