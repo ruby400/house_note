@@ -38,7 +38,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Map<String, String> editedValues = {};
   Map<String, List<String>> dropdownOptions = {};
   Map<String, bool> showPlaceholder = {};
-  Map<String, TextEditingController> _directInputControllers = {}; // 직접입력용 컨트롤러들
+  final Map<String, TextEditingController> _directInputControllers = {}; // 직접입력용 컨트롤러들
   String? activeDropdownKey; // 현재 활성된 드롭다운의 키
   final ScrollController _scrollController = ScrollController(keepScrollOffset: true);
   late TextEditingController _nameController;
@@ -985,11 +985,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       return PopScope(
         onPopInvokedWithResult: (didPop, result) async {
           if (!didPop && _hasUnsavedChanges) {
+            final navigator = Navigator.of(context);
             // 뒤로가기 전에 자동 저장 실행
             await _autoSave();
             // 저장 완료 후 뒤로가기
-            if (mounted) {
-              Navigator.of(context).pop();
+            if (mounted && navigator.canPop()) {
+              navigator.pop();
             }
           }
         },
@@ -1055,11 +1056,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && _hasUnsavedChanges) {
+          final navigator = Navigator.of(context);
           // 뒤로가기 전에 자동 저장 실행
           await _autoSave();
           // 저장 완료 후 뒤로가기
-          if (mounted) {
-            Navigator.of(context).pop();
+          if (mounted && navigator.canPop()) {
+            navigator.pop();
           }
         }
       },
