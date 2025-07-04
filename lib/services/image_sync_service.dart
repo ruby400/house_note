@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:house_note/data/models/property_chart_model.dart';
-import 'package:house_note/data/models/enhanced_image_data.dart';
 import 'package:house_note/data/models/property_data_extensions.dart';
 import 'package:house_note/services/firebase_image_service.dart';
 import 'package:house_note/core/utils/logger.dart';

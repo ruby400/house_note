@@ -231,7 +231,7 @@ class FirebaseImageService {
   /// [keepDays] 보관할 일수 (기본 30일)
   static Future<void> cleanupLocalCache({int keepDays = 30}) async {
     try {
-      AppLogger.info('🧹 로컬 이미지 캐시 정리 시작 (${keepDays}일 이상 된 파일)');
+      AppLogger.info('🧹 로컬 이미지 캐시 정리 시작 ($keepDays일 이상 된 파일)');
 
       final Directory appDir = await getApplicationDocumentsDirectory();
       final Directory cacheDir = Directory('${appDir.path}/images_cache');
@@ -256,7 +256,7 @@ class FirebaseImageService {
         }
       }
 
-      AppLogger.info('✅ 로컬 캐시 정리 완료: ${deletedCount}개 파일 삭제');
+      AppLogger.info('✅ 로컬 캐시 정리 완료: $deletedCount개 파일 삭제');
 
     } catch (e) {
       AppLogger.error('❌ 로컬 캐시 정리 실패', error: e);

@@ -79,7 +79,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     '방개수': ['원룸', '1개', '2개', '3개', '4개 이상'],
     '방구조': ['원룸', '1.5룸', '다각형방', '복도형'],
     '창문 뷰': ['뻥뷰', '막힘', '옆건물 가까움', '마주보는 건물', '벽뷰'],
-    '방향(나침반)': ['정남', '정동', '정서', '정북', '남서', '남동', '동남', '동북', '북동', '북서'],
+    '방향(나침반)': [
+      '정남향',
+      '정동향',
+      '정서향',
+      '정북향',
+      '남서향',
+      '남동향',
+      '동남향',
+      '동북향',
+      '북동향',
+      '북서향'
+    ],
     '채광': ['매우좋음', '좋음', '보통', '어두움', '매우어두움'],
     '층수': ['지하', '반지하', '1층', '2층', '3층', '4층', '5층이상'],
     '엘리베이터': ['있음', '없음'],
@@ -169,7 +180,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // 변경사항이 있는지 확인
     bool hasChanges = _checkForChanges();
 
-    if (hasChanges != _hasUnsavedChanges) {
+    if (hasChanges != _hasUnsavedChanges && mounted) {
       setState(() {
         _hasUnsavedChanges = hasChanges;
       });
@@ -178,6 +189,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
   // 스크롤 위치를 보존하면서 상태 업데이트
   void _setStateWithScrollPreservation(VoidCallback fn) {
+    if (!mounted) return;
+    
     if (!_scrollController.hasClients) {
       setState(fn);
       return;
@@ -404,10 +417,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       ref.invalidate(integratedChartsProvider);
 
       // 자동저장 후 상태 변경 (새 카드가 아니라 기존 카드로 전환)
-      setState(() {
-        _hasUnsavedChanges = false;
-        editedValues.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _hasUnsavedChanges = false;
+          editedValues.clear();
+        });
+      }
     } catch (e) {
       AppLogger.error('Auto-save failed: $e');
       // 자동저장 실패 시에는 스낵바를 표시하지 않음 (사용자 경험 방해하지 않기 위해)
@@ -1922,16 +1937,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ),
               ),
               if (isEditMode && key != null)
-                Container(
+                SizedBox(
                   width: 20,
                   height: 20,
-                  //decoration: BoxDecoration(
-                  // shape: BoxShape.circle,
-                  //  border: Border.all(
-                  //  color: Colors.grey[400]!,
-                  // width: 1.5,
-                  // ),
-                  // ),
                   child: Center(
                     child: Icon(
                       Icons.arrow_drop_down_circle_outlined,
@@ -2040,105 +2048,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       );
     } else {
       // 일반 모드일 때 텍스트 표시
-      return Text(
-        (editedValues[key] ?? value).isNotEmpty
-            ? (editedValues[key] ?? value)
-            : '-',
-        style: TextStyle(
-          fontSize: 15,
-          color: (editedValues[key] ?? value).isNotEmpty
-              ? const Color(0xFF666666)
-              : Colors.grey[500],
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    }
-  }
-
-  // 값 섹션 빌드 메서드
-  Widget _buildValueSection(String? key, String value) {
-    final bool shouldShowTextField =
-        key != null && (showPlaceholder[key] ?? false);
-
-    if (shouldShowTextField) {
-      // 직접입력용 컨트롤러 및 포커스 노드 가져오기 또는 생성
-      if (!_directInputControllers.containsKey(key)) {
-        _directInputControllers[key] =
-            TextEditingController(text: editedValues[key] ?? value);
-      }
-
-      if (!_directInputFocusNodes.containsKey(key)) {
-        _directInputFocusNodes[key] = FocusNode();
-      }
-
-      // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
-      final controller = _directInputControllers[key]!;
-      final currentText = editedValues[key] ?? value;
-      if (controller.text != currentText) {
-        final selection = controller.selection;
-        controller.text = currentText;
-        // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
-        if (selection.start <= currentText.length) {
-          controller.selection = selection;
-        }
-      }
-
-      // 직접입력 모드일 때 텍스트 필드 표시
-      return Container(
-        constraints: const BoxConstraints(minHeight: 40),
-        child: TextField(
-          controller: _directInputControllers[key]!,
-          focusNode: _directInputFocusNodes[key]!,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            hintText: '값을 입력하세요',
-            hintStyle: const TextStyle(color: Colors.grey),
-          ),
-          maxLines: null,
-          minLines: 1,
-          onChanged: (newValue) {
-            _setStateWithScrollPreservation(() {
-              editedValues[key] = newValue;
-            });
-            _onFieldChanged();
-          },
-          onSubmitted: (newValue) {
-            // 엔터를 누르면 텍스트 필드를 닫고 값을 저장
-            _setStateWithScrollPreservation(() {
-              showPlaceholder[key] = false;
-              editedValues[key] = newValue;
-            });
-            _onFieldChanged();
-          },
-          onTapOutside: (event) {
-            // 외부를 클릭하면 텍스트 필드를 닫고 값을 저장
-            _setStateWithScrollPreservation(() {
-              showPlaceholder[key] = false;
-            });
-            _onFieldChanged();
-          },
-        ),
-      );
-    } else {
-      // 일반 모드일 때 텍스트만 표시 (컨테이너는 상위에서 처리)
       return Text(
         (editedValues[key] ?? value).isNotEmpty
             ? (editedValues[key] ?? value)
@@ -2329,7 +2238,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     ),
                   ),
                 ),
-                
+
                 // 직접 입력 버튼
                 GestureDetector(
                   onTap: () => Navigator.pop(context, 'direct_input'),
@@ -2376,11 +2285,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                             color: Colors.grey[300],
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.apps, size: 14, color: Colors.grey[600]),
+                          child: Icon(Icons.apps,
+                              size: 14, color: Colors.grey[600]),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '기본 옵션',
+                          '빠른선택',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -2405,27 +2315,19 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(30),
                                     border: Border.all(
-                                      color: const Color(0xFFFF8A65),
-                                      width: 2,
+                                      color: Colors.grey[300]!,
+                                      width: 1,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF8A65)
-                                            .withValues(alpha: 0.1),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
                                   ),
                                   child: Text(
                                     option,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFFFF8A65),
+                                      color: Colors.grey[700],
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -2436,7 +2338,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   ),
                 ],
 
-                // 새 옵션 추가 버튼
+                // +항목추가 버튼
                 Center(
                   child: GestureDetector(
                     onTap: () => Navigator.pop(context, 'add_new'),
@@ -2445,31 +2347,24 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFAB91), Color(0xFFFF8A65)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: const Color(0xFFFF8A65).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        border: Border.all(
+                          color: const Color(0xFFFF8A65),
+                          width: 1,
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_circle, size: 22, color: Colors.white),
-                          SizedBox(width: 10),
+                          Icon(Icons.add, size: 22, color: Color(0xFFE85D3B)),
+                          SizedBox(width: 8),
                           Text(
-                            '새 옵션 추가',
+                            '항목추가',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFFF8A65),
                             ),
                           ),
                         ],
@@ -2912,10 +2807,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       }
 
       // 변경사항 플래그 초기화
-      setState(() {
-        _hasUnsavedChanges = false;
-        editedValues.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _hasUnsavedChanges = false;
+          editedValues.clear();
+        });
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3175,7 +3072,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         onStepEnter: () {
           // 이름 필드에 예시 텍스트 입력
           _nameController.text = '튜토리얼 예시 집';
-          if (propertyData != null) {
+          if (propertyData != null && mounted) {
             setState(() {
               editedValues['집 이름'] = '튜토리얼 예시 집';
             });
@@ -3199,7 +3096,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         autoNextDelay: const Duration(seconds: 3),
         onStepEnter: () {
           // 편집 모드 활성화 및 별점을 5점으로 설정
-          if (propertyData != null) {
+          if (propertyData != null && mounted) {
             setState(() {
               isEditMode = true;
               editedValues['rating'] = '5';
@@ -3224,9 +3121,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         autoNextDelay: const Duration(seconds: 3),
         onStepEnter: () {
           // 방향을 남향으로 설정
-          setState(() {
-            editedValues['방향(나침반)'] = '정남';
-          });
+          if (mounted) {
+            setState(() {
+              editedValues['방향(나침반)'] = '정남';
+            });
+          }
         },
         onStepExit: () {
           // 원래 값으로 복원
@@ -3257,16 +3156,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         tooltipPosition: GuideTooltipPosition.top,
         onStepEnter: () {
           // 편집 모드 해제 및 변경사항 초기화
-          setState(() {
-            isEditMode = false;
-            editedValues.clear();
-            if (propertyData != null) {
-              _nameController.text = propertyData!.name;
-              _addressController.text = propertyData!.address;
-              _depositController.text = propertyData!.deposit;
-              _rentController.text = propertyData!.rent;
-            }
-          });
+          if (mounted) {
+            setState(() {
+              isEditMode = false;
+              editedValues.clear();
+              if (propertyData != null) {
+                _nameController.text = propertyData!.name;
+                _addressController.text = propertyData!.address;
+                _depositController.text = propertyData!.deposit;
+                _rentController.text = propertyData!.rent;
+              }
+            });
+          }
         },
       ),
     ];
@@ -3570,9 +3471,11 @@ class _ImageViewerDialogState extends State<_ImageViewerDialog> {
             controller: pageController,
             itemCount: widget.images.length,
             onPageChanged: (index) {
-              setState(() {
-                currentIndex = index;
-              });
+              if (mounted) {
+                setState(() {
+                  currentIndex = index;
+                });
+              }
             },
             itemBuilder: (context, index) {
               return Center(

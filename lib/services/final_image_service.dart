@@ -255,18 +255,18 @@ class FinalImageService {
       
       // 이미지 개수에 따른 안내
       if (totalImages < 50) {
-        recommendations.add('📊 아직 여유롭습니다 (${totalImages}개 이미지)');
+        recommendations.add('📊 아직 여유롭습니다 ($totalImages개 이미지)');
       } else if (totalImages < 200) {
-        recommendations.add('📈 적당한 사용량입니다 (${totalImages}개 이미지)');
+        recommendations.add('📈 적당한 사용량입니다 ($totalImages개 이미지)');
       } else {
-        recommendations.add('📊 많은 이미지를 저장 중입니다 (${totalImages}개 이미지)');
+        recommendations.add('📊 많은 이미지를 저장 중입니다 ($totalImages개 이미지)');
       }
       
       // 프리미엄 관련 안내
       if (!isPremium) {
         recommendations.add('☁️ 프리미엄으로 업그레이드하면 클라우드 백업을 이용할 수 있습니다');
         if (totalImages > 100) {
-          recommendations.add('💡 ${totalImages}개의 소중한 이미지를 안전하게 백업해보세요!');
+          recommendations.add('💡 $totalImages개의 소중한 이미지를 안전하게 백업해보세요!');
         }
       } else {
         recommendations.add('✨ 프리미엄 사용자로 클라우드 백업이 활성화되어 있습니다');

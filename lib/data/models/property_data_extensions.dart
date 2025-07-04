@@ -4,8 +4,8 @@ import 'package:house_note/core/utils/logger.dart';
 
 /// PropertyData를 위한 확장 기능
 /// 
-/// 기존 cellImages (Map<String, List<String>>) 형식과
-/// 새로운 enhancedCellImages (Map<String, List<EnhancedImageData>>) 형식을
+/// 기존 cellImages (`Map<String, List<String>>`) 형식과
+/// 새로운 enhancedCellImages (`Map<String, List<EnhancedImageData>>`) 형식을
 /// 함께 지원하여 호환성을 유지합니다.
 extension PropertyDataImageExtensions on PropertyData {
   

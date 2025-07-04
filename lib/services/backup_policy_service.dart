@@ -270,15 +270,15 @@ class BackupPolicyService {
     final usagePercent = (storageInfo.usedGB / storageInfo.maxGB * 100).toInt();
     
     if (usagePercent >= 90) {
-      return '⚠️ 저장 공간이 거의 찼습니다 (${usagePercent}% 사용)\n'
+      return '⚠️ 저장 공간이 거의 찼습니다 ($usagePercent% 사용)\n'
              'Firebase Blaze 요금제로 업그레이드하면 무제한 저장이 가능합니다.\n'
              '월 \$0.026/GB의 합리적인 요금으로 소중한 이미지를 안전하게 보관하세요.';
     } else if (usagePercent >= 70) {
-      return '📊 저장 공간 사용량: ${usagePercent}%\n'
+      return '📊 저장 공간 사용량: $usagePercent%\n'
              '곧 무료 한도(5GB)에 도달할 예정입니다.\n'
              '요금제 업그레이드를 고려해보세요.';
     } else {
-      return '✅ 저장 공간 여유: ${usagePercent}% 사용 중\n'
+      return '✅ 저장 공간 여유: $usagePercent% 사용 중\n'
              '무료 한도 내에서 안전하게 사용 중입니다.';
     }
   }

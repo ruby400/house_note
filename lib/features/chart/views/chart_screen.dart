@@ -12,7 +12,6 @@ import 'package:house_note/data/models/property_chart_model.dart';
 import 'package:house_note/providers/auth_providers.dart';
 import 'package:house_note/providers/property_chart_providers.dart';
 import 'package:house_note/features/onboarding/views/interactive_guide_overlay.dart';
-import 'package:house_note/debug/chart_debug_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -102,103 +101,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
 
 
-  void _showDebugDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.bug_report, color: Color(0xFFFF8A65)),
-            SizedBox(width: 8),
-            Text('차트 디버그'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('90차트 및 모든 차트의 현재 상태를 확인합니다.'),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.search, color: Color(0xFFFF8A65)),
-              title: const Text('90차트 상태 분석'),
-              subtitle: const Text('90차트의 PropertyData와 ColumnOptions 확인'),
-              onTap: () {
-                Navigator.pop(context);
-                ChartDebugUtils.analyzeChart90Status(ref);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('90차트 분석 완료. 로그를 확인하세요.'),
-                    backgroundColor: Color(0xFFFF8A65),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services, color: Colors.green),
-              title: const Text('90차트 데이터 정리'),
-              subtitle: const Text('잘못된 데이터 제거 및 정리'),
-              onTap: () {
-                Navigator.pop(context);
-                ChartDebugUtils.cleanupChart90Data(ref);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('90차트 데이터 정리 완료.'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.list, color: Colors.blue),
-              title: const Text('모든 차트 목록'),
-              subtitle: const Text('현재 로드된 모든 차트 확인'),
-              onTap: () {
-                Navigator.pop(context);
-                final chartList = ref.read(propertyChartListProvider);
-                AppLogger.info('=== 현재 차트 목록 ===');
-                for (int i = 0; i < chartList.length; i++) {
-                  final chart = chartList[i];
-                  AppLogger.info('차트 $i: ID="${chart.id}", Title="${chart.title}", Properties=${chart.properties.length}개');
-                }
-                AppLogger.info('총 ${chartList.length}개 차트');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('총 ${chartList.length}개 차트 확인 완료. 로그를 확인하세요.'),
-                    backgroundColor: Colors.blue,
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.add, color: Colors.purple),
-              title: const Text('90차트 테스트 생성'),
-              subtitle: const Text('테스트용 90차트를 생성합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                _createTest90Chart();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('90차트 테스트 생성 완료.'),
-                    backgroundColor: Colors.purple,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('닫기'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showInteractiveGuide() {
     final steps = [
@@ -812,15 +714,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          // 디버그 버튼 (90차트 상태 확인용)
-          IconButton(
-            icon: const Icon(
-              Icons.bug_report,
-              color: Colors.white,
-              size: 24,
-            ),
-            onPressed: () => _showDebugDialog(),
-          ),
           IconButton(
             icon: const Icon(
               Icons.help_outline,
@@ -1717,79 +1610,6 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     ref.read(propertyChartListProvider.notifier).addChart(newChart);
   }
 
-  void _createTest90Chart() {
-    AppLogger.info('90차트 테스트 생성 시작');
-    
-    final test90Chart = PropertyChartModel(
-      id: '90',
-      title: '90차트 테스트',
-      date: DateTime.now(),
-      properties: [
-        PropertyData(
-          id: '90_property_1',
-          name: '90차트 테스트 부동산 1',
-          address: '서울시 테스트구 90번지',
-          deposit: '1000',
-          rent: '50',
-          direction: '남향',
-          landlordEnvironment: '좋음',
-          rating: 4,
-          additionalData: {
-            'col_7': '테스트 데이터 1',
-            'col_8': '테스트 데이터 2',
-            'col_9': '테스트 데이터 3',
-            '주거 형태': '오피스텔',
-            '평수': '20평대',
-          },
-        ),
-        PropertyData(
-          id: '90_property_2',
-          name: '90차트 테스트 부동산 2',
-          address: '서울시 테스트구 91번지',
-          deposit: '1500',
-          rent: '70',
-          direction: '동향',
-          landlordEnvironment: '보통',
-          rating: 3,
-          additionalData: {
-            'col_7': '테스트 데이터 A',
-            'col_8': '테스트 데이터 B',
-            'col_9': '테스트 데이터 C',
-            '주거 형태': '빌라',
-            '평수': '15평대',
-          },
-        ),
-      ],
-      columnOptions: {
-        '재계/방향': ['동향', '서향', '남향', '북향'],
-        '집주인 환경': ['좋음', '보통', '나쁨'],
-        '집 이름': ['90차트 테스트 부동산 1', '90차트 테스트 부동산 2'],
-        '보증금': ['1000', '1500', '2000'],
-        '월세': ['50', '70', '90'],
-        '주거 형태': ['오피스텔', '빌라', '아파트'],
-        '평수': ['15평대', '20평대', '25평대'],
-        '테스트 컬럼1': ['옵션1', '옵션2', '옵션3'],
-        '테스트 컬럼2': ['A', 'B', 'C'],
-        '테스트 컬럼3': ['데이터1', '데이터2', '데이터3'],
-      },
-      columnVisibility: {
-        '집 이름': true,
-        '보증금': true,
-        '월세': true,
-        '재계/방향': true,
-        '집주인 환경': false,
-        '주소': false,
-        '주거 형태': true,
-        '평수': true,
-        '테스트 컬럼1': false,
-        '테스트 컬럼2': false,
-        '테스트 컬럼3': false,
-      },
-    );
-    
-    ref.read(propertyChartListProvider.notifier).addChart(test90Chart);
-    AppLogger.info('90차트 테스트 생성 완료: ID=${test90Chart.id}, Properties=${test90Chart.properties.length}개');
-  }
 
   Widget _buildChartList(List<PropertyChartModel> chartList) {
     // 빈 리스트 처리

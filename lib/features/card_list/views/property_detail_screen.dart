@@ -94,7 +94,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         'key': 'direction',
         'label': '방향(나침반)',
         'type': 'select',
-        'options': ['정남', '정동', '정서', '정북', '남서', '남동', '동남', '동북', '북동', '북서']
+        'options': ['정남향', '정동향', '정서향', '정북향', '남서향', '남동향', '동남향', '동북향', '북동향', '북서향']
       },
       {'key': 'lighting', 'label': '채광', 'type': 'text'},
       {'key': 'floor', 'label': '층수', 'type': 'text'},
