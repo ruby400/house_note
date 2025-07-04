@@ -302,7 +302,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       for (final chart in selectedCharts) {
         pdf.addPage(
           pw.Page(
-            pageFormat: PdfPageFormat.a4,
+            pageFormat: PdfPageFormat.a3.landscape,
             build: (pw.Context context) {
               return pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -543,11 +543,13 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           children: headers
               .map(
                 (header) => pw.Container(
-                  padding: const pw.EdgeInsets.all(8),
+                  padding: const pw.EdgeInsets.all(4),
                   child: pw.Text(
                     header,
                     style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold, font: fontBold),
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold, 
+                        font: fontBold),
                     textAlign: pw.TextAlign.center,
                   ),
                 ),
@@ -569,10 +571,10 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
   pw.Widget _buildPdfCell(String text, pw.Font font) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(8),
+      padding: const pw.EdgeInsets.all(4),
       child: pw.Text(
         text.isEmpty ? '-' : text,
-        style: pw.TextStyle(fontSize: 10, font: font),
+        style: pw.TextStyle(fontSize: 8, font: font),
         textAlign: pw.TextAlign.center,
       ),
     );
@@ -582,7 +584,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     // MediaQuery와 올바른 위젯 트리를 가진 임시 위젯 생성
     final widget = MediaQuery(
       data: const MediaQueryData(
-        size: Size(800, 600),
+        size: Size(1400, 800),
         devicePixelRatio: 2.0,
         textScaler: TextScaler.linear(1.0),
       ),
@@ -591,7 +593,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         home: Material(
           color: Colors.white,
           child: Container(
-            width: 800,
+            width: 1400,
             color: Colors.white,
             padding: const EdgeInsets.all(24),
             child: Column(
