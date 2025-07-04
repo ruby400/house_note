@@ -77,7 +77,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'house-note-e2e9e.firebasestorage.app',
     androidClientId: '567850827737-2eifg1fh3268aoslqgralk2onrgs8bvg.apps.googleusercontent.com',
     iosClientId: '567850827737-q6f95t09hf5fjqhvv3lhf2l6r6d01ksv.apps.googleusercontent.com',
-    iosBundleId: 'com.example.houseNote',
+    iosBundleId: 'com.ruby444.houseNote',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

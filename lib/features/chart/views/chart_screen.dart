@@ -362,11 +362,24 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       } else {
         // iOS에서는 Documents 디렉토리에 저장 (PDF는 파일로 저장)
         saveDir = await getApplicationDocumentsDirectory();
+        
+        // 디렉토리가 존재하는지 확인하고 없으면 생성
+        if (!await saveDir.exists()) {
+          await saveDir.create(recursive: true);
+        }
+        
         locationMessage = 'Files 앱 > House Note';
       }
 
       final fileName = 'house_charts_${now.millisecondsSinceEpoch}.pdf';
       final file = File('${saveDir.path}/$fileName');
+      
+      // 파일의 부모 디렉토리가 존재하는지 한 번 더 확인
+      final parentDir = file.parent;
+      if (!await parentDir.exists()) {
+        await parentDir.create(recursive: true);
+      }
+      
       await file.writeAsBytes(await pdf.save());
 
       if (mounted) {
@@ -534,23 +547,48 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
     final visibleColumns = _getVisibleColumnsForExport(chart);
     final headers = visibleColumns.map((col) => col['name'] as String).toList();
 
-    return pw.Table(
-      border: pw.TableBorder.all(),
-      children: [
+    // 각 컬럼의 최대 글자 수를 계산해서 폭 결정
+    final columnWidths = <int, pw.TableColumnWidth>{};
+    for (int i = 0; i < headers.length; i++) {
+      // 헤더 글자 수
+      int maxLength = headers[i].length;
+      
+      // 각 행의 데이터에서 최대 글자 수 찾기
+      for (final property in chart.properties) {
+        final cellValue = _getPropertyValue(property, visibleColumns[i]['key'] as String);
+        if (cellValue.length > maxLength) {
+          maxLength = cellValue.length;
+        }
+      }
+      
+      // 글자 수에 비례해서 폭 설정 (훨씬 더 좁게)
+      final calculatedWidth = (maxLength * 4.0).clamp(20.0, 60.0);
+      columnWidths[i] = pw.FixedColumnWidth(calculatedWidth);
+    }
+
+    return pw.Container(
+      width: double.infinity,
+      child: pw.Table(
+        border: pw.TableBorder.all(width: 0.5),
+        defaultColumnWidth: const pw.IntrinsicColumnWidth(flex: 0.01),
+        columnWidths: columnWidths,
+        children: [
         // 헤더 행
         pw.TableRow(
           decoration: const pw.BoxDecoration(color: PdfColors.grey300),
           children: headers
               .map(
-                (header) => pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
+                (header) => pw.Padding(
+                  padding: const pw.EdgeInsets.all(0.5),
                   child: pw.Text(
                     header,
                     style: pw.TextStyle(
-                        fontSize: 9,
+                        fontSize: 8,
                         fontWeight: pw.FontWeight.bold, 
                         font: fontBold),
                     textAlign: pw.TextAlign.center,
+                    maxLines: 1,
+                    overflow: pw.TextOverflow.clip,
                   ),
                 ),
               )
@@ -566,16 +604,19 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           ),
         ),
       ],
+    ),
     );
   }
 
   pw.Widget _buildPdfCell(String text, pw.Font font) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(4),
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(0.5),
       child: pw.Text(
         text.isEmpty ? '-' : text,
         style: pw.TextStyle(fontSize: 8, font: font),
         textAlign: pw.TextAlign.center,
+        maxLines: 1,
+        overflow: pw.TextOverflow.clip,
       ),
     );
   }
@@ -705,49 +746,53 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   List<Map<String, String>> _getVisibleColumnsForExport(PropertyChartModel chart) {
-    // 기본 컬럼들
-    final defaultColumns = [
-      {'name': '집 이름', 'key': 'name'},
-      {'name': '보증금', 'key': 'deposit'},
-      {'name': '월세', 'key': 'rent'},
-      {'name': '주소', 'key': 'address'},
-      {'name': '재계/방향', 'key': 'direction'},
-      {'name': '집주인 환경', 'key': 'landlordEnvironment'},
-      {'name': '별점', 'key': 'rating'},
-    ];
-
-    // columnVisibility가 없거나 비어있으면 기본 컬럼만 반환
-    if (chart.columnVisibility == null || chart.columnVisibility!.isEmpty) {
-      return defaultColumns;
+    // 실제 데이터를 기반으로 컬럼 수를 계산
+    int maxColumns = 7; // 기본 컬럼 수
+    
+    if (chart.properties.isNotEmpty) {
+      // 첫 번째 프로퍼티에서 최대 컬럼 수 계산
+      final firstProperty = chart.properties.first;
+      final additionalCount = firstProperty.additionalData.keys
+          .where((key) => key.startsWith('col_'))
+          .length;
+      maxColumns = 7 + additionalCount;
     }
+
+    // chart.columnOrder가 있으면 사용, 없으면 기본 컬럼들과 추가 컬럼들 사용
+    final columnOrder = chart.columnOrder ?? _generateColumnOrder(maxColumns);
 
     final visibleColumns = <Map<String, String>>[];
     
-    // columnVisibility에 따라 표시할 컬럼들 결정
-    chart.columnVisibility!.forEach((columnName, isVisible) {
-      if (isVisible) {
-        // 기본 컬럼인지 확인
-        final defaultColumn = defaultColumns.firstWhere(
-          (col) => col['name'] == columnName,
-          orElse: () => {},
-        );
-        
-        if (defaultColumn.isNotEmpty) {
-          visibleColumns.add(defaultColumn);
-        } else {
-          // 추가 컬럼인 경우 키 변환
-          final key = _getColumnDataKey(columnName);
-          visibleColumns.add({'name': columnName, 'key': key});
-        }
+    for (int i = 0; i < columnOrder.length && i < maxColumns; i++) {
+      final columnName = columnOrder[i];
+      
+      // '제목'과 '순' 컬럼은 제외
+      if (columnName == '제목' || columnName == '순') {
+        continue;
       }
-    });
-
-    // 최소한 기본 컬럼들은 포함되도록
-    if (visibleColumns.isEmpty) {
-      return defaultColumns;
+      
+      visibleColumns.add({
+        'name': columnName,
+        'key': i.toString(), // 인덱스를 키로 사용
+      });
     }
 
     return visibleColumns;
+  }
+
+  List<String> _generateColumnOrder(int maxColumns) {
+    final defaultColumns = [
+      '집 이름', '보증금', '월세', '주소', '재계/방향', '집주인 환경', '별점'
+    ];
+    
+    final result = List<String>.from(defaultColumns);
+    
+    // 추가 컬럼들은 "컬럼 X" 형태로 생성
+    for (int i = 7; i < maxColumns; i++) {
+      result.add('컬럼 ${i + 1}');
+    }
+    
+    return result;
   }
 
   String _getColumnDataKey(String columnName) {
@@ -818,7 +863,18 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   String _getPropertyValue(PropertyData property, String key) {
-    // 기본 속성들
+    // key가 인덱스 문자열인 경우 (예: "0", "1", "2"...)
+    final columnIndex = int.tryParse(key);
+    if (columnIndex != null) {
+      // PropertyData의 getRowData 메소드를 사용하여 모든 데이터 가져오기
+      final rowData = property.getRowData();
+      if (columnIndex < rowData.length) {
+        return rowData[columnIndex];
+      }
+      return '';
+    }
+    
+    // 기본 속성들 (이전 방식과 호환성 유지)
     switch (key) {
       case 'name':
         return property.name;
