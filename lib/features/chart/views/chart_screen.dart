@@ -360,9 +360,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         }
         locationMessage = '다운로드 폴더';
       } else {
-        // iOS에서는 Documents 디렉토리 사용 (다운로드 폴더 접근 제한)
+        // iOS에서는 Documents 디렉토리에 저장 (PDF는 파일로 저장)
         saveDir = await getApplicationDocumentsDirectory();
-        locationMessage = '문서 폴더';
+        locationMessage = 'Files 앱 > House Note';
       }
 
       final fileName = 'house_charts_${now.millisecondsSinceEpoch}.pdf';
@@ -372,12 +372,32 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF가 $locationMessage에 저장되었습니다: $fileName'),
+            content: Text('PDF가 $locationMessage에 저장되었습니다\n파일명: $fileName'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
             action: SnackBarAction(
-              label: '공유',
-              onPressed: () async => await Printing.sharePdf(
-                  bytes: await pdf.save(), filename: '부동산차트.pdf'),
+              label: Platform.isIOS ? 'Files 열기' : '폴더 열기',
+              textColor: Colors.white,
+              onPressed: () async {
+                if (Platform.isIOS) {
+                  // iOS Files 앱은 직접 열 수 없으므로 공유 기능 사용
+                  await Printing.sharePdf(
+                    bytes: await pdf.save(), 
+                    filename: fileName,
+                  );
+                } else {
+                  // Android에서는 파일 관리자로 이동 시도
+                  try {
+                    await openAppSettings(); // 대체로 설정 화면 열기
+                  } catch (e) {
+                    // 실패 시 공유 기능으로 대체
+                    await Printing.sharePdf(
+                      bytes: await pdf.save(), 
+                      filename: fileName,
+                    );
+                  }
+                }
+              },
             ),
           ),
         );
@@ -434,11 +454,27 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         // 차트를 이미지로 변환
         final imageBytes = await _createChartImage(chart);
 
-        // 갤러리에 저장
+        // 갤러리에 저장 (iOS 시뮬레이터 대응)
         final fileName =
             'chart_${chart.title}_${now.millisecondsSinceEpoch}_$i.png';
-        await Gal.putImageBytes(imageBytes, name: fileName);
-        savedFiles.add(fileName);
+        
+        // PNG는 갤러리에만 저장
+        try {
+          await Gal.putImageBytes(imageBytes, name: fileName);
+          savedFiles.add(fileName);
+        } catch (e) {
+          // 갤러리 저장 실패 시 사용자에게 알림
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('갤러리 저장 실패: $fileName\n사진 접근 권한을 확인해주세요.'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+          rethrow; // 에러를 다시 던져서 전체 프로세스 중단
+        }
       }
 
       if (mounted) {
@@ -446,7 +482,29 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           SnackBar(
             content: Text('${savedFiles.length}개의 이미지가 갤러리에 저장되었습니다.'),
             backgroundColor: Colors.green,
-            duration: const Duration(milliseconds: 800),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: '갤러리 열기',
+              textColor: Colors.white,
+              onPressed: () async {
+                try {
+                  await Gal.open(); // iOS와 Android 모두 지원
+                } catch (e) {
+                  // 갤러리 열기 실패 시 안내 메시지
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(Platform.isIOS 
+                          ? '사진 앱에서 최근 항목을 확인해주세요.'
+                          : '갤러리 앱에서 확인해주세요.'),
+                        backgroundColor: Colors.orange,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
           ),
         );
         setState(() {
@@ -472,7 +530,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
 
   pw.Widget _buildPdfTable(
       PropertyChartModel chart, pw.Font font, pw.Font fontBold) {
-    final headers = ['집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
+    // 동적으로 표시되는 컬럼들을 가져오기
+    final visibleColumns = _getVisibleColumnsForExport(chart);
+    final headers = visibleColumns.map((col) => col['name'] as String).toList();
 
     return pw.Table(
       border: pw.TableBorder.all(),
@@ -497,14 +557,10 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         // 데이터 행들
         ...chart.properties.map(
           (property) => pw.TableRow(
-            children: [
-              _buildPdfCell(property.name, font),
-              _buildPdfCell(property.deposit, font),
-              _buildPdfCell(property.rent, font),
-              _buildPdfCell(property.direction, font),
-              _buildPdfCell(property.landlordEnvironment, font),
-              _buildPdfCell(property.rating.toString(), font),
-            ],
+            children: visibleColumns
+                .map((col) => _buildPdfCell(
+                    _getPropertyValue(property, col['key'] as String), font))
+                .toList(),
           ),
         ),
       ],
@@ -582,7 +638,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
   }
 
   Widget _buildImageTable(PropertyChartModel chart) {
-    final headers = ['집 이름', '보증금', '월세', '재계/방향', '집주인 환경', '별점'];
+    // 동적으로 표시되는 컬럼들을 가져오기
+    final visibleColumns = _getVisibleColumnsForExport(chart);
+    final headers = visibleColumns.map((col) => col['name'] as String).toList();
 
     return Table(
       border: TableBorder.all(
@@ -620,14 +678,10 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
             decoration: BoxDecoration(
               color: index % 2 == 0 ? Colors.white : Colors.grey[50],
             ),
-            children: [
-              _buildImageCell(property.name),
-              _buildImageCell(property.deposit),
-              _buildImageCell(property.rent),
-              _buildImageCell(property.direction),
-              _buildImageCell(property.landlordEnvironment),
-              _buildImageCell(property.rating.toString()),
-            ],
+            children: visibleColumns
+                .map((col) => _buildImageCell(
+                    _getPropertyValue(property, col['key'] as String)))
+                .toList(),
           );
         }),
       ],
@@ -646,6 +700,142 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  List<Map<String, String>> _getVisibleColumnsForExport(PropertyChartModel chart) {
+    // 기본 컬럼들
+    final defaultColumns = [
+      {'name': '집 이름', 'key': 'name'},
+      {'name': '보증금', 'key': 'deposit'},
+      {'name': '월세', 'key': 'rent'},
+      {'name': '주소', 'key': 'address'},
+      {'name': '재계/방향', 'key': 'direction'},
+      {'name': '집주인 환경', 'key': 'landlordEnvironment'},
+      {'name': '별점', 'key': 'rating'},
+    ];
+
+    // columnVisibility가 없거나 비어있으면 기본 컬럼만 반환
+    if (chart.columnVisibility == null || chart.columnVisibility!.isEmpty) {
+      return defaultColumns;
+    }
+
+    final visibleColumns = <Map<String, String>>[];
+    
+    // columnVisibility에 따라 표시할 컬럼들 결정
+    chart.columnVisibility!.forEach((columnName, isVisible) {
+      if (isVisible) {
+        // 기본 컬럼인지 확인
+        final defaultColumn = defaultColumns.firstWhere(
+          (col) => col['name'] == columnName,
+          orElse: () => {},
+        );
+        
+        if (defaultColumn.isNotEmpty) {
+          visibleColumns.add(defaultColumn);
+        } else {
+          // 추가 컬럼인 경우 키 변환
+          final key = _getColumnDataKey(columnName);
+          visibleColumns.add({'name': columnName, 'key': key});
+        }
+      }
+    });
+
+    // 최소한 기본 컬럼들은 포함되도록
+    if (visibleColumns.isEmpty) {
+      return defaultColumns;
+    }
+
+    return visibleColumns;
+  }
+
+  String _getColumnDataKey(String columnName) {
+    // 기본 컬럼 매핑
+    const baseColumnKeys = {
+      '집 이름': 'name',
+      '보증금': 'deposit',
+      '월세': 'rent',
+      '주소': 'address',
+      '재계/방향': 'direction',
+      '집주인 환경': 'landlordEnvironment',
+      '별점': 'rating',
+    };
+
+    if (baseColumnKeys.containsKey(columnName)) {
+      return baseColumnKeys[columnName]!;
+    }
+
+    // 표준 컬럼 매핑 (filtering_chart_screen.dart와 동일)
+    const standardColumnKeys = {
+      '주거 형태': 'housing_type',
+      '건축물용도': 'building_use',
+      '임차권등기명령 이력': 'lease_registration',
+      '근저당권': 'mortgage',
+      '가압류, 압류, 경매 이력': 'seizure_history',
+      '계약 조건': 'contract_type',
+      '등기부등본(말소사항 포함으로)': 'registry_check',
+      '입주 가능일': 'move_in_date',
+      '전입신고': 'resident_registration',
+      '관리비': 'management_fee',
+      '주택보증보험': 'housing_insurance',
+      '특약': 'special_terms',
+      '특이사항': 'special_notes',
+      '평수': 'area_size',
+      '방개수': 'room_count',
+      '방구조': 'room_structure',
+      '창문 뷰': 'window_view',
+      '방향(나침반)': 'compass_direction',
+      '채광': 'lighting',
+      '층수': 'floor_level',
+      '엘리베이터': 'elevator',
+      '에어컨 방식': 'air_conditioning',
+      '난방방식': 'heating',
+      '베란다': 'veranda',
+      '발코니': 'balcony',
+      '주차장': 'parking',
+      '화장실': 'bathroom',
+      '가스': 'gas_type',
+      '지하철 거리': 'subway_distance',
+      '버스 정류장': 'bus_distance',
+      '편의점 거리': 'convenience_distance',
+      '위치': 'location_type',
+      'cctv 여부': 'cctv',
+      '창문 상태': 'window_condition',
+      '문 상태': 'door_condition',
+      '집주인 성격': 'landlord_personality',
+      '집주인 거주': 'landlord_residence',
+      '집근처 술집': 'nearby_bars',
+    };
+
+    if (standardColumnKeys.containsKey(columnName)) {
+      return standardColumnKeys[columnName]!;
+    }
+
+    // 커스텀 컬럼인 경우
+    final safeKey = columnName.replaceAll(RegExp(r'[^\w가-힣]'), '_');
+    return 'custom_$safeKey';
+  }
+
+  String _getPropertyValue(PropertyData property, String key) {
+    // 기본 속성들
+    switch (key) {
+      case 'name':
+        return property.name;
+      case 'deposit':
+        return property.deposit;
+      case 'rent':
+        return property.rent;
+      case 'address':
+        return property.address;
+      case 'direction':
+        return property.direction;
+      case 'landlordEnvironment':
+        return property.landlordEnvironment;
+      case 'rating':
+        return property.rating.toString();
+      default:
+        // additionalData에서 값 가져오기
+        return property.additionalData[key] ?? '';
+    }
   }
 
   void _navigateToChart(String chartId) {
@@ -1823,8 +2013,20 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
           return true;
         }
 
-        await _showPermissionDialog(Permission.photos,
-            isPermanentlyDenied: requestResult.isPermanentlyDenied);
+        // iOS에서 권한 거부 시 바로 설정으로 이동
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('사진 접근 권한이 필요합니다. 설정창으로 이동합니다.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        
+        // 잠시 대기 후 설정 앱으로 이동
+        await Future.delayed(const Duration(milliseconds: 1000));
+        await openAppSettings();
         return false;
       }
     } catch (e) {
@@ -1898,7 +2100,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen> {
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
-                        '설정 > 개인정보 보호 및 보안 > 권한에서 설정할 수 있습니다.',
+                        'iOS: 설정 > House Note > 사진 권한 허용',
                         style: TextStyle(
                           color: Colors.blue,
                           fontSize: 12,
