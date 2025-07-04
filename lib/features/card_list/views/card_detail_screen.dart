@@ -2194,6 +2194,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // 각 요소의 실제 높이 계산
     double contentHeight = 0;
 
+    // 드랍다운 제목 (새로 추가된 부분)
+    contentHeight += 50; // 제목 높이 + padding
+
     // 직접 입력 버튼 (고정)
     contentHeight += 50; // padding + height
 
@@ -2210,10 +2213,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     contentHeight += options.length * 40; // 각 옵션당 40px
 
     // 새 옵션 추가 버튼
-    contentHeight += 60; // 버튼 높이 + 여백
+    contentHeight += 70; // 버튼 높이 + 여백 (조금 더 크게)
 
     // 여백 추가 (충분한 공간 확보)
-    contentHeight += 30;
+    contentHeight += 40; // 더 여유있게
 
     // 화면 높이에 따라 최대 높이 제한
     final screenHeight = MediaQuery.of(context).size.height;
@@ -2311,6 +2314,22 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // 드랍다운 제목
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                  child: Center(
+                    child: Text(
+                      '$label 선택',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ),
+                
                 // 직접 입력 버튼
                 GestureDetector(
                   onTap: () => Navigator.pop(context, 'direct_input'),
@@ -2348,16 +2367,24 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.apps, size: 16, color: Color(0xFFFF8A65)),
-                        SizedBox(width: 8),
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.apps, size: 14, color: Colors.grey[600]),
+                        ),
+                        const SizedBox(width: 8),
                         Text(
                           '기본 옵션',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF8A65),
+                            color: Colors.grey[600],
                           ),
                         ),
                       ],
@@ -2410,42 +2437,43 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ],
 
                 // 새 옵션 추가 버튼
-                GestureDetector(
-                  onTap: () => Navigator.pop(context, 'add_new'),
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFFAB91), Color(0xFFFF8A65)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(50),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                Center(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context, 'add_new'),
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFAB91), Color(0xFFFF8A65)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add_circle, size: 22, color: Colors.white),
-                        SizedBox(width: 10),
-                        Text(
-                          '새 옵션 추가',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color.fromARGB(255, 255, 255, 255),
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF8A65).withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_circle, size: 22, color: Colors.white),
+                          SizedBox(width: 10),
+                          Text(
+                            '새 옵션 추가',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color.fromARGB(255, 255, 255, 255),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
