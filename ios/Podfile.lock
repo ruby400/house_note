@@ -1218,12 +1218,19 @@ PODS:
   - Firebase/Firestore (11.13.0):
     - Firebase/CoreOnly
     - FirebaseFirestore (~> 11.13.0)
+  - Firebase/Storage (11.13.0):
+    - Firebase/CoreOnly
+    - FirebaseStorage (~> 11.13.0)
   - firebase_auth (5.6.0):
     - Firebase/Auth (= 11.13.0)
     - firebase_core
     - Flutter
   - firebase_core (3.14.0):
     - Firebase/CoreOnly (= 11.13.0)
+    - Flutter
+  - firebase_storage (12.4.7):
+    - Firebase/Storage (= 11.13.0)
+    - firebase_core
     - Flutter
   - FirebaseAppCheckInterop (11.15.0)
   - FirebaseAuth (11.13.0):
@@ -1265,6 +1272,13 @@ PODS:
     - leveldb-library (~> 1.22)
     - nanopb (~> 3.30910.0)
   - FirebaseSharedSwift (11.15.0)
+  - FirebaseStorage (11.13.0):
+    - FirebaseAppCheckInterop (~> 11.0)
+    - FirebaseAuthInterop (~> 11.0)
+    - FirebaseCore (~> 11.13.0)
+    - FirebaseCoreExtension (~> 11.13.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GTMSessionFetcher/Core (< 5.0, >= 3.4)
   - Flutter (1.0.0)
   - flutter_naver_login (0.0.1):
     - Flutter
@@ -1452,6 +1466,7 @@ DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
   - Flutter (from `Flutter`)
   - flutter_naver_login (from `.symlinks/plugins/flutter_naver_login/ios`)
   - gal (from `.symlinks/plugins/gal/darwin`)
@@ -1482,6 +1497,7 @@ SPEC REPOS:
     - FirebaseFirestore
     - FirebaseFirestoreInternal
     - FirebaseSharedSwift
+    - FirebaseStorage
     - Google-Maps-iOS-Utils
     - GoogleMaps
     - GoogleSignIn
@@ -1505,6 +1521,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_auth/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_storage:
+    :path: ".symlinks/plugins/firebase_storage/ios"
   Flutter:
     :path: Flutter
   flutter_naver_login:
@@ -1542,6 +1560,7 @@ SPEC CHECKSUMS:
   Firebase: 3435bc66b4d494c2f22c79fd3aae4c1db6662327
   firebase_auth: ebc1f561cc3077efebad5005974c9ed58008973b
   firebase_core: 700bac7ed92bb754fd70fbf01d72b36ecdd6d450
+  firebase_storage: 17e3f7e7ee83680abb6aad6a28fe1404bf6b5a53
   FirebaseAppCheckInterop: 06fe5a3799278ae4667e6c432edd86b1030fa3df
   FirebaseAuth: 175cb5503dfdb52191b8ff81cdd52c1d9dee9ac9
   FirebaseAuthInterop: 7087d7a4ee4bc4de019b2d0c240974ed5d89e2fd
@@ -1551,6 +1570,7 @@ SPEC CHECKSUMS:
   FirebaseFirestore: 3ae3aeaad5b5ef5ec0dba86882a7156f509ff480
   FirebaseFirestoreInternal: 6c8aa676751593471f66d857db5b8674ea66116b
   FirebaseSharedSwift: e17c654ef1f1a616b0b33054e663ad1035c8fd40
+  FirebaseStorage: 2a3e5402a565e06e121308dadfe0626976fd6b45
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_naver_login: 965ca284c1a64f0185dfaf9dfd1b8f69f34e6c11
   gal: baecd024ebfd13c441269ca7404792a7152fde89

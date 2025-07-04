@@ -137,7 +137,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         '주차장': ['기계식', '지하주차장', '지상주차장'],
         '난방방식': ['보일러', '심야전기', '중앙난방'],
         '집주인 거주': ['있음', '없음'],
-        '2종 잠금장치': ['있음', '없음', '설치해준다함'],
+        '2중 잠금장치': ['있음', '없음', '설치해준다함'],
       },
       columnVisibility: {
         // 예시 차트는 더 많은 컬럼을 보여주지만 여전히 기본만 체크
@@ -155,7 +155,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
         '주차장': false,
         '난방방식': false,
         '집주인 거주': false,
-        '2종 잠금장치': false,
+        '2중 잠금장치': false,
       },
     );
     state = [defaultChart];
@@ -261,7 +261,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
       '곰팡이': false,
       '벌레': false,
       '소음': false,
-      '2종 잠금장치': false,
+      '2중 잠금장치': false,
       '외관': false,
       '인테리어': false,
       '별점': false,
@@ -430,7 +430,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           '주차장': ['기계식', '지하주차장', '지상주차장'],
           '난방방식': ['보일러', '심야전기', '중앙난방'],
           '집주인 거주': ['있음', '없음'],
-          '2종 잠금장치': ['있음', '없음', '설치해준다함'],
+          '2중 잠금장치': ['있음', '없음', '설치해준다함'],
         },
         columnVisibility: {
           // 예시 차트는 더 많은 컬럼을 보여주지만 여전히 기본만 체크
@@ -448,7 +448,7 @@ class PropertyChartListNotifier extends StateNotifier<List<PropertyChartModel>> 
           '주차장': false,
           '난방방식': false,
           '집주인 거주': false,
-          '2종 잠금장치': false,
+          '2중 잠금장치': false,
         },
       ),
     ];

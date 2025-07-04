@@ -210,7 +210,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
       },
       {
         'key': 'double_lock',
-        'label': '2종 잠금장치',
+        'label': '2중 잠금장치',
         'type': 'select',
         'options': ['있음', '없음', '설치해준다함']
       },

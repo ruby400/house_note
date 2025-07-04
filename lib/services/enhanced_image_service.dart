@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:house_note/core/utils/logger.dart';
 import 'package:house_note/services/firebase_image_service.dart';
+import 'package:house_note/services/backup_policy_service.dart';
 
 /// 강화된 이미지 서비스 - 로컬 + Firebase Storage 이중 저장
 /// 
@@ -114,12 +115,15 @@ class EnhancedImageService {
         return {};
       }
 
+      // 백업 품질 설정 가져오기
+      final backupQuality = await BackupPolicyService.getBackupQuality();
+
       AppLogger.d('✅ Permissions OK, calling image picker...');
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        imageQuality: backupQuality, // 동적 품질 설정
+        maxWidth: 1280,  // 무료 요금제 고려하여 낮춤
+        maxHeight: 720,  // 무료 요금제 고려하여 낮춤
       );
 
       if (image == null) {
@@ -136,9 +140,28 @@ class EnhancedImageService {
         return {};
       }
 
-      // Firebase Storage에 백업 (백그라운드)
-      AppLogger.info('☁️ Firebase Storage 백업 시작...');
-      final Map<String, String?> syncResult = await FirebaseImageService.syncImage(localPath);
+      // 백업 정책 확인
+      final backupDecision = await BackupPolicyService.shouldBackupImage();
+      
+      Map<String, String?> syncResult = {'localPath': localPath, 'firebaseUrl': null};
+      
+      if (backupDecision.shouldBackup) {
+        // Firebase Storage에 백업 실행
+        AppLogger.info('☁️ Firebase Storage 백업 시작...');
+        syncResult = await FirebaseImageService.syncImage(localPath);
+        
+        // 사용량 업데이트 (추정)
+        if (syncResult['firebaseUrl'] != null) {
+          final file = File(localPath);
+          if (await file.exists()) {
+            final sizeBytes = await file.length();
+            final sizeGB = sizeBytes / (1024 * 1024 * 1024);
+            await BackupPolicyService.addUploadUsage(sizeGB);
+          }
+        }
+      } else {
+        AppLogger.info('⏭️ 백업 건너뜀: ${backupDecision.reason}');
+      }
       
       final result = {
         kLocalPathKey: localPath,

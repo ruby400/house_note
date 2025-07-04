@@ -38,17 +38,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Map<String, String> editedValues = {};
   Map<String, List<String>> dropdownOptions = {};
   Map<String, bool> showPlaceholder = {};
-  final Map<String, TextEditingController> _directInputControllers = {}; // 직접입력용 컨트롤러들
+  final Map<String, TextEditingController> _directInputControllers =
+      {}; // 직접입력용 컨트롤러들
+  final Map<String, FocusNode> _directInputFocusNodes = {}; // 직접입력용 포커스 노드들
   String? activeDropdownKey; // 현재 활성된 드롭다운의 키
-  final ScrollController _scrollController = ScrollController(keepScrollOffset: true);
+  final ScrollController _scrollController =
+      ScrollController(keepScrollOffset: true);
   late TextEditingController _nameController;
   late TextEditingController _depositController;
   late TextEditingController _rentController;
   late TextEditingController _addressController;
-  
+
   // 변경사항 추적 및 자동 저장
   bool _hasUnsavedChanges = false;
-  
+
   // 튜토리얼 관련
   final GlobalKey _editButtonKey = GlobalKey();
   final GlobalKey _saveButtonKey = GlobalKey();
@@ -126,13 +129,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   void initState() {
     super.initState();
     _initializePropertyData();
-    
+
     // TextEditingController 초기화
     _nameController = TextEditingController();
     _depositController = TextEditingController();
     _rentController = TextEditingController();
     _addressController = TextEditingController();
-    
+
     // 변경사항 추적을 위한 리스너 추가
     _nameController.addListener(_onFieldChanged);
     _depositController.addListener(_onFieldChanged);
@@ -152,7 +155,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         }
       });
     }
-    
+
     // 튜토리얼 체크
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndShowTutorial();
@@ -162,33 +165,33 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   // 변경사항 추적 및 자동 저장 관련 메서드들
   void _onFieldChanged() {
     if (!mounted) return;
-    
+
     // 변경사항이 있는지 확인
     bool hasChanges = _checkForChanges();
-    
+
     if (hasChanges != _hasUnsavedChanges) {
       setState(() {
         _hasUnsavedChanges = hasChanges;
       });
     }
   }
-  
+
   // 스크롤 위치를 보존하면서 상태 업데이트
   void _setStateWithScrollPreservation(VoidCallback fn) {
     if (!_scrollController.hasClients) {
       setState(fn);
       return;
     }
-    
+
     final double scrollOffset = _scrollController.offset;
-    
+
     // 상태 업데이트 전에 스크롤 위치 저장
     setState(fn);
-    
+
     // 여러 단계로 스크롤 위치 복원 시도
     _restoreScrollPosition(scrollOffset);
   }
-  
+
   void _restoreScrollPosition(double scrollOffset) {
     // 1단계: 즉시 복원
     if (_scrollController.hasClients && mounted) {
@@ -198,7 +201,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         // 스크롤 복원 실패 시 다음 단계로
       }
     }
-    
+
     // 2단계: 다음 프레임에서 복원
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients && mounted) {
@@ -209,7 +212,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         }
       }
     });
-    
+
     // 3단계: 약간의 지연 후 복원
     Future.delayed(const Duration(milliseconds: 50), () {
       if (_scrollController.hasClients && mounted) {
@@ -222,17 +225,17 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       }
     });
   }
-  
+
   bool _checkForChanges() {
     if (propertyData == null) return false;
-    
+
     // 텍스트 컨트롤러 값 확인
     if (_nameController.text != propertyData!.name ||
         _depositController.text != propertyData!.deposit ||
         _rentController.text != propertyData!.rent) {
       return true;
     }
-    
+
     // editedValues 확인
     for (String key in editedValues.keys) {
       String originalValue = _getOriginalValue(key);
@@ -240,13 +243,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         return true;
       }
     }
-    
+
     return false;
   }
-  
+
   String _getOriginalValue(String key) {
     if (propertyData == null) return '';
-    
+
     switch (key) {
       case 'name':
         return propertyData!.name;
@@ -266,25 +269,25 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         return propertyData!.additionalData[key] ?? '';
     }
   }
-  
+
   // 자동 저장 실행
   Future<void> _autoSave() async {
     if (!_hasUnsavedChanges || propertyData == null) return;
-    
+
     try {
       // 편집된 값들을 적용
       editedValues['name'] = _nameController.text;
       editedValues['address'] = _addressController.text;
       editedValues['deposit'] = _depositController.text;
       editedValues['rent'] = _rentController.text;
-      
+
       // 새 카드인지 기존 카드인지 구분해서 저장
       if (widget.isNewProperty) {
         await _autoSaveNewProperty();
       } else {
         await _saveChanges();
       }
-      
+
       // 자동 저장 알림 (조용히)
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -307,7 +310,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       }
     }
   }
-  
+
   // 새 카드 자동 저장 (페이지 이동 없음)
   Future<void> _autoSaveNewProperty() async {
     if (propertyData == null || widget.chartId == null) return;
@@ -335,7 +338,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             propertyData = propertyData!.copyWith(address: editedValues[key]!);
             break;
           case 'direction':
-            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            propertyData =
+                propertyData!.copyWith(direction: editedValues[key]!);
             break;
           case 'landlord_environment':
             propertyData =
@@ -361,7 +365,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
       // Firebase 통합 차트 서비스를 사용하여 저장
       final integratedService = ref.read(integratedChartServiceProvider);
-      
+
       // Get target chart from integrated charts
       final integratedCharts = ref.read(integratedChartsProvider);
       final targetChart = integratedCharts.firstWhere(
@@ -376,8 +380,9 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
       // 중복 방지: 이미 존재하는 카드인지 확인
       final updatedProperties = List<PropertyData>.from(targetChart.properties);
-      final existingIndex = updatedProperties.indexWhere((p) => p.id == propertyData!.id);
-      
+      final existingIndex =
+          updatedProperties.indexWhere((p) => p.id == propertyData!.id);
+
       if (existingIndex != -1) {
         // 기존 카드 업데이트
         updatedProperties[existingIndex] = propertyData!;
@@ -385,16 +390,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         // 새 카드 추가
         updatedProperties.add(propertyData!);
       }
-      
+
       final updatedChart = targetChart.copyWith(properties: updatedProperties);
-      
+
       // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
       await integratedService.saveChart(updatedChart);
-      
+
       // 로컬 provider들도 업데이트 (UI 즉시 반영)
       ref.read(currentChartProvider.notifier).setChart(updatedChart);
       ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
-      
+
       // 통합 차트 provider도 무효화하여 새로고침
       ref.invalidate(integratedChartsProvider);
 
@@ -403,13 +408,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         _hasUnsavedChanges = false;
         editedValues.clear();
       });
-      
     } catch (e) {
       AppLogger.error('Auto-save failed: $e');
       // 자동저장 실패 시에는 스낵바를 표시하지 않음 (사용자 경험 방해하지 않기 위해)
     }
   }
-  
+
   // 페이지 나가기 전 확인 및 자동 저장
   Future<bool> _onWillPop() async {
     if (_hasUnsavedChanges) {
@@ -436,6 +440,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       controller.dispose();
     }
     _directInputControllers.clear();
+
+    // 직접입력 포커스 노드들 정리
+    for (final focusNode in _directInputFocusNodes.values) {
+      focusNode.dispose();
+    }
+    _directInputFocusNodes.clear();
     super.dispose();
   }
 
@@ -474,7 +484,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
     return dropdownWidth;
   }
-
 
   void _initializePropertyData() {
     if (widget.propertyData != null) {
@@ -726,25 +735,27 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     for (final property in chart.properties) {
       usedKeys.addAll(property.additionalData.keys);
     }
-    
+
     // 디버그: 차트 상태 로깅
     AppLogger.d('Chart ID: ${chart.id}, Title: ${chart.title}');
     AppLogger.d('Properties count: ${chart.properties.length}');
     AppLogger.d('Used keys: $usedKeys');
     AppLogger.d('Column options: ${chart.columnOptions.keys.toList()}');
-    
+
     // 모든 잘못된 데이터를 정리
     bool needsCleaning = false;
-    final cleanedColumnOptions = Map<String, List<String>>.from(chart.columnOptions);
-    
+    final cleanedColumnOptions =
+        Map<String, List<String>>.from(chart.columnOptions);
+
     // "추가항목" 키 완전 제거
     if (cleanedColumnOptions.containsKey('추가항목')) {
       final duplicateCount = cleanedColumnOptions['추가항목']!.length;
-      AppLogger.d('Found $duplicateCount duplicate "추가항목" entries - removing completely');
+      AppLogger.d(
+          'Found $duplicateCount duplicate "추가항목" entries - removing completely');
       cleanedColumnOptions.remove('추가항목');
       needsCleaning = true;
     }
-    
+
     // "추가 항목" 같은 비슷한 키들도 제거
     final keysToRemove = <String>[];
     for (final key in cleanedColumnOptions.keys) {
@@ -753,19 +764,19 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         needsCleaning = true;
       }
     }
-    
+
     for (final key in keysToRemove) {
       AppLogger.d('Removing problematic key: $key');
       cleanedColumnOptions.remove(key);
     }
-    
+
     // 데이터 정리가 필요한 경우 저장
     if (needsCleaning) {
       final cleanedChart = chart.copyWith(
         columnOptions: cleanedColumnOptions,
         properties: [], // 프로퍼티도 비워서 완전히 정리
       );
-      
+
       // Firebase에 저장
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
@@ -919,7 +930,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // 실시간으로 차트 데이터 감시하여 동기화
     final chartList = ref.watch(integratedChartsProvider);
     PropertyData? latestPropertyData;
-    
+
     // 모든 차트에서 현재 프로퍼티 ID와 일치하는 최신 데이터 찾기
     for (final chart in chartList) {
       final foundProperty = chart.properties.firstWhere(
@@ -943,12 +954,15 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         break;
       }
     }
-    
+
     // 최신 데이터가 있고 현재 데이터와 다르면 업데이트
-    if (latestPropertyData != null && propertyData != null && latestPropertyData != propertyData) {
+    if (latestPropertyData != null &&
+        propertyData != null &&
+        latestPropertyData != propertyData) {
       final safeLatestData = latestPropertyData; // null-safe 지역 변수
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !isEditMode) { // 편집 중이 아닐 때만 업데이트
+        if (mounted && !isEditMode) {
+          // 편집 중이 아닐 때만 업데이트
           setState(() {
             propertyData = safeLatestData;
             // 컨트롤러도 업데이트
@@ -962,16 +976,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           setState(() {
             propertyData = safeLatestData;
           });
-          
-          // 편집 중이더라도 외부에서 변경된 데이터는 컨트롤러에 반영 
+
+          // 편집 중이더라도 외부에서 변경된 데이터는 컨트롤러에 반영
           // (사용자가 현재 입력하고 있지 않은 필드만)
-          if (_addressController.text.isEmpty && safeLatestData.address.isNotEmpty) {
+          if (_addressController.text.isEmpty &&
+              safeLatestData.address.isNotEmpty) {
             _addressController.text = safeLatestData.address;
           }
           if (_nameController.text.isEmpty && safeLatestData.name.isNotEmpty) {
             _nameController.text = safeLatestData.name;
           }
-          if (_depositController.text.isEmpty && safeLatestData.deposit.isNotEmpty) {
+          if (_depositController.text.isEmpty &&
+              safeLatestData.deposit.isNotEmpty) {
             _depositController.text = safeLatestData.deposit;
           }
           if (_rentController.text.isEmpty && safeLatestData.rent.isNotEmpty) {
@@ -980,7 +996,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         }
       });
     }
-    
+
     if (propertyData == null) {
       return PopScope(
         onPopInvokedWithResult: (didPop, result) async {
@@ -996,59 +1012,61 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         },
         canPop: !_hasUnsavedChanges, // 변경사항이 있으면 팝 방지
         child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          centerTitle: true,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '집 상세정보',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              if (_hasUnsavedChanges && isEditMode) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    '수정됨',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            centerTitle: true,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '집 상세정보',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                if (_hasUnsavedChanges && isEditMode) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '수정됨',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ],
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () async {
-              await _onWillPop();
-              if (context.mounted) Navigator.of(context).pop();
-            },
-          ),
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
-                  Color(0xFFFF8A65), // 메인 주황색 (중간)
-                  Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: [0.0, 0.5, 1.0],
+              ],
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () async {
+                await _onWillPop();
+                if (context.mounted) Navigator.of(context).pop();
+              },
+            ),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFFFAB91), // 밝은 주황색 (왼쪽 위)
+                    Color(0xFFFF8A65), // 메인 주황색 (중간)
+                    Color(0xFFFF7043), // 진한 주황색 (오른쪽 아래)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.0, 0.5, 1.0],
+                ),
               ),
             ),
           ),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
+          body: const Center(child: CircularProgressIndicator()),
         ),
       );
     }
@@ -1067,385 +1085,395 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       },
       canPop: !_hasUnsavedChanges, // 변경사항이 있으면 팝 방지
       child: Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        title: Text(
-          (editedValues['name']?.isNotEmpty == true
-                      ? editedValues['name']!
-                      : propertyData!.name)
-                  .isNotEmpty
-              ? (editedValues['name']?.isNotEmpty == true
-                  ? editedValues['name']!
-                  : propertyData!.name)
-              : '집 이름',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () async {
-            await _onWillPop();
-            if (context.mounted) Navigator.of(context).pop();
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: _showTutorial,
-          ),
-        ],
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFFF9575), // 좋은 중간조 주황색 (왼쪽 위)
-                Color(0xFFFF8A65), // 메인 주황색 (중간)
-                Color(0xFFFF8064), // 따뜻한 주황색 (오른쪽 아래)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              stops: [0.0, 0.5, 1.0],
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          centerTitle: true,
+          title: Text(
+            (editedValues['name']?.isNotEmpty == true
+                        ? editedValues['name']!
+                        : propertyData!.name)
+                    .isNotEmpty
+                ? (editedValues['name']?.isNotEmpty == true
+                    ? editedValues['name']!
+                    : propertyData!.name)
+                : '집 이름',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        key: const PageStorageKey('card_detail_scroll'),
-        controller: _scrollController,
-        physics: const ClampingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 이미지 갤러리
-            Container(
-              key: _imageGalleryKey,
-              height: 140,
-              padding: const EdgeInsets.all(16),
-              child: _buildImageGallery(),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () async {
+              await _onWillPop();
+              if (context.mounted) Navigator.of(context).pop();
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline, color: Colors.white),
+              onPressed: _showTutorial,
             ),
-
-            // 기본 정보 요약
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+          ],
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFF9575), // 좋은 중간조 주황색 (왼쪽 위)
+                  Color(0xFFFF8A65), // 메인 주황색 (중간)
+                  Color(0xFFFF8064), // 따뜻한 주황색 (오른쪽 아래)
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [0.0, 0.5, 1.0],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 이름 편집
-                  isEditMode
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                key: _nameFieldKey,
-                                controller: _nameController,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: _nameController.text.isEmpty || _nameController.text == '집 이름'
-                                      ? Colors.grey
-                                      : Colors.black87,
-                                ),
-                                decoration: const InputDecoration(
-                                  border: UnderlineInputBorder(),
-                                  hintText: '집 이름',
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                onChanged: (value) {
-                                  _setStateWithScrollPreservation(() {
-                                    editedValues['name'] = value;
-                                  });
-                                  _onFieldChanged();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.edit,
-                              color: Color(0xFFFF8A65),
-                              size: 20,
-                            ),
-                          ],
-                        )
-                      : Text(
-                          propertyData!.name.isNotEmpty
-                              ? propertyData!.name
-                              : '집 이름',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                  const SizedBox(height: 12),
-                  // 별점 편집
-                  Row(
-                    key: _ratingKey,
-                    children: [
-                      isEditMode
-                          ? Row(
-                              children: List.generate(5, (index) {
-                                final currentRating = int.tryParse(
-                                        editedValues['rating'] ?? '') ??
-                                    propertyData!.rating;
-                                return GestureDetector(
-                                  onTap: () {
-                                    _setStateWithScrollPreservation(() {
-                                      editedValues['rating'] =
-                                          (index + 1).toString();
-                                    });
-                                  },
-                                  child: Icon(
-                                    index < currentRating
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 24,
-                                  ),
-                                );
-                              }),
-                            )
-                          : Row(
-                              children: List.generate(
-                                  5,
-                                  (index) => Icon(
-                                        index < propertyData!.rating
-                                            ? Icons.star
-                                            : Icons.star_border,
-                                        color: Colors.amber,
-                                        size: 20,
-                                      )),
-                            ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${int.tryParse(editedValues['rating'] ?? '') ?? propertyData!.rating}/5',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFFFF8A65),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // 주소 입력 필드
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, 
-                          color: Color(0xFFFF8A65), size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: isEditMode
-                            ? TextField(
-                                controller: _addressController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Color(0xFFFF8A65), width: 1),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Color(0xFFFF8A65), width: 1),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Color(0xFFFF8A65), width: 2),
-                                  ),
-                                  hintText: '주소를 입력하세요',
-                                  hintStyle: const TextStyle(color: Colors.grey),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                ),
-                                style: const TextStyle(fontSize: 14),
-                                onChanged: (value) {
-                                  editedValues['address'] = value;
-                                  _onFieldChanged();
-                                },
-                              )
-                            : Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF8F5),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: const Color(0xFFFFCCBC), width: 1),
-                                ),
-                                child: Text(
-                                  propertyData!.address.isEmpty
-                                      ? '주소 정보 없음'
-                                      : propertyData!.address,
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          key: const PageStorageKey('card_detail_scroll'),
+          controller: _scrollController,
+          physics: const ClampingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 이미지 갤러리
+              Container(
+                key: _imageGalleryKey,
+                height: 140,
+                padding: const EdgeInsets.all(16),
+                child: _buildImageGallery(),
+              ),
+
+              // 기본 정보 요약
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 이름 편집
+                    isEditMode
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  key: _nameFieldKey,
+                                  controller: _nameController,
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    color: propertyData!.address.isEmpty
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: _nameController.text.isEmpty ||
+                                            _nameController.text == '집 이름'
                                         ? Colors.grey
                                         : Colors.black87,
                                   ),
+                                  decoration: const InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    hintText: '집 이름',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    _setStateWithScrollPreservation(() {
+                                      editedValues['name'] = value;
+                                    });
+                                    _onFieldChanged();
+                                  },
                                 ),
                               ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildSummaryItem(
-                          '보증금', propertyData!.deposit, 'deposit'),
-                      const SizedBox(width: 16),
-                      _buildSummaryItem('월세', propertyData!.rent, 'rent'),
-                    ],
-                  ),
-                ],
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.edit,
+                                color: Color(0xFFFF8A65),
+                                size: 20,
+                              ),
+                            ],
+                          )
+                        : Text(
+                            propertyData!.name.isNotEmpty
+                                ? propertyData!.name
+                                : '집 이름',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                    const SizedBox(height: 12),
+                    // 별점 편집
+                    Row(
+                      key: _ratingKey,
+                      children: [
+                        isEditMode
+                            ? Row(
+                                children: List.generate(5, (index) {
+                                  final currentRating = int.tryParse(
+                                          editedValues['rating'] ?? '') ??
+                                      propertyData!.rating;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      _setStateWithScrollPreservation(() {
+                                        editedValues['rating'] =
+                                            (index + 1).toString();
+                                      });
+                                    },
+                                    child: Icon(
+                                      index < currentRating
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: Colors.amber,
+                                      size: 24,
+                                    ),
+                                  );
+                                }),
+                              )
+                            : Row(
+                                children: List.generate(
+                                    5,
+                                    (index) => Icon(
+                                          index < propertyData!.rating
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: Colors.amber,
+                                          size: 20,
+                                        )),
+                              ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${int.tryParse(editedValues['rating'] ?? '') ?? propertyData!.rating}/5',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFFFF8A65),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 주소 입력 필드
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on,
+                            color: Color(0xFFFF8A65), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: isEditMode
+                              ? TextField(
+                                  controller: _addressController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFFFF8A65), width: 1),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFFFF8A65), width: 1),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFFFF8A65), width: 2),
+                                    ),
+                                    hintText: '주소를 입력하세요',
+                                    hintStyle:
+                                        const TextStyle(color: Colors.grey),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                  ),
+                                  style: const TextStyle(fontSize: 14),
+                                  onChanged: (value) {
+                                    editedValues['address'] = value;
+                                    _onFieldChanged();
+                                  },
+                                )
+                              : Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF8F5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: const Color(0xFFFFCCBC),
+                                        width: 1),
+                                  ),
+                                  child: Text(
+                                    propertyData!.address.isEmpty
+                                        ? '주소 정보 없음'
+                                        : propertyData!.address,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: propertyData!.address.isEmpty
+                                          ? Colors.grey
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildSummaryItem(
+                            '보증금', propertyData!.deposit, 'deposit'),
+                        const SizedBox(width: 16),
+                        _buildSummaryItem('월세', propertyData!.rent, 'rent'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // 카테고리별 정보 섹션들
-            ..._getCategories().entries.map((entry) {
-              // 첫 번째 섹션에만 key 추가
-              if (entry.key == _getCategories().entries.first.key) {
-                return Container(
-                  key: _propertyFormKey,
-                  child: _buildInfoSection(
-                    entry.key,
-                    entry.value,
-                    _getCategoryColor(entry.key),
-                  ),
+              // 카테고리별 정보 섹션들
+              ..._getCategories().entries.map((entry) {
+                // 첫 번째 섹션에만 key 추가
+                if (entry.key == _getCategories().entries.first.key) {
+                  return Container(
+                    key: _propertyFormKey,
+                    child: _buildInfoSection(
+                      entry.key,
+                      entry.value,
+                      _getCategoryColor(entry.key),
+                    ),
+                  );
+                }
+                return _buildInfoSection(
+                  entry.key,
+                  entry.value,
+                  _getCategoryColor(entry.key),
                 );
-              }
-              return _buildInfoSection(
-                entry.key,
-                entry.value,
-                _getCategoryColor(entry.key),
-              );
-            }),
+              }),
 
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: widget.isNewProperty
-          ? Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFF8A65)),
-                        foregroundColor: const Color(0xFFFF8A65),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('취소'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saveNewProperty,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8A65),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('저장'),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : null,
-      floatingActionButton: !widget.isNewProperty
-          ? Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: _hasUnsavedChanges && isEditMode 
-                    ? [Colors.orange, Colors.deepOrange]
-                    : [const Color(0xFFFF8A65), const Color(0xFFFF7043)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_hasUnsavedChanges && isEditMode 
-                      ? Colors.orange 
-                      : const Color(0xFFFF8A65)).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                key: isEditMode ? _saveButtonKey : _editButtonKey,
-                onPressed: () {
-                  if (isEditMode) {
-                    _saveChanges();
-                  } else {
-                    // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
-                    _nameController.text = editedValues['name'] ?? propertyData!.name;
-                    _addressController.text = editedValues['address'] ?? propertyData!.address;
-                    _depositController.text = editedValues['deposit'] ?? propertyData!.deposit;
-                    _rentController.text = editedValues['rent'] ?? propertyData!.rent;
-                  }
-                  if (mounted) {
-                    _setStateWithScrollPreservation(() {
-                      isEditMode = !isEditMode;
-                    });
-                  }
-                },
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                highlightElevation: 0,
-                shape: const CircleBorder(),
-                child: Icon(
-                  isEditMode ? (_hasUnsavedChanges ? Icons.save : Icons.check) : Icons.edit,
+        bottomNavigationBar: widget.isNewProperty
+            ? Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  size: 28,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
                 ),
-              ),
-            )
-          : null,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFFF8A65)),
+                          foregroundColor: const Color(0xFFFF8A65),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('취소'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _saveNewProperty,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8A65),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('저장'),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : null,
+        floatingActionButton: !widget.isNewProperty
+            ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: _hasUnsavedChanges && isEditMode
+                        ? [Colors.orange, Colors.deepOrange]
+                        : [const Color(0xFFFF8A65), const Color(0xFFFF7043)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_hasUnsavedChanges && isEditMode
+                              ? Colors.orange
+                              : const Color(0xFFFF8A65))
+                          .withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  key: isEditMode ? _saveButtonKey : _editButtonKey,
+                  onPressed: () {
+                    if (isEditMode) {
+                      _saveChanges();
+                    } else {
+                      // 편집 모드로 전환할 때 컨트롤러에 현재 값 설정
+                      _nameController.text =
+                          editedValues['name'] ?? propertyData!.name;
+                      _addressController.text =
+                          editedValues['address'] ?? propertyData!.address;
+                      _depositController.text =
+                          editedValues['deposit'] ?? propertyData!.deposit;
+                      _rentController.text =
+                          editedValues['rent'] ?? propertyData!.rent;
+                    }
+                    if (mounted) {
+                      _setStateWithScrollPreservation(() {
+                        isEditMode = !isEditMode;
+                      });
+                    }
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  highlightElevation: 0,
+                  shape: const CircleBorder(),
+                  child: Icon(
+                    isEditMode
+                        ? (_hasUnsavedChanges ? Icons.save : Icons.check)
+                        : Icons.edit,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -1457,7 +1485,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final List<String> finalImages = snapshot.data ?? [];
         return _buildImageGalleryContent(finalImages);
       },
@@ -1467,11 +1495,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   Future<List<String>> _getValidImagePaths() async {
     // 갤러리 이미지와 차트 셀 이미지들을 모두 수집
     final List<String> allImages = <String>[];
-    
+
     // 기존 갤러리 이미지 추가
     final galleryImages = propertyData?.cellImages['gallery'] ?? [];
     allImages.addAll(galleryImages);
-    
+
     // 차트 셀에서 등록된 모든 이미지들 추가
     if (propertyData != null) {
       // additionalData에서 _images로 끝나는 키들을 찾아서 이미지 경로들을 추출
@@ -1480,14 +1508,15 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           try {
             // JSON 문자열을 List<String>으로 파싱
             final List<dynamic> imageList = jsonDecode(entry.value);
-            final List<String> imagePaths = imageList.map((e) => e.toString()).toList();
+            final List<String> imagePaths =
+                imageList.map((e) => e.toString()).toList();
             allImages.addAll(imagePaths);
           } catch (e) {
             // JSON 파싱 실패 시 무시
           }
         }
       }
-      
+
       // cellImages의 다른 키들도 추가 (gallery 제외)
       for (final entry in propertyData!.cellImages.entries) {
         if (entry.key != 'gallery') {
@@ -1495,7 +1524,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         }
       }
     }
-    
+
     // 중복 제거
     final Set<String> uniqueImages = Set<String>.from(allImages);
     List<String> finalImages = uniqueImages.toList();
@@ -1738,22 +1767,23 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 16,
                 color: Color(0xFFFF8A65),
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 4),
             isEditMode && key != null
                 ? TextField(
-                    controller: key == 'deposit' 
-                        ? _depositController 
-                        : key == 'rent' 
-                            ? _rentController 
-                            : TextEditingController(text: editedValues[key] ?? value),
+                    controller: key == 'deposit'
+                        ? _depositController
+                        : key == 'rent'
+                            ? _rentController
+                            : TextEditingController(
+                                text: editedValues[key] ?? value),
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
+                      fontSize: 15,
+                      color: Color(0xFF666666),
                       fontWeight: FontWeight.bold,
                     ),
                     decoration: const InputDecoration(
@@ -1770,9 +1800,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   )
                 : Text(
                     value.isNotEmpty ? value : '-',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: value.isNotEmpty
+                          ? const Color(0xFF666666)
+                          : Colors.grey[500],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1867,48 +1899,53 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, [String? key]) {
-    Widget child = Column(
-      crossAxisAlignment: CrossAxisAlignment.start, 
-      children: [
-        // 레이블 섹션
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFFF8A65),
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (isEditMode && key != null)
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(
-                    color: const Color(0xFFBDBDBD),
-                    width: 1,
+    Widget child = Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFFF8A65),
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Icon(
-                  Icons.arrow_drop_down,
-                  color: Color(0xFF757575),
-                  size: 12,
-                ),
               ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // 값 섹션
-        _buildValueSection(key, value),
-      ]
+              if (isEditMode && key != null)
+                Container(
+                  width: 20,
+                  height: 20,
+                  //decoration: BoxDecoration(
+                  // shape: BoxShape.circle,
+                  //  border: Border.all(
+                  //  color: Colors.grey[400]!,
+                  // width: 1.5,
+                  // ),
+                  // ),
+                  child: Center(
+                    child: Icon(
+                      Icons.arrow_drop_down_circle_outlined,
+                      size: 23,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _buildValueSectionInContainer(key, value),
+        ],
+      ),
     );
 
     // 편집 모드이고 키가 있을 때만 Builder와 GestureDetector로 감싸기
@@ -1933,33 +1970,125 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     return child;
   }
 
-  // 값 섹션 빌드 메서드
-  Widget _buildValueSection(String? key, String value) {
-    final bool shouldShowTextField = key != null && (showPlaceholder[key] ?? false);
-    
+  // 컨테이너 내부의 값 섹션 빌드 메서드
+  Widget _buildValueSectionInContainer(String? key, String value) {
+    final bool shouldShowTextField =
+        key != null && (showPlaceholder[key] ?? false);
+
     if (shouldShowTextField) {
-      // 직접입력용 컨트롤러 가져오기 또는 생성
+      // 직접입력용 컨트롤러 및 포커스 노드 가져오기 또는 생성
       if (!_directInputControllers.containsKey(key)) {
-        _directInputControllers[key] = TextEditingController(text: editedValues[key] ?? value);
-      } else {
-        // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
-        final controller = _directInputControllers[key]!;
-        final currentText = editedValues[key] ?? value;
-        if (controller.text != currentText) {
-          final selection = controller.selection;
-          controller.text = currentText;
-          // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
-          if (selection.start <= currentText.length) {
-            controller.selection = selection;
-          }
+        _directInputControllers[key] =
+            TextEditingController(text: editedValues[key] ?? value);
+      }
+
+      if (!_directInputFocusNodes.containsKey(key)) {
+        _directInputFocusNodes[key] = FocusNode();
+      }
+
+      // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
+      final controller = _directInputControllers[key]!;
+      final currentText = editedValues[key] ?? value;
+      if (controller.text != currentText) {
+        final selection = controller.selection;
+        controller.text = currentText;
+        // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
+        if (selection.start <= currentText.length) {
+          controller.selection = selection;
         }
       }
-      
+
+      // 직접입력 모드일 때 텍스트 필드 표시
+      return TextField(
+        controller: _directInputControllers[key]!,
+        focusNode: _directInputFocusNodes[key]!,
+        style: const TextStyle(
+          fontSize: 15,
+          color: Color(0xFF666666),
+          fontWeight: FontWeight.bold,
+        ),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+          hintText: '값을 입력하세요',
+          hintStyle: TextStyle(color: Colors.grey),
+        ),
+        maxLines: null,
+        minLines: 1,
+        onChanged: (newValue) {
+          _setStateWithScrollPreservation(() {
+            editedValues[key] = newValue;
+          });
+          _onFieldChanged();
+        },
+        onSubmitted: (newValue) {
+          // 엔터를 누르면 텍스트 필드를 닫고 값을 저장
+          _setStateWithScrollPreservation(() {
+            showPlaceholder[key] = false;
+            editedValues[key] = newValue;
+          });
+          _onFieldChanged();
+        },
+        onTapOutside: (event) {
+          // 외부를 클릭하면 텍스트 필드를 닫고 값을 저장
+          _setStateWithScrollPreservation(() {
+            showPlaceholder[key] = false;
+          });
+          _onFieldChanged();
+        },
+      );
+    } else {
+      // 일반 모드일 때 텍스트 표시
+      return Text(
+        (editedValues[key] ?? value).isNotEmpty
+            ? (editedValues[key] ?? value)
+            : '-',
+        style: TextStyle(
+          fontSize: 15,
+          color: (editedValues[key] ?? value).isNotEmpty
+              ? const Color(0xFF666666)
+              : Colors.grey[500],
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+  }
+
+  // 값 섹션 빌드 메서드
+  Widget _buildValueSection(String? key, String value) {
+    final bool shouldShowTextField =
+        key != null && (showPlaceholder[key] ?? false);
+
+    if (shouldShowTextField) {
+      // 직접입력용 컨트롤러 및 포커스 노드 가져오기 또는 생성
+      if (!_directInputControllers.containsKey(key)) {
+        _directInputControllers[key] =
+            TextEditingController(text: editedValues[key] ?? value);
+      }
+
+      if (!_directInputFocusNodes.containsKey(key)) {
+        _directInputFocusNodes[key] = FocusNode();
+      }
+
+      // 기존 컨트롤러의 텍스트를 현재 값으로 업데이트 (커서 위치 유지)
+      final controller = _directInputControllers[key]!;
+      final currentText = editedValues[key] ?? value;
+      if (controller.text != currentText) {
+        final selection = controller.selection;
+        controller.text = currentText;
+        // 커서 위치가 텍스트 길이를 초과하지 않도록 조정
+        if (selection.start <= currentText.length) {
+          controller.selection = selection;
+        }
+      }
+
       // 직접입력 모드일 때 텍스트 필드 표시
       return Container(
         constraints: const BoxConstraints(minHeight: 40),
         child: TextField(
           controller: _directInputControllers[key]!,
+          focusNode: _directInputFocusNodes[key]!,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.black87,
@@ -1978,13 +2107,13 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xFFFF8A65), width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             hintText: '값을 입력하세요',
             hintStyle: const TextStyle(color: Colors.grey),
           ),
           maxLines: null,
           minLines: 1,
-          autofocus: true,
           onChanged: (newValue) {
             _setStateWithScrollPreservation(() {
               editedValues[key] = newValue;
@@ -2009,18 +2138,19 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         ),
       );
     } else {
-      // 일반 모드일 때 텍스트만 표시
-      return (editedValues[key] ?? value).isNotEmpty
-          ? Text(
-              editedValues[key] ?? value,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: null,
-            )
-          : const SizedBox(height: 24);
+      // 일반 모드일 때 텍스트만 표시 (컨테이너는 상위에서 처리)
+      return Text(
+        (editedValues[key] ?? value).isNotEmpty
+            ? (editedValues[key] ?? value)
+            : '-',
+        style: TextStyle(
+          fontSize: 15,
+          color: (editedValues[key] ?? value).isNotEmpty
+              ? const Color(0xFF666666)
+              : Colors.grey[500],
+          fontWeight: FontWeight.bold,
+        ),
+      );
     }
   }
 
@@ -2035,7 +2165,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     // 드롭다운 높이를 내용에 맞게 정확히 계산
     List<String> options = dropdownOptions[key] ?? [];
     final List<String> defaultOptionsForLabel = defaultOptions[label] ?? [];
-    
+
     // 차트에서 추가된 옵션들도 포함
     if (widget.chartId != null) {
       final chartList = ref.read(integratedChartsProvider);
@@ -2048,7 +2178,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           properties: [],
         ),
       );
-      
+
       String columnName = _getChartColumnNameFromCardKey(key) ?? '새 컬럼';
       if (chart.columnOptions.containsKey(columnName)) {
         final chartOptions = chart.columnOptions[columnName]!;
@@ -2100,7 +2230,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
     final buttonBottom = position.dy + buttonSize.height;
     final buttonTop = position.dy;
-    final spaceBelow = screenHeight - buttonBottom - safeAreaBottom - 20; // 여유 공간 확보
+    final spaceBelow =
+        screenHeight - buttonBottom - safeAreaBottom - 20; // 여유 공간 확보
     final spaceAbove = buttonTop - safeAreaTop - 20; // 여유 공간 확보
 
     late RelativeRect relativePosition;
@@ -2138,7 +2269,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       position: relativePosition,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFFFCC80), width: 2), // 연한 주황색 테두리
+        side:
+            const BorderSide(color: Color(0xFFFFCC80), width: 2), // 연한 주황색 테두리
       ),
       color: Colors.white,
       elevation: 8,
@@ -2218,8 +2350,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                     child: const Row(
                       children: [
-                        Icon(Icons.apps,
-                            size: 16, color: Color(0xFFFF8A65)),
+                        Icon(Icons.apps, size: 16, color: Color(0xFFFF8A65)),
                         SizedBox(width: 8),
                         Text(
                           '기본 옵션',
@@ -2304,9 +2435,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_circle,
-                            size: 22,
-                            color: Colors.white),
+                        Icon(Icons.add_circle, size: 22, color: Colors.white),
                         SizedBox(width: 10),
                         Text(
                           '새 옵션 추가',
@@ -2332,11 +2461,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 
   // 드롭다운 선택 처리 메서드
-  Future<void> _handleDropdownSelection(String value, String key, String label) async {
+  Future<void> _handleDropdownSelection(
+      String value, String key, String label) async {
     if (value == 'direct_input') {
       if (mounted) {
         _setStateWithScrollPreservation(() {
           showPlaceholder[key] = true;
+        });
+        // 다음 프레임에서 포커스 요청
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_directInputFocusNodes[key] != null) {
+            _directInputFocusNodes[key]!.requestFocus();
+          }
         });
       }
     } else if (value == 'add_new') {
@@ -2355,7 +2491,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             dropdownOptions[key]!.add(value);
           }
         });
-        
+
         // 변경사항 추적
         _onFieldChanged();
 
@@ -2429,7 +2565,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         return const Color(0xFFF8F9FA); // 중성 그레이
     }
   }
-
 
   void _showAddOptionDialog(String key) {
     final TextEditingController controller = TextEditingController();
@@ -2572,18 +2707,18 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('"${controller.text}" 옵션이 추가되었습니다.',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
-                        backgroundColor: const Color(0xFFFF8A65),
-                        duration: const Duration(milliseconds: 1000),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        margin: const EdgeInsets.all(16),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                        SnackBar(
+                          content: Text('"${controller.text}" 옵션이 추가되었습니다.',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          backgroundColor: const Color(0xFFFF8A65),
+                          duration: const Duration(milliseconds: 1000),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          margin: const EdgeInsets.all(16),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     }
                   }
                 },
@@ -2634,11 +2769,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     }
 
     final updatedChart = chart.copyWith(columnOptions: updatedColumnOptions);
-    
+
     // Firebase 통합 서비스를 사용해서 저장
     final integratedService = ref.read(integratedChartServiceProvider);
     await integratedService.saveChart(updatedChart);
-    
+
     // 로컬 dropdownOptions도 업데이트 (더 빠른 반영을 위해)
     if (mounted) {
       setState(() {
@@ -2676,7 +2811,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             propertyData = propertyData!.copyWith(address: editedValues[key]!);
             break;
           case 'direction':
-            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            propertyData =
+                propertyData!.copyWith(direction: editedValues[key]!);
             break;
           case 'landlord_environment':
             propertyData =
@@ -2707,12 +2843,12 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
         deposit: _depositController.text,
         rent: _rentController.text,
       );
-      
+
       // Debug: Address save logging
 
       // Firebase 통합 차트 서비스를 사용하여 저장
       final integratedService = ref.read(integratedChartServiceProvider);
-      
+
       // 실제 차트 데이터에 변경사항 반영
       final chartList = ref.read(integratedChartsProvider);
       for (var chart in chartList) {
@@ -2724,18 +2860,21 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           updatedProperties[propertyIndex] = propertyData!;
 
           final updatedChart = chart.copyWith(properties: updatedProperties);
-          
+
           // Debug: 저장될 데이터 확인
-          
+
           // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
           await integratedService.saveChart(updatedChart);
-          
+
           // 로컬 provider들도 업데이트 (UI 즉시 반영)
-          ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
-          
+          ref
+              .read(propertyChartListProvider.notifier)
+              .updateChart(updatedChart);
+
           // 통합 차트 provider도 업데이트 (차트 화면 동기화용)
           final integratedCharts = ref.read(integratedChartsProvider);
-          final chartIndex = integratedCharts.indexWhere((c) => c.id == chart.id);
+          final chartIndex =
+              integratedCharts.indexWhere((c) => c.id == chart.id);
           if (chartIndex != -1) {
             // integratedChartsProvider는 직접 수정할 수 없으므로 서비스를 통해 다시 로드
             ref.invalidate(integratedChartsProvider);
@@ -2808,7 +2947,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             propertyData = propertyData!.copyWith(address: editedValues[key]!);
             break;
           case 'direction':
-            propertyData = propertyData!.copyWith(direction: editedValues[key]!);
+            propertyData =
+                propertyData!.copyWith(direction: editedValues[key]!);
             break;
           case 'landlord_environment':
             propertyData =
@@ -2834,7 +2974,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 
       // Firebase 통합 차트 서비스를 사용하여 저장
       final integratedService = ref.read(integratedChartServiceProvider);
-      
+
       // Get target chart from integrated charts
       final integratedCharts = ref.read(integratedChartsProvider);
       final targetChart = integratedCharts.firstWhere(
@@ -2850,16 +2990,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       // Add the property to the chart
       final updatedProperties = List<PropertyData>.from(targetChart.properties);
       updatedProperties.add(propertyData!);
-      
+
       final updatedChart = targetChart.copyWith(properties: updatedProperties);
-      
+
       // Firebase에 저장 (로그인 상태에 따라 Firebase 또는 로컬)
       await integratedService.saveChart(updatedChart);
-      
+
       // 로컬 provider들도 업데이트 (UI 즉시 반영)
       ref.read(currentChartProvider.notifier).setChart(updatedChart);
       ref.read(propertyChartListProvider.notifier).updateChart(updatedChart);
-      
+
       // 통합 차트 provider도 무효화하여 새로고침
       ref.invalidate(integratedChartsProvider);
 
@@ -3047,7 +3187,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       ),
       GuideStep(
         title: '드롭다운 옵션 선택하기 📋',
-        description: '드롭다운을 탭하여 방향, 특징 등 다양한 옵션을 선택할 수 있습니다. 필요시 새로운 옵션도 추가 가능합니다.',
+        description:
+            '드롭다운을 탭하여 방향, 특징 등 다양한 옵션을 선택할 수 있습니다. 필요시 새로운 옵션도 추가 가능합니다.',
         targetKey: _propertyFormKey,
         icon: Icons.arrow_drop_down,
         tooltipPosition: GuideTooltipPosition.bottom,
@@ -3066,14 +3207,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       ),
       GuideStep(
         title: '사진 추가하기 📷',
-        description: '매물 사진을 추가하여 나중에 쉽게 기억할 수 있습니다. 편집 모드에서 갤러리나 카메라로 촬영 가능합니다.',
+        description:
+            '매물 사진을 추가하여 나중에 쉽게 기억할 수 있습니다. 편집 모드에서 갤러리나 카메라로 촬영 가능합니다.',
         targetKey: _imageGalleryKey,
         icon: Icons.photo_library,
         tooltipPosition: GuideTooltipPosition.bottom,
       ),
       GuideStep(
         title: '카테고리별 정보 관리 📋',
-        description: '매물 정보를 카테고리별로 체계적으로 관리할 수 있습니다. 필수정보부터 치안, 환경까지 꼼꼼하게 기록해보세요.',
+        description:
+            '매물 정보를 카테고리별로 체계적으로 관리할 수 있습니다. 필수정보부터 치안, 환경까지 꼼꼼하게 기록해보세요.',
         targetKey: _propertyFormKey,
         icon: Icons.category,
         tooltipPosition: GuideTooltipPosition.top,
@@ -3196,7 +3339,7 @@ class _ImageGalleryPopup extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 갤러리 그리드
             Expanded(
               child: Padding(
@@ -3229,7 +3372,7 @@ class _ImageGalleryPopup extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: index == initialIndex 
+                            color: index == initialIndex
                                 ? const Color(0xFFFF8A65)
                                 : Colors.grey[300]!,
                             width: index == initialIndex ? 3 : 1,
@@ -3274,7 +3417,8 @@ class _ImageGalleryPopup extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.3),
+                                          color: Colors.black
+                                              .withValues(alpha: 0.3),
                                           blurRadius: 4,
                                           offset: const Offset(0, 1),
                                         ),
@@ -3317,7 +3461,7 @@ class _ImageGalleryPopup extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 하단 정보
             Container(
               padding: const EdgeInsets.all(16),
@@ -3459,8 +3603,8 @@ class _ImageViewerDialogState extends State<_ImageViewerDialog> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(20),

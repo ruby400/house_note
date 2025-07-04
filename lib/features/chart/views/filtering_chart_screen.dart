@@ -101,7 +101,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '저층 방범창': ['있음', '없음'],
     '집주변 낮분위기': ['을씨년스러움', '사람들 많이다님', '사람들 안다님', '평범함', '분위기 좋음', '따뜻함'],
     '집주변 밤분위기': ['을씨년스러움', '무서움', '스산함', '평범함', '사람들 많이다님', '사람들 안다님'],
-    '2종 잠금장치': ['있음', '없음', '설치해준다함'],
+    '2중 잠금장치': ['있음', '없음', '설치해준다함'],
     '집 근처 소음원': ['공장', '공사장', '폐기장', '고물상', '큰 도로', '없음'],
     '실내소음': ['있음', '없음', '가벽'],
     '이중창(소음, 외풍)': ['있음', '없음'],
@@ -170,7 +170,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
     '저층 방범창',
     '집주변 낮분위기',
     '집주변 밤분위기',
-    '2종 잠금장치',
+    '2중 잠금장치',
     '집 근처 소음원',
     '실내소음',
     '이중창(소음, 외풍)',
@@ -252,7 +252,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '저층 방범창': 'security_bars',
       '집주변 낮분위기': 'day_atmosphere',
       '집주변 밤분위기': 'night_atmosphere',
-      '2종 잠금장치': 'double_lock',
+      '2중 잠금장치': 'double_lock',
       '집 근처 소음원': 'noise_source',
       '실내소음': 'indoor_noise',
       '이중창(소음, 외풍)': 'double_window',
@@ -351,7 +351,7 @@ class _FilteringChartScreenState extends ConsumerState<FilteringChartScreen> {
       '저층 방범창',
       '집주변 낮분위기',
       '집주변 밤분위기',
-      '2종 잠금장치'
+      '2중 잠금장치'
     ],
     '🧽 환경 및 청결': [
       '집 근처 소음원',

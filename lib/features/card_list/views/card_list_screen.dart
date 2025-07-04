@@ -1553,7 +1553,7 @@ class _CardListScreenState extends ConsumerState<CardListScreen> {
       '저층 방범창': 'security_bars',
       '집주변 낮분위기': 'day_atmosphere',
       '집주변 밤분위기': 'night_atmosphere',
-      '2종 잠금장치': 'double_lock',
+      '2중 잠금장치': 'double_lock',
       '집 근처 소음원': 'noise_source',
       '실내소음': 'indoor_noise',
       '이중창(소음, 외풍)': 'double_window',
